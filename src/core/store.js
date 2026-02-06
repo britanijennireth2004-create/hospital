@@ -188,7 +188,6 @@ export async function createStore(bus) {
       }
     ],
     
-    // En la sección de defaultData, después de 'appointments':
     clinicalRecords: [
       {
         id: 'cr_1',
@@ -267,12 +266,52 @@ export async function createStore(bus) {
       }
     ],
 
+    // Añadir a la sección defaultData en store.js:
+
+    triage: [
+      {
+        id: 'triage_1',
+        patientId: 'p_1',
+        priority: 'orange',
+        symptoms: 'Dolor torácico intenso con irradiación al brazo izquierdo, náuseas, diaforesis',
+        observations: 'Paciente con antecedentes de HTA y tabaquismo. ECG solicitado.',
+        vitalSigns: {
+          bloodPressure: '150/95',
+          heartRate: 110,
+          temperature: 37.2,
+          spo2: 94,
+          respiratoryRate: 22,
+          painLevel: 9
+        },
+        status: 'in_progress',
+        triagedBy: 'doctor_1',
+        triagedByName: 'Dra. Ana Ruiz',
+        createdAt: Date.now() - 15 * 60 * 1000, // 15 minutos atrás
+        startedAt: Date.now() - 5 * 60 * 1000   // 5 minutos atrás
+      },
+      {
+        id: 'triage_2',
+        patientId: 'p_2',
+        priority: 'yellow',
+        symptoms: 'Fractura expuesta en pierna derecha, dolor intenso, deformidad visible',
+        observations: 'Accidente de tránsito. Estable hemodinámicamente.',
+        vitalSigns: {
+          bloodPressure: '130/85',
+          heartRate: 95,
+          temperature: 36.8,
+          spo2: 97,
+          respiratoryRate: 18,
+          painLevel: 8
+        },
+        status: 'waiting',
+        triagedBy: 'doctor_2',
+        triagedByName: 'Dr. Luis Pérez',
+        createdAt: Date.now() - 30 * 60 * 1000  // 30 minutos atrás
+      }
+    ],
+
     // Colecciones vacías para funcionalidades futuras
-    clinicalHistories: [],
     labResults: [],
-    prescriptions: [],
-    triage: [],
-    admissions: [],
     messages: []
   };
   

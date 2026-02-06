@@ -1574,518 +1574,437 @@ export default function mountClinical(root, { bus, store, user, role }) {
     setupDetailModalListeners(modalContainer, record, patient, doctor, appointment);
   }
 
-  // ===== FUNCIÓN PARA IMPRIMIR INFORME PROFESIONAL OPTIMIZADO =====
-  function generateClinicalReport(record) {
+  // ===== FUNCIÓN PARA IMPRIMIR INFORME CLÍNICO PROFESIONAL =====
+// ===== FUNCIÓN PARA IMPRIMIR INFORME CLÍNICO COMPACTO =====
+function generateClinicalReport(record) {
     const patient = store.find('patients', record.patientId);
     const doctor = store.find('doctors', record.doctorId);
     const date = new Date(record.date);
     const vitals = record.vitalSigns || {};
     
-    // Crear una ventana nueva para el informe
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      showNotification('Por favor, permite las ventanas emergentes para imprimir el informe', 'warning');
-      return;
+        showNotification('Permite ventanas emergentes para imprimir', 'warning');
+        return;
     }
     
-    // Función para truncar texto largo
-    function truncateForPrint(text, maxLines = 6) {
-      if (!text) return '';
-      const lines = text.split('\n');
-      if (lines.length <= maxLines) return text;
-      return lines.slice(0, maxLines).join('\n') + '\n[...]';
-    }
+    // Funciones de formato
+    const formatDateShort = (dateObj) => dateObj.toLocaleDateString('es-ES', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+    
+    const formatDateTime = (dateObj) => dateObj.toLocaleDateString('es-ES', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
+    
+    const getSeverityLevel = () => {
+        if (!vitals.bloodPressure && !vitals.heartRate && !vitals.temperature) {
+            return 'NORMAL';
+        }
+        
+        const bp = vitals.bloodPressure ? vitals.bloodPressure.split('/').map(Number) : [null, null];
+        const hr = vitals.heartRate || 0;
+        const temp = vitals.temperature || 0;
+        
+        let score = 0;
+        if (bp[0] && (bp[0] > 180 || bp[0] < 90)) score += 2;
+        else if (bp[0] && (bp[0] > 140 || bp[0] < 100)) score += 1;
+        if (hr > 120 || hr < 50) score += 2;
+        else if (hr > 100 || hr < 60) score += 1;
+        if (temp > 39 || temp < 35) score += 2;
+        else if (temp > 38 || temp < 36) score += 1;
+        
+        if (score >= 4) return 'ALTO';
+        if (score >= 2) return 'MODERADO';
+        return 'BAJO';
+    };
+    
+    // Generar tabla compacta
+    const createCompactTable = (headers, rows, colWidths = []) => {
+        let table = '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:9pt;">';
+        table += '<tr style="background:#2c5282;color:white;">';
+        headers.forEach((header, i) => {
+            const width = colWidths[i] ? `width="${colWidths[i]}"` : '';
+            table += `<th style="padding:5px 8px;text-align:left;font-weight:bold;" ${width}>${header}</th>`;
+        });
+        table += '</tr>';
+        rows.forEach(row => {
+            table += '<tr style="border-bottom:1px solid #e2e8f0;">';
+            row.forEach(cell => {
+                table += `<td style="padding:5px 8px;">${cell}</td>`;
+            });
+            table += '</tr>';
+        });
+        table += '</table>';
+        return table;
+    };
+    
+    // Calcular IMC si hay peso y altura
+    const calculateBMI = () => {
+        if (vitals.weight && vitals.height) {
+            const heightM = vitals.height / 100;
+            const bmi = (vitals.weight / (heightM * heightM)).toFixed(1);
+            let category = '';
+            if (bmi < 18.5) category = 'Bajo peso';
+            else if (bmi < 25) category = 'Normal';
+            else if (bmi < 30) category = 'Sobrepeso';
+            else category = 'Obesidad';
+            return `${bmi} (${category})`;
+        }
+        return 'N/A';
+    };
     
     printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Informe Clínico - ${patient?.name || 'Paciente'}</title>
-        <style>
-          @page {
-            margin: 0.8cm;
-            size: A4;
-          }
-          
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 10pt;
-            line-height: 1.2;
-            color: #000;
-            max-width: 19cm;
-            margin: 0 auto;
-            padding: 0;
-          }
-          
-          /* Header compacto */
-          .header {
-            text-align: center;
-            margin-bottom: 0.4cm;
-            padding-bottom: 0.2cm;
-            border-bottom: 1.5pt solid #000;
-          }
-          
-          .hospital-name {
-            font-size: 12pt;
-            font-weight: bold;
-            letter-spacing: 0.5pt;
-            margin-bottom: 2pt;
-          }
-          
-          .report-title {
-            font-size: 11pt;
-            font-weight: bold;
-            margin-bottom: 2pt;
-          }
-          
-          .subtitle {
-            font-size: 9pt;
-            color: #666;
-          }
-          
-          /* Sección de información del paciente - COMPACTA */
-          .patient-section {
-            margin-bottom: 0.3cm;
-            padding: 0.2cm;
-            border: 0.75pt solid #000;
-            border-radius: 2pt;
-          }
-          
-          .patient-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.2cm;
-            font-size: 9pt;
-          }
-          
-          .patient-info {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.3cm;
-          }
-          
-          .info-item {
-            flex: 1;
-            min-width: 45%;
-          }
-          
-          .info-label {
-            font-weight: bold;
-            font-size: 8.5pt;
-            display: inline-block;
-            min-width: 2.5cm;
-          }
-          
-          /* Signos vitales - ultra compacto */
-          .vitals-section {
-            margin-bottom: 0.3cm;
-          }
-          
-          .vitals-title {
-            font-size: 10pt;
-            font-weight: bold;
-            margin-bottom: 0.15cm;
-            padding-bottom: 1pt;
-            border-bottom: 0.75pt solid #000;
-          }
-          
-          .vitals-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 0.15cm;
-            font-size: 9pt;
-          }
-          
-          .vital-item {
-            text-align: center;
-            border: 0.5pt solid #000;
-            padding: 0.15cm;
-            border-radius: 1pt;
-          }
-          
-          .vital-label {
-            font-size: 8pt;
-            font-weight: bold;
-            margin-bottom: 1pt;
-          }
-          
-          .vital-value {
-            font-size: 9pt;
-          }
-          
-          /* Secciones de contenido - ultra compactas */
-          .section {
-            margin-bottom: 0.25cm;
-            page-break-inside: avoid;
-          }
-          
-          .section-title {
-            font-size: 10pt;
-            font-weight: bold;
-            margin-bottom: 0.1cm;
-            padding-bottom: 1pt;
-            border-bottom: 0.75pt solid #000;
-          }
-          
-          .content-box {
-            border: 0.75pt solid #000;
-            padding: 0.15cm;
-            min-height: 0.8cm;
-            max-height: 2.5cm;
-            overflow: hidden;
-            font-size: 9pt;
-            line-height: 1.15;
-            white-space: pre-line;
-          }
-          
-          /* Diagnóstico destacado pero compacto */
-          .diagnosis-box {
-            background-color: #f0f0f0;
-            border: 0.75pt solid #000;
-            padding: 0.15cm;
-            font-weight: bold;
-            font-size: 9.5pt;
-            line-height: 1.15;
-            min-height: 0.8cm;
-            max-height: 1.5cm;
-            overflow: hidden;
-          }
-          
-          /* Recetas compactas */
-          .prescription-item {
-            margin-bottom: 0.1cm;
-            padding-bottom: 0.1cm;
-            border-bottom: 0.5pt dashed #aaa;
-            font-size: 8.5pt;
-          }
-          
-          .prescription-med {
-            font-weight: bold;
-            margin-bottom: 0.05cm;
-          }
-          
-          .prescription-details {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.1cm;
-            font-size: 8pt;
-          }
-          
-          /* Firmas compactas */
-          .footer {
-            margin-top: 0.4cm;
-            padding-top: 0.2cm;
-            border-top: 0.75pt solid #000;
-            font-size: 8pt;
-          }
-          
-          .signature-area {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.2cm;
-          }
-          
-          .signature-line {
-            width: 7cm;
-            text-align: center;
-          }
-          
-          .signature-name {
-            font-weight: bold;
-            font-size: 9pt;
-            margin-bottom: 0.05cm;
-          }
-          
-          .signature-details {
-            font-size: 7.5pt;
-            color: #666;
-            margin-bottom: 0.05cm;
-          }
-          
-          /* Información del documento */
-          .document-info {
-            font-size: 7pt;
-            color: #666;
-            text-align: center;
-            margin-top: 0.1cm;
-          }
-          
-          /* Utilidades */
-          .compact-text {
-            font-size: 8.5pt;
-            line-height: 1.1;
-          }
-          
-          .no-margin {
-            margin: 0;
-          }
-          
-          .small-text {
-            font-size: 7.5pt;
-          }
-          
-          @media print {
-            body {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Informe Clínico - ${patient?.name || 'Paciente'}</title>
+            <style>
+                @page { margin: 0.8cm; size: A4; }
+                * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+                body { font-size:9.5pt; line-height:1.2; color:#333; max-width:100%; }
+                
+                /* HEADER SUPER COMPACTO */
+                .header { text-align:center; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #2c5282; }
+                .hospital { font-size:11pt; font-weight:bold; color:#2c5282; letter-spacing:0.3px; }
+                .title { font-size:10pt; font-weight:bold; color:#2d3748; margin:3px 0; }
+                .info-line { font-size:8pt; color:#666; margin-top:2px; }
+                
+                /* DATOS PACIENTE - 2 COLUMNAS */
+                .patient-grid { 
+                    display:grid; grid-template-columns:1fr 1fr; gap:6px; 
+                    margin-bottom:12px; font-size:9pt;
+                }
+                .patient-item { display:flex; margin-bottom:4px; }
+                .patient-label { width:70px; color:#666; font-size:8.5pt; flex-shrink:0; }
+                .patient-value { font-weight:500; }
+                
+                /* RESÚMENES COMPACTOS */
+                .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:10px 0; }
+                .summary-item { 
+                    background:#f8fafc; border:1px solid #e2e8f0; border-radius:3px; 
+                    padding:6px; text-align:center;
+                }
+                .summary-label { font-size:8pt; color:#666; margin-bottom:2px; }
+                .summary-value { font-size:9.5pt; font-weight:bold; color:#2c5282; }
+                
+                /* SIGNOS VITALES EN 1 LÍNEA */
+                .vitals-line { 
+                    display:grid; grid-template-columns:repeat(6,1fr); gap:4px; 
+                    margin:10px 0; font-size:9pt;
+                }
+                .vital-compact { 
+                    text-align:center; padding:5px; 
+                    border:1px solid #e2e8f0; border-radius:3px;
+                }
+                .vital-label-compact { font-size:8pt; color:#666; margin-bottom:1px; }
+                .vital-value-compact { font-size:9pt; font-weight:bold; }
+                
+                /* CONTENIDO COMPACTO */
+                .section { margin:10px 0; }
+                .section-title { 
+                    font-size:9.5pt; font-weight:bold; color:#2c5282; 
+                    margin-bottom:6px; padding-bottom:3px; border-bottom:1px solid #e2e8f0;
+                }
+                .content-compact { 
+                    font-size:9pt; line-height:1.3; white-space:pre-line;
+                    padding:8px; background:#f8fafc; border-radius:3px;
+                    max-height:80px; overflow:hidden;
+                }
+                .content-expand { max-height:none !important; }
+                
+                /* DIAGNÓSTICO DESTACADO */
+                .diagnosis-box { 
+                    background:#fff5f5; border:1px solid #fed7d7; 
+                    padding:8px; border-radius:3px; font-weight:bold;
+                    font-size:9.5pt; margin:8px 0;
+                }
+                
+                /* LISTA COMPACTA */
+                .compact-list { padding-left:15px; margin:5px 0; }
+                .compact-list li { 
+                    font-size:8.5pt; margin-bottom:3px; line-height:1.2;
+                    list-style-type:disc; 
+                }
+                
+                /* FIRMAS COMPACTAS */
+                .signatures { 
+                    display:grid; grid-template-columns:1fr 1fr; gap:15px;
+                    margin-top:15px; padding-top:10px; border-top:1px solid #ddd;
+                }
+                .signature { text-align:center; }
+                .signature-line { 
+                    border-top:1px solid #000; width:80%; margin:0 auto;
+                    padding-top:4px; margin-top:25px;
+                }
+                
+                /* FOOTER MINIMALISTA */
+                .footer { 
+                    font-size:7.5pt; color:#888; text-align:center;
+                    margin-top:10px; padding-top:5px; border-top:1px solid #eee;
+                }
+                
+                /* UTILIDADES */
+                .text-small { font-size:8pt; }
+                .text-muted { color:#666; }
+                .text-bold { font-weight:bold; }
+                .severity-high { color:#c53030; background:#fff5f5; padding:1px 4px; border-radius:2px; }
+                .severity-moderate { color:#d69e2e; background:#fffff0; padding:1px 4px; border-radius:2px; }
+                .severity-low { color:#38a169; background:#f0fff4; padding:1px 4px; border-radius:2px; }
+                
+                @media print {
+                    .no-print { display:none !important; }
+                    .page-break { page-break-before:always; }
+                    .content-compact { max-height:60px; }
+                }
+            </style>
+        </head>
+        <body>
+            <!-- ENCABEZADO MINIMALISTA -->
+            <div class="header">
+                <div class="hospital">HOSPITAL CENTRAL</div>
+                <div class="title">INFORME CLÍNICO ELECTRÓNICO</div>
+                <div class="info-line">
+                    Generado: ${formatDateTime(new Date())} | ID: ${record.id.substring(0,8)}
+                </div>
+            </div>
             
-            .no-print {
-              display: none !important;
-            }
-          }
-          
-          /* Ajustes para contenido largo */
-          .truncated {
-            max-height: 1.2cm;
-            overflow: hidden;
-            position: relative;
-          }
-          
-          .truncated::after {
-            content: "...";
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            background: white;
-            padding-left: 0.2cm;
-          }
-        </style>
-      </head>
-      <body>
-        <!-- Encabezado ultra compacto -->
-        <div class="header">
-          <div class="hospital-name">HOSPITAL GENERAL</div>
-          <div class="report-title">INFORME CLÍNICO</div>
-          <div class="subtitle">Sistema Electrónico de Historia Clínica</div>
-        </div>
-        
-        <!-- Información del paciente y médico - COMPACTA -->
-        <div class="patient-section">
-          <div class="patient-grid">
-            <div>
-              <div class="info-item">
-                <span class="info-label">Paciente:</span>
-                <span>${patient?.name || 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">DNI:</span>
-                <span>${patient?.dni || 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Edad:</span>
-                <span>${patient?.birthDate ? calculateAge(patient.birthDate) + ' años' : 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Teléfono:</span>
-                <span class="compact-text">${patient?.phone || 'N/A'}</span>
-              </div>
-            </div>
-            <div>
-              <div class="info-item">
-                <span class="info-label">Médico:</span>
-                <span>${doctor?.name || 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Especialidad:</span>
-                <span>${doctor?.specialty || 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Matrícula:</span>
-                <span>${doctor?.license || 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Fecha:</span>
-                <span>${date.toLocaleDateString('es-ES', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric'
-                })}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Signos vitales - solo si existen -->
-        ${Object.values(vitals).some(v => v !== null && v !== '') ? `
-          <div class="vitals-section">
-            <div class="vitals-title">SIGNOS VITALES</div>
-            <div class="vitals-grid">
-              ${vitals.bloodPressure ? `
-                <div class="vital-item">
-                  <div class="vital-label">PA</div>
-                  <div class="vital-value">${vitals.bloodPressure}</div>
-                </div>
-              ` : '<div class="vital-item"></div>'}
-              ${vitals.heartRate ? `
-                <div class="vital-item">
-                  <div class="vital-label">FC</div>
-                  <div class="vital-value">${vitals.heartRate}</div>
-                </div>
-              ` : '<div class="vital-item"></div>'}
-              ${vitals.temperature ? `
-                <div class="vital-item">
-                  <div class="vital-label">Temp</div>
-                  <div class="vital-value">${vitals.temperature}°</div>
-                </div>
-              ` : '<div class="vital-item"></div>'}
-              ${vitals.spo2 ? `
-                <div class="vital-item">
-                  <div class="vital-label">O₂</div>
-                  <div class="vital-value">${vitals.spo2}%</div>
-                </div>
-              ` : '<div class="vital-item"></div>'}
-              ${vitals.weight ? `
-                <div class="vital-item">
-                  <div class="vital-label">Peso</div>
-                  <div class="vital-value">${vitals.weight}kg</div>
-                </div>
-              ` : '<div class="vital-item"></div>'}
-              ${vitals.height ? `
-                <div class="vital-item">
-                  <div class="vital-label">Altura</div>
-                  <div class="vital-value">${vitals.height}cm</div>
-                </div>
-              ` : '<div class="vital-item"></div>'}
-            </div>
-          </div>
-        ` : ''}
-        
-        <!-- Motivo y síntomas - COMPACTO -->
-        ${record.reason || record.symptoms ? `
-          <div class="section">
-            <div class="section-title">MOTIVO Y SÍNTOMAS</div>
-            <div class="content-box">
-              ${record.reason ? `<div class="compact-text"><strong>Motivo:</strong> ${truncateForPrint(record.reason, 3)}</div>` : ''}
-              ${record.symptoms ? `<div class="compact-text" style="margin-top: 0.05cm;"><strong>Síntomas:</strong> ${truncateForPrint(record.symptoms, 3)}</div>` : ''}
-            </div>
-          </div>
-        ` : ''}
-        
-        <!-- Diagnóstico - COMPACTO -->
-        <div class="section">
-          <div class="section-title">DIAGNÓSTICO</div>
-          <div class="diagnosis-box">
-            ${truncateForPrint(record.diagnosis || 'No especificado', 2)}
-          </div>
-        </div>
-        
-        <!-- Tratamiento - COMPACTO -->
-        ${record.treatment ? `
-          <div class="section">
-            <div class="section-title">TRATAMIENTO</div>
-            <div class="content-box">
-              ${truncateForPrint(record.treatment, 4)}
-            </div>
-          </div>
-        ` : ''}
-        
-        <!-- Recetas - COMPACTO -->
-        ${(record.prescriptions && (Array.isArray(record.prescriptions) ? record.prescriptions.length > 0 : record.prescriptions.trim() !== '')) ? `
-          <div class="section">
-            <div class="section-title">RECETAS</div>
-            <div class="content-box">
-              ${Array.isArray(record.prescriptions) ? 
-                record.prescriptions.slice(0, 3).map((pres, index) => `
-                  <div class="prescription-item">
-                    <div class="prescription-med">${pres.medication || 'Medicamento'}</div>
-                    <div class="prescription-details">
-                      <div><strong>Dosis:</strong> ${pres.dosage || 'N/A'}</div>
-                      <div><strong>Frec:</strong> ${pres.frequency || 'N/A'}</div>
-                      <div><strong>Duración:</strong> ${pres.duration || 'N/A'}</div>
+            <!-- PACIENTE Y MÉDICO EN 2 COLUMNAS -->
+            <div class="patient-grid">
+                <div>
+                    <div class="patient-item">
+                        <span class="patient-label">Paciente:</span>
+                        <span class="patient-value">${patient?.name || 'N/A'}</span>
                     </div>
-                  </div>
-                `).join('') + (record.prescriptions.length > 3 ? '<div class="small-text">[...] y ' + (record.prescriptions.length - 3) + ' más</div>' : '')
-                :
-                `<div class="compact-text">${truncateForPrint(record.prescriptions, 4)}</div>`
-              }
-            </div>
-          </div>
-        ` : ''}
-        
-        <!-- Observaciones - COMPACTO -->
-        ${record.notes || record.recommendations || record.followUp ? `
-          <div class="section">
-            <div class="section-title">OBSERVACIONES</div>
-            <div class="content-box">
-              ${record.notes ? `<div class="compact-text"><strong>Notas:</strong> ${truncateForPrint(record.notes, 2)}</div>` : ''}
-              ${record.recommendations ? `<div class="compact-text" style="margin-top: 0.05cm;"><strong>Recomendaciones:</strong> ${truncateForPrint(record.recommendations, 2)}</div>` : ''}
-              ${record.followUp ? `
-                <div class="compact-text" style="margin-top: 0.05cm;">
-                  <strong>Control:</strong> ${new Date(record.followUp).toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                  })}
+                    <div class="patient-item">
+                        <span class="patient-label">DNI:</span>
+                        <span class="patient-value">${patient?.dni || 'N/A'}</span>
+                    </div>
+                    <div class="patient-item">
+                        <span class="patient-label">Edad:</span>
+                        <span class="patient-value">${patient?.birthDate ? calculateAge(patient.birthDate) + ' años' : 'N/A'}</span>
+                    </div>
+                    <div class="patient-item">
+                        <span class="patient-label">Teléfono:</span>
+                        <span class="patient-value">${patient?.phone || 'N/A'}</span>
+                    </div>
                 </div>
-              ` : ''}
+                <div>
+                    <div class="patient-item">
+                        <span class="patient-label">Médico:</span>
+                        <span class="patient-value">${doctor?.name || 'N/A'}</span>
+                    </div>
+                    <div class="patient-item">
+                        <span class="patient-label">Especialidad:</span>
+                        <span class="patient-value">${doctor?.specialty || 'N/A'}</span>
+                    </div>
+                    <div class="patient-item">
+                        <span class="patient-label">Fecha:</span>
+                        <span class="patient-value">${formatDateShort(date)}</span>
+                    </div>
+                    <div class="patient-item">
+                        <span class="patient-label">Matrícula:</span>
+                        <span class="patient-value">${doctor?.license || 'N/A'}</span>
+                    </div>
+                </div>
             </div>
-          </div>
-        ` : ''}
-        
-        <!-- Firmas COMPACTAS -->
-        <div class="footer">
-          <div class="signature-area">
-            <div class="signature-line">
-              <div class="signature-name">${doctor?.name || 'Médico Tratante'}</div>
-              <div class="signature-details">${doctor?.specialty || ''}</div>
-              <div class="signature-details">Mat. ${doctor?.license || 'N/A'}</div>
-              <div style="border-top: 0.75pt solid #000; margin-top: 0.1cm; padding-top: 0.05cm;">
-                Firma
-              </div>
+            
+            <!-- RESUMEN EN 4 CUADROS -->
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">TIPO</div>
+                    <div class="summary-value">${getTypeText(record.type)}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">ESTADO</div>
+                    <div class="summary-value">${record.status.toUpperCase()}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">SEVERIDAD</div>
+                    <div class="summary-value ${'severity-' + getSeverityLevel().toLowerCase()}">
+                        ${getSeverityLevel()}
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">IMC</div>
+                    <div class="summary-value">${calculateBMI()}</div>
+                </div>
             </div>
-            <div class="signature-line">
-              <div class="signature-name">HOSPITAL GENERAL</div>
-              <div class="signature-details">Sello Institucional</div>
-              <div style="border-top: 0.75pt solid #000; margin-top: 0.1cm; padding-top: 0.05cm;">
-                Sello y Firma
-              </div>
+            
+            <!-- SIGNOS VITALES EN 1 LÍNEA -->
+            ${Object.values(vitals).some(v => v !== null && v !== '') ? `
+                <div class="section">
+                    <div class="section-title">SIGNOS VITALES</div>
+                    <div class="vitals-line">
+                        ${vitals.bloodPressure ? `
+                            <div class="vital-compact">
+                                <div class="vital-label-compact">PA</div>
+                                <div class="vital-value-compact">${vitals.bloodPressure}</div>
+                            </div>
+                        ` : '<div class="vital-compact"></div>'}
+                        ${vitals.heartRate ? `
+                            <div class="vital-compact">
+                                <div class="vital-label-compact">FC</div>
+                                <div class="vital-value-compact">${vitals.heartRate}</div>
+                            </div>
+                        ` : '<div class="vital-compact"></div>'}
+                        ${vitals.temperature ? `
+                            <div class="vital-compact">
+                                <div class="vital-label-compact">Temp</div>
+                                <div class="vital-value-compact">${vitals.temperature}°</div>
+                            </div>
+                        ` : '<div class="vital-compact"></div>'}
+                        ${vitals.spo2 ? `
+                            <div class="vital-compact">
+                                <div class="vital-label-compact">O₂</div>
+                                <div class="vital-value-compact">${vitals.spo2}%</div>
+                            </div>
+                        ` : '<div class="vital-compact"></div>'}
+                        ${vitals.weight ? `
+                            <div class="vital-compact">
+                                <div class="vital-label-compact">Peso</div>
+                                <div class="vital-value-compact">${vitals.weight}kg</div>
+                            </div>
+                        ` : '<div class="vital-compact"></div>'}
+                        ${vitals.height ? `
+                            <div class="vital-compact">
+                                <div class="vital-label-compact">Altura</div>
+                                <div class="vital-value-compact">${vitals.height}cm</div>
+                            </div>
+                        ` : '<div class="vital-compact"></div>'}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- DIAGNÓSTICO -->
+            <div class="section">
+                <div class="section-title">DIAGNÓSTICO</div>
+                <div class="diagnosis-box">${record.diagnosis || 'No especificado'}</div>
             </div>
-          </div>
-          
-          <div class="document-info">
-            <div>ID: ${record.id} • Fecha creación: ${new Date(record.createdAt).toLocaleDateString('es-ES', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            })}</div>
-            <div>Documento electrónico válido • ${new Date().toLocaleDateString('es-ES')}</div>
-          </div>
-        </div>
-        
-        <script>
-          // Imprimir automáticamente cuando se carga la página
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-              setTimeout(function() {
-                window.close();
-              }, 500);
-            }, 100);
-          };
-          
-          // También permitir imprimir manualmente con Ctrl+P
-          document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'p') {
-              e.preventDefault();
-              window.print();
-            }
-          });
-        </script>
-      </body>
-      </html>
+            
+            <!-- EVALUACIÓN CLÍNICA COMPACTA -->
+            ${record.symptoms || record.reason ? `
+                <div class="section">
+                    <div class="section-title">EVALUACIÓN</div>
+                    <div class="content-compact">
+                        ${record.reason ? `<span class="text-bold">Motivo:</span> ${record.reason}<br><br>` : ''}
+                        ${record.symptoms ? `<span class="text-bold">Síntomas:</span> ${record.symptoms}` : ''}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- TRATAMIENTO -->
+            ${record.treatment ? `
+                <div class="section">
+                    <div class="section-title">TRATAMIENTO</div>
+                    <div class="content-compact">${record.treatment}</div>
+                </div>
+            ` : ''}
+            
+            <!-- RECETAS COMPACTAS -->
+            ${(record.prescriptions && (Array.isArray(record.prescriptions) ? record.prescriptions.length > 0 : record.prescriptions.trim() !== '')) ? `
+                <div class="section">
+                    <div class="section-title">PRESCRIPCIONES</div>
+                    ${createCompactTable(
+                        ['Medicamento', 'Dosis', 'Frecuencia', 'Duración'],
+                        Array.isArray(record.prescriptions) ? 
+                            record.prescriptions.map(pres => [
+                                pres.medication || 'N/A',
+                                pres.dosage || 'N/A',
+                                pres.frequency || 'N/A',
+                                pres.duration || 'N/A'
+                            ])
+                            :
+                            [[record.prescriptions, '', '', '']],
+                        ['40%', '20%', '20%', '20%']
+                    )}
+                </div>
+            ` : ''}
+            
+            <!-- RECOMENDACIONES Y SEGUIMIENTO -->
+            <div class="section">
+                <div class="section-title">RECOMENDACIONES</div>
+                <ul class="compact-list">
+                    ${getSeverityLevel() === 'ALTO' ? 
+                        '<li>SEGUIMIENTO ESTRICTO REQUERIDO - Nivel de severidad ALTO</li>' : 
+                      getSeverityLevel() === 'MODERADO' ? 
+                        '<li>Seguimiento regular recomendado</li>' : 
+                        '<li>Seguimiento según evolución</li>'
+                    }
+                    ${record.followUp ? 
+                        `<li>Control programado: ${formatDateShort(new Date(record.followUp))}</li>` : 
+                        '<li>No se programó control de seguimiento</li>'
+                    }
+                    ${record.recommendations ? `<li>${record.recommendations}</li>` : ''}
+                    ${record.notes ? `<li>${record.notes}</li>` : ''}
+                    <li class="text-muted">Documento electrónico válido - Confidencial</li>
+                </ul>
+            </div>
+            
+            <!-- FIRMAS COMPACTAS -->
+            <div class="signatures">
+                <div class="signature">
+                    <div class="text-bold">${doctor?.name || 'Médico Tratante'}</div>
+                    <div class="text-small text-muted">${doctor?.specialty || ''} - Mat. ${doctor?.license || 'N/A'}</div>
+                    <div class="signature-line"></div>
+                    <div class="text-small">Firma</div>
+                </div>
+                <div class="signature">
+                    <div class="text-bold">HOSPITAL CENTRAL</div>
+                    <div class="text-small text-muted">Sello institucional</div>
+                    <div class="signature-line"></div>
+                    <div class="text-small">Sello y firma</div>
+                </div>
+            </div>
+            
+            <!-- FOOTER MINIMALISTA -->
+            <div class="footer">
+                <div>ID: ${record.id} | Creación: ${formatDateShort(new Date(record.createdAt))}</div>
+                <div>Documento electrónico válido | Sistema HCE v2.0</div>
+            </div>
+            
+            <!-- BOTÓN DE IMPRESIÓN OCULTO -->
+            <div class="no-print" style="text-align:center; margin-top:10px;">
+                <button onclick="window.print()" style="padding:6px 12px; background:#2c5282; color:white; border:none; border-radius:3px; cursor:pointer;">
+                    🖨️ Imprimir Informe
+                </button>
+            </div>
+            
+            <script>
+                // Imprimir automáticamente
+                window.onload = function() {
+                    setTimeout(() => window.print(), 300);
+                    // Cerrar después de 3 segundos si no se imprime
+                    setTimeout(() => {
+                        if (!window.closed && confirm('¿Cerrar ventana de impresión?')) {
+                            window.close();
+                        }
+                    }, 3000);
+                };
+                
+                // Mostrar más contenido al hacer clic
+                document.querySelectorAll('.content-compact').forEach(el => {
+                    el.addEventListener('click', function() {
+                        this.classList.toggle('content-expand');
+                    });
+                });
+                
+                // Ctrl+P para imprimir
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'p') {
+                        e.preventDefault();
+                        window.print();
+                    }
+                });
+            </script>
+        </body>
+        </html>
     `);
     
     printWindow.document.close();
-  }
+}
 
   // Función para calcular edad
   function calculateAge(birthDate) {

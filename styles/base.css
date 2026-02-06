@@ -354,3 +354,123 @@ p {
     margin: 1rem;
   }
 }
+
+/* En tu archivo de estilos principal */
+.triage-level {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: var(--card);
+  border-radius: var(--radius);
+}
+
+.triage-levels .triage-level:last-child {
+  margin-bottom: 0;
+}
+
+.priority-option {
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.priority-option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quick-actions button {
+  justify-content: flex-start;
+  padding: 0.75rem;
+}
+
+/* ===== triage ===== */
+.step {
+  display: none;
+}
+
+.step.active {
+  display: block;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--muted-light);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+.step-dot.active {
+  background: var(--accent);
+  color: white;
+}
+
+.step-line {
+  width: 40px;
+  height: 2px;
+  background: var(--muted-light);
+}
+
+.patient-item {
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+}
+
+.patient-item:hover {
+  background: var(--bg-light);
+}
+
+.patient-item.selected {
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+}
+
+.confirmation-card {
+  padding: 1rem;
+  background: var(--bg-light);
+  border-radius: var(--radius);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes flash {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.7; }
+}

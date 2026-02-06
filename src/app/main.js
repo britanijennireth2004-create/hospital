@@ -50,6 +50,12 @@ const ROUTES = {
     icon: '📋',
     module: () => import('../modules/clinical.js'),
     permission: (role) => ['admin', 'doctor', 'patient'].includes(role)
+  },
+  triage: {
+    label: 'Triage',
+    icon: '🚨',
+    module: () => import('../modules/triage.js'),
+    permission: (role) => ['admin', 'doctor', 'nurse'].includes(role)
   }
 };
 
