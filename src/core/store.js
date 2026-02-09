@@ -312,7 +312,110 @@ export async function createStore(bus) {
 
     // Colecciones vacías para funcionalidades futuras
     labResults: [],
-    messages: []
+    messages: [],
+
+    // ===== MÓDULO DE SEGURIDAD =====
+    auditLogs: [
+      {
+        id: 'audit_1',
+        userId: 'admin_1',
+        userName: 'Administrador',
+        userRole: 'admin',
+        action: 'LOGIN',
+        module: 'auth',
+        description: 'Inicio de sesión exitoso',
+        details: { ip: '192.168.1.100', browser: 'Chrome' },
+        timestamp: Date.now() - 2 * 60 * 60 * 1000
+      },
+      {
+        id: 'audit_2',
+        userId: 'doctor_1',
+        userName: 'Dra. Ana Ruiz',
+        userRole: 'doctor',
+        action: 'CREATE',
+        module: 'appointments',
+        description: 'Cita médica creada',
+        details: { appointmentId: 'apt_1', patientName: 'María Gómez' },
+        timestamp: Date.now() - 1 * 60 * 60 * 1000
+      },
+      {
+        id: 'audit_3',
+        userId: 'admin_1',
+        userName: 'Administrador',
+        userRole: 'admin',
+        action: 'UPDATE',
+        module: 'patients',
+        description: 'Datos de paciente actualizados',
+        details: { patientId: 'p_1', fields: ['phone', 'address'] },
+        timestamp: Date.now() - 30 * 60 * 1000
+      }
+    ],
+
+    sessions: [
+      {
+        id: 'session_1',
+        userId: 'admin_1',
+        userName: 'Administrador',
+        userRole: 'admin',
+        startTime: Date.now(),
+        lastActivity: Date.now(),
+        expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+        ipAddress: '192.168.1.100',
+        browser: 'Chrome 120',
+        device: 'Windows PC',
+        isActive: true
+      }
+    ],
+
+    passwordPolicies: {
+      minLength: 8,
+      requireUppercase: true,
+      requireLowercase: true,
+      requireNumbers: true,
+      requireSpecialChars: false,
+      expirationDays: 90,
+      preventReuse: 3,
+      sessionTimeoutMinutes: 480
+    },
+
+    loginHistory: [
+      {
+        id: 'login_1',
+        userId: 'admin_1',
+        userName: 'Administrador',
+        userRole: 'admin',
+        action: 'login',
+        success: true,
+        ipAddress: '192.168.1.100',
+        browser: 'Chrome 120',
+        device: 'Windows PC',
+        timestamp: Date.now() - 2 * 60 * 60 * 1000
+      },
+      {
+        id: 'login_2',
+        userId: 'doctor_1',
+        userName: 'Dra. Ana Ruiz',
+        userRole: 'doctor',
+        action: 'login',
+        success: true,
+        ipAddress: '192.168.1.101',
+        browser: 'Firefox 121',
+        device: 'MacOS',
+        timestamp: Date.now() - 24 * 60 * 60 * 1000
+      },
+      {
+        id: 'login_3',
+        userId: 'patient_1',
+        userName: 'María Gómez',
+        userRole: 'patient',
+        action: 'logout',
+        success: true,
+        ipAddress: '192.168.1.102',
+        browser: 'Safari',
+        device: 'iPhone',
+        timestamp: Date.now() - 48 * 60 * 60 * 1000
+      }
+    ]
   };
   
   // Cargar datos

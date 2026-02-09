@@ -6,38 +6,58 @@
   --text: #0f3b2f;
   --text-light: #56706a;
   --muted: #94a89c;
-  
+
   /* Colores de marca */
   --accent: #0f8d3a;
   --accent-dark: #0a6b2c;
   --accent-2: #24b36b;
   --accent-light: rgba(15, 141, 58, 0.1);
-  
+
   /* Sistema de colores */
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
   --info: #3b82f6;
-  
+
   /* Bordes */
   --border: #e8f3ea;
   --border-light: #f1f8f1;
-  
+
   /* Sombras */
   --shadow: 0 6px 20px rgba(15, 59, 47, 0.06);
   --shadow-md: 0 8px 30px rgba(15, 59, 47, 0.08);
   --shadow-lg: 0 12px 40px rgba(15, 59, 47, 0.12);
-  
+
   /* Bordes redondeados */
   --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
-  
+
   /* Tipografía */
   --font: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  
+
   /* Layout */
   --header-height: 64px;
   --sidebar-width: 240px;
   --max-width: 1200px;
+
+  /* ===== COLORES PARA MODALES (estilo clínico) ===== */
+  --modal-bg: #d5e7d5;
+  --modal-header: #5e8a66;
+  --modal-header-text: white;
+  --modal-card: #e2ede2;
+  --modal-card-alt: #b7d6b7;
+  --modal-section-green: #5a8973;
+  --modal-section-green-light: #d5e7d5;
+  --modal-section-olive: #7c9b1f;
+  --modal-section-olive-light: #d7e1bb;
+  --modal-section-forest: #5b8f5b;
+  --modal-section-forest-light: #c8dec8;
+  --modal-section-gold: #daa722;
+  --modal-section-gold-light: #f3e3b7;
+  --modal-highlight: #c19c3b;
+  --modal-highlight-light: #ebdcb7;
+  --modal-border: #b7d6b7;
+  --modal-text: #2d4a3e;
+  --modal-text-muted: #5a7a6a;
 }

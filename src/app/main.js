@@ -56,6 +56,12 @@ const ROUTES = {
     icon: '🚨',
     module: () => import('../modules/triage.js'),
     permission: (role) => ['admin', 'doctor', 'nurse'].includes(role)
+  },
+  security: {
+    label: 'Seguridad',
+    icon: '🔐',
+    module: () => import('../modules/security.js'),
+    permission: (role) => ['admin'].includes(role)
   }
 };
 
@@ -138,7 +144,7 @@ function mountLogin(root, { onSuccess }) {
       </div>
     </div>
   `;
-  
+
   // Configurar event listeners
   root.querySelectorAll('.login-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -146,14 +152,14 @@ function mountLogin(root, { onSuccess }) {
       const user = {
         id: `${role}_1`,
         username: role,
-        name: role === 'admin' ? 'Administrador' : 
-               role === 'doctor' ? 'Dra. Ana Ruiz' : 'María Gómez',
+        name: role === 'admin' ? 'Administrador' :
+          role === 'doctor' ? 'Dra. Ana Ruiz' : 'María Gómez',
         role: role,
         email: `${role}@hospital.com`,
         patientId: role === 'patient' ? 'p_1' : null,
         doctorId: role === 'doctor' ? 'd_1' : null
       };
-      
+
       onSuccess(user);
     });
   });
@@ -168,10 +174,10 @@ async function mountAppShell(root, { user, bus, store }) {
 
   // Renderizar shell
   function render() {
-    const routes = Object.entries(ROUTES).filter(([_, route]) => 
+    const routes = Object.entries(ROUTES).filter(([_, route]) =>
       route.permission(user.role)
     );
-    
+
     root.innerHTML = `
       <div class="app-shell">
         <!-- Header -->
@@ -221,7 +227,7 @@ async function mountAppShell(root, { user, bus, store }) {
         </main>
       </div>
     `;
-    
+
     // Configurar responsive sidebar
     const menuToggle = root.querySelector('#menu-toggle');
     if (window.innerWidth < 768) {
@@ -231,7 +237,7 @@ async function mountAppShell(root, { user, bus, store }) {
         render();
       });
     }
-    
+
     // Configurar navegación
     root.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -239,7 +245,7 @@ async function mountAppShell(root, { user, bus, store }) {
         navigateTo(route);
       });
     });
-    
+
     // Configurar logout
     root.querySelector('#btn-logout').addEventListener('click', () => {
       if (confirm('¿Estás seguro de cerrar sesión?')) {
@@ -249,7 +255,7 @@ async function mountAppShell(root, { user, bus, store }) {
         initApp();
       }
     });
-    
+
     // Cargar módulo inicial
     navigateTo(state.currentRoute);
   }
@@ -259,9 +265,9 @@ async function mountAppShell(root, { user, bus, store }) {
     if (!ROUTES[routeId] || !ROUTES[routeId].permission(user.role)) {
       routeId = 'dashboard';
     }
-    
+
     state.currentRoute = routeId;
-    
+
     // Actualizar UI
     root.querySelectorAll('.nav-btn').forEach(btn => {
       const isActive = btn.dataset.route === routeId;
@@ -269,10 +275,10 @@ async function mountAppShell(root, { user, bus, store }) {
       btn.style.background = isActive ? 'var(--accent-light)' : 'transparent';
       btn.style.color = isActive ? 'var(--accent)' : 'var(--text)';
     });
-    
+
     // Cargar módulo
     await loadModule(routeId);
-    
+
     // Cerrar sidebar en móvil
     if (window.innerWidth < 768 && state.sidebarOpen) {
       state.sidebarOpen = false;
@@ -284,14 +290,14 @@ async function mountAppShell(root, { user, bus, store }) {
   async function loadModule(routeId) {
     const moduleContainer = root.querySelector('#module-container');
     if (!moduleContainer) return;
-    
+
     // Limpiar módulo anterior
     if (APP_STATE.currentModule && APP_STATE.currentModule.destroy) {
       await APP_STATE.currentModule.destroy();
     }
-    
+
     moduleContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';
-    
+
     try {
       // Cargar módulo dinámicamente
       const moduleFactory = await ROUTES[routeId].module();
@@ -301,10 +307,10 @@ async function mountAppShell(root, { user, bus, store }) {
         user,
         role: user.role
       });
-      
+
       // Actualizar URL
       window.history.pushState({}, '', `#${routeId}`);
-      
+
     } catch (error) {
       console.error(`Error cargando módulo ${routeId}:`, error);
       moduleContainer.innerHTML = `
@@ -327,13 +333,13 @@ async function mountAppShell(root, { user, bus, store }) {
 
   // Inicializar
   render();
-  
+
   // Cargar ruta desde URL
   const initialRoute = window.location.hash.slice(1) || 'dashboard';
   if (initialRoute !== state.currentRoute) {
     navigateTo(initialRoute);
   }
-  
+
   return {
     navigateTo,
     destroy() {
@@ -348,26 +354,26 @@ async function mountAppShell(root, { user, bus, store }) {
 async function initApp() {
   try {
     showLoading(true);
-    
+
     // 1. Inicializar core
     APP_STATE.bus = createBus();
     APP_STATE.store = await createStore(APP_STATE.bus);
-    
+
     // 2. Verificar usuario guardado
     const savedUser = localStorage.getItem('hospital_user');
-    
+
     if (savedUser) {
       const user = JSON.parse(savedUser);
       APP_STATE.user = user;
       APP_STATE.role = user.role;
-      
+
       // 3. Montar aplicación autenticada
       await mountAuthenticatedApp(user);
     } else {
       // 4. Montar login
       await mountLoginScreen();
     }
-    
+
   } catch (error) {
     console.error('Error al inicializar:', error);
     showError(`Error técnico: ${error.message}`);
@@ -379,14 +385,14 @@ async function initApp() {
 async function mountLoginScreen() {
   const appElement = document.getElementById('app');
   appElement.innerHTML = '';
-  
+
   mountLogin(appElement, {
     onSuccess: (user) => {
       // Guardar usuario
       localStorage.setItem('hospital_user', JSON.stringify(user));
       APP_STATE.user = user;
       APP_STATE.role = user.role;
-      
+
       // Recargar para montar app autenticada
       location.reload();
     }
@@ -396,12 +402,47 @@ async function mountLoginScreen() {
 async function mountAuthenticatedApp(user) {
   const appElement = document.getElementById('app');
   appElement.innerHTML = '';
-  
+
   APP_STATE.appShell = await mountAppShell(appElement, {
     user,
     bus: APP_STATE.bus,
     store: APP_STATE.store
   });
+
+  // Configurar temporizador de inactividad (Seguridad)
+  setupAutoLogout(APP_STATE.store);
+}
+
+// Lógica de Logout por Inactividad
+function setupAutoLogout(store) {
+  let lastActivity = Date.now();
+  const policies = store.get('passwordPolicies') || { sessionTimeoutMinutes: 480 };
+  const timeoutMs = (policies.sessionTimeoutMinutes || 480) * 60 * 1000;
+
+  const updateActivity = () => {
+    lastActivity = Date.now();
+  };
+
+  // Eventos que cuentan como actividad
+  ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(name => {
+    document.addEventListener(name, updateActivity, { passive: true });
+  });
+
+  // Verificación periódica
+  const checkInterval = setInterval(() => {
+    const elapsed = Date.now() - lastActivity;
+
+    if (elapsed >= timeoutMs) {
+      clearInterval(checkInterval);
+      handleAutomaticLogout();
+    }
+  }, 30000); // Revisar cada 30 segundos
+}
+
+function handleAutomaticLogout() {
+  localStorage.removeItem('hospital_user');
+  alert('Su sesión ha expirado por inactividad por motivos de seguridad.');
+  location.reload();
 }
 
 // ===== INICIAR APLICACIÓN =====
