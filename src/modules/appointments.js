@@ -220,89 +220,115 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         </div>
       </div>
 
-      <!-- Modal para nueva/editar cita -->
+      <!-- Modal para nueva/editar cita - DISEÑO PROFESIONAL ACTUALIZADO -->
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="appointment-modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3 style="margin: 0;">${state.editingId ? 'Editar Cita' : 'Nueva Cita'}</h3>
-            <button class="btn btn-outline btn-sm" id="btn-close-modal">×</button>
+        <div class="modal-content" style="max-width: 800px; background: var(--modal-bg);">
+          <div class="modal-header" style="flex-direction: column; align-items: center; padding: 1.5rem;">
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem;">HOSPITAL GENERAL</h2>
+            <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem; margin-top: 0.25rem; letter-spacing: 0.05em;">${state.editingId ? 'ACTUALIZACIÓN DE CITA' : 'REGISTRO DE CITA MÉDICA'}</div>
           </div>
           
-          <div class="modal-body">
+          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 4px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
             <form id="appointment-form">
-              <div class="grid grid-2">
-                <div class="form-group">
-                  <label class="form-label">Paciente *</label>
-                  <select class="input" id="form-patient" required>
-                    <option value="">Seleccionar paciente</option>
-                  </select>
+              <!-- Información básica -->
+              <div style="margin-bottom: 2rem;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: #2a5298; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <span>📋</span> INFORMACIÓN DE LA CITA
                 </div>
                 
+                <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; color: #5a8973;">Paciente *</label>
+                    <select class="input" id="form-patient" required style="border-color: #5a8973;">
+                      <option value="">Seleccionar paciente</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; color: #5a8973;">Médico *</label>
+                    <select class="input" id="form-doctor" required style="border-color: #5a8973;">
+                      <option value="">Seleccionar médico</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="margin-bottom: 2rem;">
                 <div class="form-group">
-                  <label class="form-label">Médico *</label>
-                  <select class="input" id="form-doctor" required>
-                    <option value="">Seleccionar médico</option>
+                  <label class="form-label" style="font-weight: 600; color: #d69e2e;">Área *</label>
+                  <select class="input" id="form-area" required style="border-color: #d69e2e;">
+                    <option value="">Seleccionar área</option>
                   </select>
                 </div>
               </div>
               
-              <div class="form-group">
-                <label class="form-label">Área *</label>
-                <select class="input" id="form-area" required>
-                  <option value="">Seleccionar área</option>
-                </select>
-              </div>
-              
-              <div class="grid grid-2">
-                <div class="form-group">
-                  <label class="form-label">Fecha *</label>
-                  <input type="date" class="input" id="form-date" required>
-                </div>
+              <!-- Fecha y Hora -->
+              <div style="margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: #689f38; margin-bottom: 1rem;">FECHA Y HORA DE LA CITA</div>
                 
-                <div class="form-group">
-                  <label class="form-label">Hora *</label>
-                  <input type="time" class="input" id="form-time" required>
+                <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; color: #689f38;">Fecha *</label>
+                    <input type="date" class="input" id="form-date" required style="border-color: #689f38;">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; color: #689f38;">Hora *</label>
+                    <input type="time" class="input" id="form-time" required style="border-color: #689f38;">
+                  </div>
                 </div>
               </div>
               
-              <div class="form-group">
-                <label class="form-label">Duración (minutos) *</label>
-                <select class="input" id="form-duration" required>
-                  <option value="15">15 minutos</option>
-                  <option value="30" selected>30 minutos</option>
-                  <option value="45">45 minutos</option>
-                  <option value="60">60 minutos</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Motivo de la consulta</label>
-                <textarea class="input" id="form-reason" rows="3" placeholder="Describa el motivo de la consulta..."></textarea>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Notas adicionales</label>
-                <textarea class="input" id="form-notes" rows="2" placeholder="Notas importantes..."></textarea>
-              </div>
-              
-              ${state.editingId ? `
-                <div class="form-group">
-                  <label class="form-label">Estado</label>
-                  <select class="input" id="form-status">
-                    <option value="scheduled">Programada</option>
-                    <option value="confirmed">Confirmada</option>
-                    <option value="completed">Completada</option>
-                    <option value="cancelled">Cancelada</option>
-                  </select>
+              <!-- Duración y Estado -->
+              <div style="margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+                <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; color: #276749;">Duración *</label>
+                    <select class="input" id="form-duration" required style="border-color: #276749;">
+                      <option value="15">15 minutos</option>
+                      <option value="30" selected>30 minutos</option>
+                      <option value="45">45 minutos</option>
+                      <option value="60">60 minutos</option>
+                    </select>
+                  </div>
+                  
+                  ${state.editingId ? `
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 600; color: #276749;">Estado</label>
+                      <select class="input" id="form-status" style="border-color: #276749;">
+                        <option value="scheduled">Programada</option>
+                        <option value="confirmed">Confirmada</option>
+                        <option value="completed">Completada</option>
+                        <option value="cancelled">Cancelada</option>
+                      </select>
+                    </div>
+                  ` : ''}
                 </div>
-              ` : ''}
+              </div>
+              
+              <!-- Motivo y Notas -->
+              <div style="margin-bottom: 2rem;">
+                <div style="font-size: 0.9rem; font-weight: 700; color: #d69e2e; margin-bottom: 1rem;">INFORMACIÓN ADICIONAL</div>
+                
+                <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; color: #d69e2e;">Motivo de la consulta</label>
+                    <textarea class="input" id="form-reason" rows="3" placeholder="Describa el motivo de la consulta..." style="border-color: #d69e2e;"></textarea>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 600; color: #d69e2e;">Notas adicionales</label>
+                    <textarea class="input" id="form-notes" rows="3" placeholder="Notas importantes..." style="border-color: #d69e2e;"></textarea>
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
           
-          <div class="modal-footer">
-            <button class="btn btn-outline" id="btn-cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btn-save" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? 'Guardando...' : (state.editingId ? 'Actualizar' : 'Guardar')}
+          <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button class="btn btn-outline" id="btn-cancel" style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.3);">Cancelar</button>
+            <button class="btn btn-primary" id="btn-save" style="background: #daa722; border: none;" ${state.isLoading ? 'disabled' : ''}>
+              ${state.isLoading ? 'Guardando...' : (state.editingId ? 'Actualizar Cita' : 'Registrar Cita')}
             </button>
           </div>
         </div>
@@ -360,7 +386,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     
     // Establecer fecha mínima (hoy)
     const today = new Date().toISOString().split('T')[0];
-    elements.formDate.min = today;
+    if (elements.formDate) {
+      elements.formDate.min = today;
+    }
     
     // Cargar citas iniciales
     loadAppointments();
@@ -563,10 +591,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       elements.btnCreateFirst.addEventListener('click', () => openModal());
     }
     
-    if (elements.btnCloseModal) {
-      elements.btnCloseModal.addEventListener('click', closeModal);
-    }
-    
     if (elements.btnCancel) {
       elements.btnCancel.addEventListener('click', closeModal);
     }
@@ -663,7 +687,19 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       
       // Si es paciente, seleccionar automáticamente
       if (role === 'patient' && user?.patientId) {
-        elements.formPatient.value = user.patientId;
+        const patient = store.find('patients', user.patientId);
+        if (patient && elements.formPatient) {
+          elements.formPatient.innerHTML = `<option value="${patient.id}">${patient.name}</option>`;
+          elements.formPatient.value = patient.id;
+          elements.formPatient.disabled = true;
+        }
+      }
+      
+      // Establecer fecha mínima (hoy)
+      if (elements.formDate) {
+        const today = new Date().toISOString().split('T')[0];
+        elements.formDate.min = today;
+        elements.formDate.value = today;
       }
     }
   }
@@ -686,7 +722,18 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     const dateStr = date.toISOString().split('T')[0];
     const timeStr = date.toTimeString().slice(0, 5);
     
-    if (elements.formPatient) elements.formPatient.value = appointment.patientId;
+    if (elements.formPatient) {
+      elements.formPatient.value = appointment.patientId;
+      // Si es paciente, deshabilitar el select
+      if (role === 'patient' && user?.patientId === appointment.patientId) {
+        const patient = store.find('patients', user.patientId);
+        if (patient) {
+          elements.formPatient.innerHTML = `<option value="${patient.id}">${patient.name}</option>`;
+          elements.formPatient.disabled = true;
+        }
+      }
+    }
+    
     if (elements.formDoctor) elements.formDoctor.value = appointment.doctorId;
     if (elements.formArea) elements.formArea.value = appointment.areaId;
     if (elements.formDate) elements.formDate.value = dateStr;
@@ -698,20 +745,42 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     
     // Actualizar doctores según área
     updateDoctorsByArea();
+    
+    // Establecer fecha mínima (hoy)
+    if (elements.formDate) {
+      const today = new Date().toISOString().split('T')[0];
+      elements.formDate.min = today;
+    }
   }
 
   // Limpiar formulario
   function clearForm() {
     if (elements.form) elements.form.reset();
     
-    // Restaurar fecha mínima
+    // Restaurar selects
+    loadSelectData();
+    
+    // Restaurar fecha mínima y valor por defecto
     if (elements.formDate) {
       const today = new Date().toISOString().split('T')[0];
       elements.formDate.min = today;
+      elements.formDate.value = today;
     }
     
-    // Restaurar selects
-    loadSelectData();
+    // Si es paciente, auto-seleccionar y deshabilitar
+    if (role === 'patient' && user?.patientId && elements.formPatient) {
+      const patient = store.find('patients', user.patientId);
+      if (patient) {
+        elements.formPatient.innerHTML = `<option value="${patient.id}">${patient.name}</option>`;
+        elements.formPatient.value = patient.id;
+        elements.formPatient.disabled = true;
+      }
+    }
+    
+    // Si es doctor, auto-seleccionar
+    if (role === 'doctor' && user?.doctorId && elements.formDoctor) {
+      elements.formDoctor.value = user.doctorId;
+    }
   }
 
   // Actualizar doctores por área
@@ -739,13 +808,21 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         elements.formDoctor.value = '';
       }
     }
+    
+    // Si es doctor, auto-seleccionar después de cargar
+    if (role === 'doctor' && user?.doctorId) {
+      const doctorExists = filteredDoctors.some(d => d.id === user.doctorId);
+      if (doctorExists) {
+        elements.formDoctor.value = user.doctorId;
+      }
+    }
   }
 
   // Guardar cita
   async function saveAppointment() {
     // Validar formulario
     if (!validateForm()) {
-      alert('Por favor, complete todos los campos requeridos correctamente.');
+      showNotification('Por favor, complete todos los campos requeridos correctamente.', 'warning');
       return;
     }
     
@@ -778,7 +855,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       state.isLoading = false;
       if (elements.btnSave) {
         elements.btnSave.disabled = false;
-        elements.btnSave.textContent = state.editingId ? 'Actualizar' : 'Guardar';
+        elements.btnSave.textContent = state.editingId ? 'Actualizar Cita' : 'Registrar Cita';
       }
     }
   }
@@ -798,10 +875,30 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     
     requiredFields.forEach(field => {
       if (field && !field.value.trim()) {
-        field.classList.add('error');
+        field.style.borderColor = '#e53e3e';
         isValid = false;
       } else if (field) {
-        field.classList.remove('error');
+        // Restaurar color original según el tipo de campo
+        const fieldType = field.id.replace('form-', '');
+        switch(fieldType) {
+          case 'patient':
+          case 'doctor':
+            field.style.borderColor = '#5a8973';
+            break;
+          case 'area':
+            field.style.borderColor = '#d69e2e';
+            break;
+          case 'date':
+          case 'time':
+            field.style.borderColor = '#689f38';
+            break;
+          case 'duration':
+          case 'status':
+            field.style.borderColor = '#276749';
+            break;
+          default:
+            field.style.borderColor = '';
+        }
       }
     });
     
@@ -811,7 +908,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       const now = new Date();
       
       if (selectedDate < now) {
-        alert('No se puede programar una cita en el pasado');
+        showNotification('No se puede programar una cita en el pasado', 'warning');
         return false;
       }
     }
@@ -868,307 +965,386 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
   }
 
-  // Ver detalles de cita
-  // Reemplazar la función viewAppointment actual con esta versión corregida:
-
-function viewAppointment(appointment) {
-  const patient = store.find('patients', appointment.patientId);
-  const doctor = store.find('doctors', appointment.doctorId);
-  const area = store.find('areas', appointment.areaId);
-  
-  const date = new Date(appointment.dateTime);
-  const dateStr = date.toLocaleDateString('es-ES', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  const timeStr = date.toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  
-  // Determinar si el usuario actual puede crear una consulta clínica
-  const canCreateClinical = (role === 'admin' || role === 'doctor') && 
+  // Ver detalles de cita - DISEÑO PROFESIONAL ACTUALIZADO
+  function viewAppointment(appointment) {
+    const patient = store.find('patients', appointment.patientId);
+    const doctor = store.find('doctors', appointment.doctorId);
+    const area = store.find('areas', appointment.areaId);
+    
+    const date = new Date(appointment.dateTime);
+    const dateStr = date.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    const timeStr = date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    // Determinar si el usuario actual puede crear una consulta clínica
+    const canCreateClinical = (role === 'admin' || role === 'doctor') && 
                            appointment.status === 'completed' &&
                            !hasClinicalRecord(appointment.id);
-  
-  // Verificar si ya existe un registro clínico para esta cita
-  function hasClinicalRecord(appointmentId) {
-    const clinicalRecords = store.get('clinicalRecords');
-    return clinicalRecords.some(record => record.appointmentId === appointmentId);
-  }
-  
-  // Crear modal
-  const modalContainer = document.createElement('div');
-  modalContainer.id = 'view-appointment-modal';
-  modalContainer.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
-  `;
-  
-  modalContainer.innerHTML = `
-    <div class="modal-content" style="max-width: 600px; background: var(--card); border-radius: var(--radius); width: 100%; max-height: 90vh; overflow-y: auto; animation: modalSlideIn 0.3s ease;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border);">
-        <h3 style="margin: 0;">Detalles de la Cita</h3>
-        <button class="btn btn-outline btn-sm" id="close-view-appointment-btn">×</button>
-      </div>
-      
-      <div class="modal-body" style="padding: 1.5rem;">
-        <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Paciente</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-              ${patient?.name || 'N/A'}
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Médico</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-              ${doctor?.name || 'N/A'}
-            </div>
-          </div>
+    
+    // Verificar si ya existe un registro clínico para esta cita
+    function hasClinicalRecord(appointmentId) {
+      const clinicalRecords = store.get('clinicalRecords');
+      return clinicalRecords.some(record => record.appointmentId === appointmentId);
+    }
+    
+    // Crear modal con diseño profesional similar al historial clínico
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'view-appointment-modal';
+    modalContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 1rem;
+      overflow: auto;
+    `;
+    
+    // Determinar si el usuario puede editar esta cita
+    const canEdit = role === 'admin' || 
+                   (role === 'doctor' && user?.doctorId === appointment.doctorId) ||
+                   (role === 'patient' && user?.patientId === appointment.patientId);
+    
+    const canCancel = canEdit && appointment.status !== 'completed' && appointment.status !== 'cancelled';
+    
+    modalContainer.innerHTML = `
+      <div class="modal-content" style="max-width: 800px; background: var(--modal-bg);">
+        <div class="modal-header" style="flex-direction: column; align-items: center; padding: 1.5rem;">
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem;">HOSPITAL GENERAL</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem; margin-top: 0.25rem; letter-spacing: 0.05em;">INFORME DE CITA MÉDICA</div>
         </div>
         
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label">Área</label>
-          <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-            ${area?.name || 'N/A'}
-          </div>
-        </div>
-        
-        <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Fecha</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-              ${dateStr}
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 4px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+          <!-- Encabezado de Datos -->
+          <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">N° DE CITA</div>
+              <div style="font-family: monospace; font-size: 1.25rem; font-weight: 700;">${appointment.id.split('_').pop()}</div>
             </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Hora</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-              ${timeStr}
-            </div>
-          </div>
-        </div>
-        
-        <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Duración</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-              ${appointment.duration} minutos
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Estado</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-              ${getStatusBadge(appointment.status)}
-            </div>
-          </div>
-        </div>
-        
-        ${appointment.reason ? `
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label class="form-label">Motivo de consulta</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); min-height: 60px;">
-              ${appointment.reason}
-            </div>
-          </div>
-        ` : ''}
-        
-        ${appointment.notes ? `
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label class="form-label">Notas adicionales</label>
-            <div class="input" style="background: var(--bg-light); padding: 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); min-height: 60px;">
-              ${appointment.notes}
-            </div>
-          </div>
-        ` : ''}
-        
-        <!-- Información de registro clínico -->
-        ${hasClinicalRecord(appointment.id) ? `
-          <div class="alert alert-success" style="margin-top: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span>📋</span>
-              <div>
-                <div style="font-weight: 500;">Registro clínico disponible</div>
-                <div style="font-size: 0.875rem;">Esta cita ya tiene una consulta médica registrada</div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">FECHA Y HORA PROGRAMADA</div>
+              <div style="font-size: 1.125rem; font-weight: 700;">
+                ${dateStr}
+              </div>
+              <div style="margin-top: 0.25rem; font-size: 0.95rem; color: #2a5298;">
+                ${timeStr} • ${appointment.duration} minutos
               </div>
             </div>
           </div>
-        ` : ''}
+
+          <!-- Paciente y Médico (Mismo esquema de colores que historial clínico) -->
+          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div style="background: var(--card-patient); border-radius: 4px; padding: 1.25rem; position: relative;">
+               <div style="display: flex; align-items: center; gap: 1rem;">
+                  <div style="width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">👤</div>
+                  <div>
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">PACIENTE</div>
+                    <div style="font-weight: 700; font-size: 1.1rem;">${patient?.name || 'N/A'}</div>
+                  </div>
+               </div>
+               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
+                  <div>
+                    <div style="font-weight: 700; color: var(--modal-text-muted);">DNI</div>
+                    <div>${patient?.dni || 'No disponible'}</div>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; color: var(--modal-text-muted);">TELÉFONO</div>
+                    <div>${patient?.phone || 'No disponible'}</div>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; color: var(--modal-text-muted);">EMAIL</div>
+                    <div style="word-break: break-all;">${patient?.email || 'No disponible'}</div>
+                  </div>
+               </div>
+            </div>
+
+            <div style="background: var(--card-doctor); border-radius: 4px; padding: 1.25rem;">
+               <div style="display: flex; align-items: center; gap: 1rem;">
+                  <div style="width: 40px; height: 40px; background: white; border-radius: 50%; opacity: 0.6; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+                  <div>
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">MÉDICO ASIGNADO</div>
+                    <div style="font-weight: 700; font-size: 1.1rem;">${doctor?.name || 'N/A'}</div>
+                  </div>
+               </div>
+               <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
+                  <div>
+                    <div style="font-weight: 700; color: var(--modal-text-muted);">ESPECIALIDAD</div>
+                    <div>${doctor?.specialty || 'No especificada'}</div>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; color: var(--modal-text-muted);">ÁREA</div>
+                    <div>${area?.name || 'No asignada'}</div>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; color: var(--modal-text-muted);">MATRÍCULA</div>
+                    <div>${doctor?.license || 'No disponible'}</div>
+                  </div>
+               </div>
+            </div>
+          </div>
+
+          <!-- Estado de la Cita -->
+          <div style="margin-bottom: 2rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">ESTADO ACTUAL</div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              ${getStatusBadge(appointment.status)}
+              <div style="font-size: 0.85rem; color: #666;">
+                ${appointment.cancelledAt ? `Cancelada el ${new Date(appointment.cancelledAt).toLocaleDateString('es-ES')}` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Información de la Consulta -->
+          <div style="margin-bottom: 2rem;">
+            <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📋</span> INFORMACIÓN DE LA CONSULTA
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div style="background: var(--modal-section-gold-light); border: 1px solid var(--modal-section-gold); border-radius: 4px; padding: 1rem;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--modal-highlight); margin-bottom: 0.5rem;">MOTIVO DE LA CONSULTA</div>
+                <div style="font-size: 0.9rem; line-height: 1.4;">
+                  ${appointment.reason || 'No especificado'}
+                </div>
+              </div>
+              
+              <div style="background: var(--modal-section-olive-light); border: 1px solid var(--modal-section-olive); border-radius: 4px; padding: 1rem;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 0.5rem;">NOTAS ADICIONALES</div>
+                <div style="font-size: 0.9rem; line-height: 1.4;">
+                  ${appointment.notes || 'Sin notas adicionales'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Información de Registro -->
+          <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; justify-content: space-between; font-size: 0.7rem; color: #999;">
+            <div>
+              <div style="font-weight: 700; color: #666;">CITA CREADA POR</div>
+              <div>${appointment.createdBy || 'Sistema'}</div>
+              <div>${new Date(appointment.createdAt).toLocaleString()}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700; color: #666;">ÚLTIMA ACTUALIZACIÓN</div>
+              <div>${appointment.updatedAt ? new Date(appointment.updatedAt).toLocaleString() : 'Sin modificaciones'}</div>
+            </div>
+          </div>
+
+          <!-- Información de Registro Clínico -->
+          ${hasClinicalRecord(appointment.id) ? `
+            <div style="background: var(--modal-section-forest-light); border: 1px solid var(--modal-section-forest); border-radius: 4px; padding: 1rem; margin-top: 1.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="font-size: 1.25rem;">📋</div>
+                <div>
+                  <div style="font-weight: 700; color: var(--modal-section-forest);">REGISTRO CLÍNICO DISPONIBLE</div>
+                  <div style="font-size: 0.8rem; color: var(--modal-section-forest);">
+                    Esta cita tiene una consulta médica registrada en el historial clínico
+                  </div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
         
-        <div style="font-size: 0.75rem; color: var(--muted); margin-top: 1.5rem;">
-          Creada el ${new Date(appointment.createdAt).toLocaleDateString('es-ES')}
-          ${appointment.updatedAt && appointment.updatedAt !== appointment.createdAt ? 
-            ` • Actualizada el ${new Date(appointment.updatedAt).toLocaleDateString('es-ES')}` : ''}
+        <div style="padding: 1rem 1.5rem; text-align: center; color: rgba(255,255,255,0.8); font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            Documento administrativo • Generado automáticamente por Hospital General
+        </div>
+
+        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: space-between; gap: 0.5rem;">
+          <div style="display: flex; gap: 0.5rem;">
+            ${canCancel ? `
+              <button class="btn" style="background: #e53e3e; border: none; color: white; padding: 0.5rem 1rem;" 
+                id="cancel-appointment-btn" data-id="${appointment.id}">
+                🚫 Cancelar Cita
+              </button>
+            ` : ''}
+            
+            ${canEdit ? `
+              <button class="btn" style="background: var(--modal-section-olive); border: none; color: white; padding: 0.5rem 1rem;" 
+                id="edit-appointment-btn" data-id="${appointment.id}">
+                ✏️ Editar Cita
+              </button>
+            ` : ''}
+          </div>
+          
+          <div style="display: flex; gap: 0.5rem;">
+            ${canCreateClinical ? `
+              <button class="btn" style="background: var(--modal-section-forest); border: none; color: white; padding: 0.5rem 1rem;" 
+                id="create-clinical-from-appointment" data-id="${appointment.id}">
+                📋 Crear Consulta
+              </button>
+            ` : ''}
+            
+            ${hasClinicalRecord(appointment.id) ? `
+              <button class="btn" style="background: var(--modal-section-sage); border: none; color: white; padding: 0.5rem 1rem;" 
+                id="view-clinical-record" data-id="${appointment.id}">
+                👁️ Ver Historia
+              </button>
+            ` : ''}
+            
+            <button class="btn" style="background: #495057; border: none; color: white; padding: 0.5rem 1rem;" 
+              id="close-appointment-modal">
+              ✕ Cerrar
+            </button>
+          </div>
         </div>
       </div>
-      
-      <div class="modal-footer" style="padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem;">
-        ${canCreateClinical ? `
-          <button class="btn btn-primary" id="btn-create-clinical-from-appointment" data-id="${appointment.id}">
-            📋 Crear Consulta Médica
-          </button>
-        ` : ''}
-        
-        ${hasClinicalRecord(appointment.id) ? `
-          <button class="btn btn-outline" id="btn-view-clinical-record" data-id="${appointment.id}">
-            Ver Historia Clínica
-          </button>
-        ` : ''}
-        
-        <button class="btn btn-outline" id="close-view-appointment-btn-2">Cerrar</button>
-      </div>
-    </div>
-  `;
-  
-  // Agregar al DOM
-  document.body.appendChild(modalContainer);
-  
-  // Función para cerrar el modal
-  const closeModal = () => {
-    if (modalContainer.parentNode) {
-      modalContainer.parentNode.removeChild(modalContainer);
-    }
-  };
-  
-  // Configurar event listeners
-  const closeBtn1 = modalContainer.querySelector('#close-view-appointment-btn');
-  const closeBtn2 = modalContainer.querySelector('#close-view-appointment-btn-2');
-  const createClinicalBtn = modalContainer.querySelector('#btn-create-clinical-from-appointment');
-  const viewClinicalBtn = modalContainer.querySelector('#btn-view-clinical-record');
-  
-  if (closeBtn1) {
-    closeBtn1.addEventListener('click', closeModal);
-  }
-  
-  if (closeBtn2) {
-    closeBtn2.addEventListener('click', closeModal);
-  }
-  
-  // Botón para crear consulta clínica
-  if (createClinicalBtn) {
-    createClinicalBtn.addEventListener('click', () => {
-      createClinicalFromAppointment(appointment);
-      closeModal();
-    });
-  }
-  
-  // Botón para ver registro clínico existente
-  if (viewClinicalBtn) {
-    viewClinicalBtn.addEventListener('click', () => {
-      viewClinicalRecordFromAppointment(appointment);
-      closeModal();
-    });
-  }
-  
-  // Cerrar al hacer clic fuera del contenido
-  modalContainer.addEventListener('click', (e) => {
-    if (e.target === modalContainer) {
-      closeModal();
-    }
-  });
-  
-  // Cerrar con ESC
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeModal();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
-  
-  document.addEventListener('keydown', escHandler);
-  
-  // También limpiamos el event listener cuando se cierra el modal
-  const originalCloseModal = closeModal;
-  const enhancedCloseModal = () => {
-    originalCloseModal();
-    document.removeEventListener('keydown', escHandler);
-  };
-  
-  // Reasignar los event listeners para usar la función mejorada
-  if (closeBtn1) {
-    closeBtn1.removeEventListener('click', closeModal);
-    closeBtn1.addEventListener('click', enhancedCloseModal);
-  }
-  
-  if (closeBtn2) {
-    closeBtn2.removeEventListener('click', closeModal);
-    closeBtn2.addEventListener('click', enhancedCloseModal);
-  }
-  
-  modalContainer.removeEventListener('click', (e) => {
-    if (e.target === modalContainer) closeModal();
-  });
-  
-  modalContainer.addEventListener('click', (e) => {
-    if (e.target === modalContainer) enhancedCloseModal();
-  });
-  
-  // ===== FUNCIONES AUXILIARES =====
-  
-  function createClinicalFromAppointment(appointment) {
-    if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
-      // Navegar al módulo de historia clínica
-      window.APP_STATE.appShell.navigateTo('clinical');
-      
-      // Guardar datos para prellenar el formulario
-      const clinicalData = {
-        appointmentId: appointment.id,
-        patientId: appointment.patientId,
-        doctorId: appointment.doctorId || (role === 'doctor' ? user?.doctorId : ''),
-        date: appointment.dateTime,
-        reason: appointment.reason,
-        areaId: appointment.areaId,
-        source: 'appointment'
-      };
-      
-      localStorage.setItem('clinical_form_data', JSON.stringify(clinicalData));
-      
-      // Mostrar notificación
-      setTimeout(() => {
-        const patientName = patient?.name || 'el paciente';
-        showNotification(`Creando consulta para ${patientName}...`, 'info');
-      }, 300);
-    }
-  }
-  
-  function viewClinicalRecordFromAppointment(appointment) {
-    // Buscar el registro clínico asociado a esta cita
-    const clinicalRecords = store.get('clinicalRecords');
-    const clinicalRecord = clinicalRecords.find(record => record.appointmentId === appointment.id);
+    `;
     
-    if (clinicalRecord) {
+    // Agregar al DOM
+    document.body.appendChild(modalContainer);
+    
+    // Función para cerrar el modal
+    const closeModal = () => {
+      if (modalContainer.parentNode) {
+        modalContainer.parentNode.removeChild(modalContainer);
+      }
+    };
+    
+    // Configurar event listeners
+    const closeBtn = modalContainer.querySelector('#close-appointment-modal');
+    const editBtn = modalContainer.querySelector('#edit-appointment-btn');
+    const cancelBtn = modalContainer.querySelector('#cancel-appointment-btn');
+    const createClinicalBtn = modalContainer.querySelector('#create-clinical-from-appointment');
+    const viewClinicalBtn = modalContainer.querySelector('#view-clinical-record');
+    
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeModal);
+    }
+    
+    // Botón para editar cita
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        editAppointment(appointment);
+        closeModal();
+      });
+    }
+    
+    // Botón para cancelar cita
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        cancelAppointment(appointment);
+        closeModal();
+      });
+    }
+    
+    // Botón para crear consulta clínica
+    if (createClinicalBtn) {
+      createClinicalBtn.addEventListener('click', () => {
+        createClinicalFromAppointment(appointment);
+        closeModal();
+      });
+    }
+    
+    // Botón para ver registro clínico existente
+    if (viewClinicalBtn) {
+      viewClinicalBtn.addEventListener('click', () => {
+        viewClinicalRecordFromAppointment(appointment);
+        closeModal();
+      });
+    }
+    
+    // Cerrar al hacer clic fuera del contenido
+    modalContainer.addEventListener('click', (e) => {
+      if (e.target === modalContainer) {
+        closeModal();
+      }
+    });
+    
+    // Cerrar con ESC
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    
+    document.addEventListener('keydown', escHandler);
+    
+    // También limpiamos el event listener cuando se cierra el modal
+    const originalCloseModal = closeModal;
+    const enhancedCloseModal = () => {
+      originalCloseModal();
+      document.removeEventListener('keydown', escHandler);
+    };
+    
+    // Reasignar los event listeners para usar la función mejorada
+    if (closeBtn) {
+      closeBtn.removeEventListener('click', closeModal);
+      closeBtn.addEventListener('click', enhancedCloseModal);
+    }
+    
+    modalContainer.removeEventListener('click', (e) => {
+      if (e.target === modalContainer) closeModal();
+    });
+    
+    modalContainer.addEventListener('click', (e) => {
+      if (e.target === modalContainer) enhancedCloseModal();
+    });
+    
+    // ===== FUNCIONES AUXILIARES =====
+    
+    function createClinicalFromAppointment(appointment) {
       if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
         // Navegar al módulo de historia clínica
         window.APP_STATE.appShell.navigateTo('clinical');
         
-        // Guardar el ID del registro para mostrar detalles
-        localStorage.setItem('clinical_view_record', clinicalRecord.id);
+        // Guardar datos para prellenar el formulario
+        const clinicalData = {
+          appointmentId: appointment.id,
+          patientId: appointment.patientId,
+          doctorId: appointment.doctorId || (role === 'doctor' ? user?.doctorId : ''),
+          date: appointment.dateTime,
+          reason: appointment.reason,
+          areaId: appointment.areaId,
+          source: 'appointment'
+        };
+        
+        localStorage.setItem('clinical_form_data', JSON.stringify(clinicalData));
         
         // Mostrar notificación
         setTimeout(() => {
-          showNotification('Cargando registro clínico...', 'info');
+          const patientName = patient?.name || 'el paciente';
+          showNotification(`Creando consulta para ${patientName}...`, 'info');
         }, 300);
       }
-    } else {
-      showNotification('No se encontró el registro clínico', 'warning');
+    }
+    
+    function viewClinicalRecordFromAppointment(appointment) {
+      // Buscar el registro clínico asociado a esta cita
+      const clinicalRecords = store.get('clinicalRecords');
+      const clinicalRecord = clinicalRecords.find(record => record.appointmentId === appointment.id);
+      
+      if (clinicalRecord) {
+        if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
+          // Navegar al módulo de historia clínica
+          window.APP_STATE.appShell.navigateTo('clinical');
+          
+          // Guardar el ID del registro para mostrar detalles
+          localStorage.setItem('clinical_view_record', clinicalRecord.id);
+          
+          // Mostrar notificación
+          setTimeout(() => {
+            showNotification('Cargando registro clínico...', 'info');
+          }, 300);
+        }
+      } else {
+        showNotification('No se encontró el registro clínico', 'warning');
+      }
     }
   }
-}
 
   // Mostrar notificación
   function showNotification(message, type = 'info') {
@@ -1219,6 +1395,12 @@ function viewAppointment(appointment) {
   // Editar cita
   function editAppointment(appointment) {
     openModal(appointment);
+  }
+
+  // Verificar si existe registro clínico
+  function hasClinicalRecord(appointmentId) {
+    const clinicalRecords = store.get('clinicalRecords');
+    return clinicalRecords.some(record => record.appointmentId === appointmentId);
   }
 
   // Inicializar módulo

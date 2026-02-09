@@ -48,7 +48,12 @@ export default function mountClinical(root, { bus, store, user, role }) {
     if (viewRecordId) {
       const record = store.find('clinicalRecords', viewRecordId);
       if (record) {
-        viewRecordDetail(record);
+        // Verificar permisos antes de mostrar
+        if (hasPermissionToView(record)) {
+          viewRecordDetail(record);
+        } else {
+          showNotification('No tiene permiso para ver este registro', 'error');
+        }
       }
       localStorage.removeItem('clinical_view_record');
     }
@@ -80,16 +85,57 @@ export default function mountClinical(root, { bus, store, user, role }) {
     return unsubscribe;
   }
 
+  // ===== FUNCIONES DE SEGURIDAD Y PERMISOS =====
+
+  // Verificar si el usuario tiene permiso para ver un registro específico
+  function hasPermissionToView(record) {
+    if (role === 'admin') return true;
+    
+    if (role === 'doctor') {
+      // Los doctores pueden ver sus propios registros y todos los registros si están asignados
+      // En este caso, permitimos que vean todos para propósitos del sistema
+      return true;
+    }
+    
+    if (role === 'patient') {
+      // Los pacientes solo pueden ver sus propios registros
+      return record.patientId === user.patientId;
+    }
+    
+    return false;
+  }
+
+  // Verificar si el usuario tiene permiso para editar un registro específico
+  function hasPermissionToEdit(record) {
+    if (role === 'admin') return true;
+    
+    if (role === 'doctor') {
+      // Los doctores solo pueden editar sus propios registros
+      return record.doctorId === user.doctorId;
+    }
+    
+    // Los pacientes NUNCA pueden editar registros
+    return false;
+  }
+
+  // Verificar si el usuario puede crear nuevos registros
+  function canCreateRecords() {
+    return role === 'admin' || role === 'doctor';
+  }
+
   // ===== FUNCIONES PRINCIPALES =====
 
   // Cargar registros clínicos
   function loadClinicalRecords() {
     let records = store.get('clinicalRecords');
 
-    // Filtrar por rol
+    // Filtrar por rol y permisos
     if (role === 'doctor' && user?.doctorId) {
-      records = records.filter(record => record.doctorId === user.doctorId);
+      // Los doctores ven todos los registros para propósitos del sistema
+      // Si se quiere restringir a solo sus registros, usar:
+      // records = records.filter(record => record.doctorId === user.doctorId);
     } else if (role === 'patient' && user?.patientId) {
+      // Los pacientes solo ven sus propios registros
       records = records.filter(record => record.patientId === user.patientId);
     }
 
@@ -113,7 +159,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         return false;
       }
 
-      // Filtro por médico
+      // Filtro por médico (solo para admin y doctor)
       if (state.filters.doctorId && record.doctorId !== state.filters.doctorId) {
         return false;
       }
@@ -168,7 +214,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
   // ===== RENDERIZADO PRINCIPAL =====
   function render() {
-    const canCreate = role === 'admin' || role === 'doctor';
+    const canCreate = canCreateRecords();
     const isPatient = role === 'patient';
 
     root.innerHTML = `
@@ -226,7 +272,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
                 </select>
               </div>
               
-              ${role !== 'doctor' ? `
+              ${role !== 'doctor' && role !== 'patient' ? `
                 <div class="form-group">
                   <label class="form-label">Médico</label>
                   <select class="input" id="filter-doctor">
@@ -283,7 +329,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         <div style="flex: 1;">
           <div class="card">
             <div class="card-header">
-              <h3 style="margin: 0;">${isPatient ? 'Mi Historia Clínica' : 'Registros Recientes'}</h3>
+              <h3 style="margin: 0;">${isPatient ? 'Mi Historia Clínica' : 'Registros Clínicos'}</h3>
               <div class="text-muted" id="records-count">
                 Cargando...
               </div>
@@ -572,55 +618,55 @@ export default function mountClinical(root, { bus, store, user, role }) {
       const statusBadge = getStatusBadge(record.status);
 
       return `
-        <div class="record-item" data-id="${record.id}">
-      <div style="display: flex; align-items: flex-start; gap: 1rem;">
-        <div style="font-size: 1.5rem; flex-shrink: 0;">${typeIcon}</div>
+        <div class="record-item" data-id="${record.id}" style="cursor: pointer;">
+          <div style="display: flex; align-items: flex-start; gap: 1rem;">
+            <div style="font-size: 1.5rem; flex-shrink: 0;">${typeIcon}</div>
 
-        <div style="flex: 1;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <div style="font-weight: 500; font-size: 1.1rem;">${patient?.name || 'Paciente'}</div>
-              <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
-                <span class="text-sm text-muted">${dateStr}</span>
-                <span class="text-sm">${doctor?.name || 'Médico'}</span>
-                <span class="text-sm text-muted">${getTypeText(record.type)}</span>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <div style="font-weight: 500; font-size: 1.1rem;">${patient?.name || 'Paciente'}</div>
+                  <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                    <span class="text-sm text-muted">${dateStr}</span>
+                    <span class="text-sm">${doctor?.name || 'Médico'}</span>
+                    <span class="text-sm text-muted">${getTypeText(record.type)}</span>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  ${statusBadge}
+                </div>
+              </div>
+
+              ${record.diagnosis ? `
+                    <div style="margin-top: 0.5rem;">
+                      <div class="text-sm text-muted">Diagnóstico:</div>
+                      <div style="font-size: 0.9rem; color: var(--text);">${truncateText(record.diagnosis, 120)}</div>
+                    </div>
+                  ` : ''}
+
+              ${record.treatment ? `
+                    <div style="margin-top: 0.25rem;">
+                      <div class="text-sm text-muted">Tratamiento:</div>
+                      <div style="font-size: 0.9rem; color: var(--text);">${truncateText(record.treatment, 100)}</div>
+                    </div>
+                  ` : ''}
+
+              <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                ${record.vitalSigns?.bloodPressure ? `
+                      <div class="text-xs" style="padding: 0.125rem 0.5rem; background: var(--bg-light); border-radius: 4px;">
+                        <span class="text-muted">TA:</span> ${record.vitalSigns.bloodPressure}
+                      </div>
+                    ` : ''}
+
+                ${record.vitalSigns?.temperature ? `
+                      <div class="text-xs" style="padding: 0.125rem 0.5rem; background: var(--bg-light); border-radius: 4px;">
+                        <span class="text-muted">Temp:</span> ${record.vitalSigns.temperature}°C
+                      </div>
+                    ` : ''}
               </div>
             </div>
-
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              ${statusBadge}
-            </div>
           </div>
-
-          ${record.diagnosis ? `
-                <div style="margin-top: 0.5rem;">
-                  <div class="text-sm text-muted">Diagnóstico:</div>
-                  <div style="font-size: 0.9rem; color: var(--text);">${truncateText(record.diagnosis, 120)}</div>
-                </div>
-              ` : ''}
-
-          ${record.treatment ? `
-                <div style="margin-top: 0.25rem;">
-                  <div class="text-sm text-muted">Tratamiento:</div>
-                  <div style="font-size: 0.9rem; color: var(--text);">${truncateText(record.treatment, 100)}</div>
-                </div>
-              ` : ''}
-
-          <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-            ${record.vitalSigns?.bloodPressure ? `
-                  <div class="text-xs" style="padding: 0.125rem 0.5rem; background: var(--bg-light); border-radius: 4px;">
-                    <span class="text-muted">TA:</span> ${record.vitalSigns.bloodPressure}
-                  </div>
-                ` : ''}
-
-            ${record.vitalSigns?.temperature ? `
-                  <div class="text-xs" style="padding: 0.125rem 0.5rem; background: var(--bg-light); border-radius: 4px;">
-                    <span class="text-muted">Temp:</span> ${record.vitalSigns.temperature}°C
-                  </div>
-                ` : ''}
-          </div>
-        </div>
-      </div>
         </div>
       `;
     }).join('');
@@ -742,7 +788,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
     }
 
     // Actualizar select de médicos (solo si no es doctor)
-    if (elements.filterDoctor && role !== 'doctor') {
+    if (elements.filterDoctor && role !== 'doctor' && role !== 'patient') {
       const doctors = store.get('doctors');
       const options = doctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
       elements.filterDoctor.innerHTML = `<option value="">Todos los médicos</option>${options}`;
@@ -846,13 +892,25 @@ export default function mountClinical(root, { bus, store, user, role }) {
       elements.btnClearFilters.addEventListener('click', clearFiltersHandler);
     }
 
-    // Nuevo registro
+    // Nuevo registro (solo si tiene permisos)
     if (elements.btnNewRecord) {
-      elements.btnNewRecord.addEventListener('click', () => openModal());
+      elements.btnNewRecord.addEventListener('click', () => {
+        if (!canCreateRecords()) {
+          showNotification('No tiene permiso para crear registros clínicos', 'error');
+          return;
+        }
+        openModal();
+      });
     }
 
     if (elements.btnCreateFirstRecord) {
-      elements.btnCreateFirstRecord.addEventListener('click', () => openModal());
+      elements.btnCreateFirstRecord.addEventListener('click', () => {
+        if (!canCreateRecords()) {
+          showNotification('No tiene permiso para crear registros clínicos', 'error');
+          return;
+        }
+        openModal();
+      });
     }
 
     // Modal
@@ -864,7 +922,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
       elements.btnSave.addEventListener('click', saveRecord);
     }
 
-    // Click en registros
+    // Click en registros - CON VALIDACIÓN DE PERMISOS
     if (elements.recordsList) {
       elements.recordsList.addEventListener('click', (e) => {
         const recordItem = e.target.closest('.record-item');
@@ -872,6 +930,11 @@ export default function mountClinical(root, { bus, store, user, role }) {
           const recordId = recordItem.dataset.id;
           const record = store.find('clinicalRecords', recordId);
           if (record) {
+            // Verificar permisos antes de mostrar detalles
+            if (!hasPermissionToView(record)) {
+              showNotification('No tiene permiso para ver este registro', 'error');
+              return;
+            }
             viewRecordDetail(record);
           }
         }
@@ -966,6 +1029,18 @@ export default function mountClinical(root, { bus, store, user, role }) {
   // ===== GESTIÓN DE REGISTROS =====
 
   function openModal(record = null) {
+    // Verificar permisos antes de abrir el modal
+    if (!canCreateRecords()) {
+      showNotification('No tiene permiso para crear o editar registros clínicos', 'error');
+      return;
+    }
+    
+    // Si está editando, verificar permisos específicos para ese registro
+    if (record && !hasPermissionToEdit(record)) {
+      showNotification('No tiene permiso para editar este registro', 'error');
+      return;
+    }
+
     state.editingId = record?.id || null;
     state.showModal = true;
 
@@ -992,6 +1067,12 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
   // Función para abrir modal con datos prellenados desde citas
   function openModalWithData(data) {
+    // Verificar permisos primero
+    if (!canCreateRecords()) {
+      showNotification('No tiene permiso para crear registros clínicos', 'error');
+      return;
+    }
+
     // Crear un objeto de registro temporal con los datos proporcionados
     const tempRecord = {
       patientId: data.patientId,
@@ -1099,6 +1180,21 @@ export default function mountClinical(root, { bus, store, user, role }) {
   }
 
   async function saveRecord() {
+    // Verificar permisos antes de guardar
+    if (!canCreateRecords()) {
+      showNotification('No tiene permiso para crear o editar registros clínicos', 'error');
+      return;
+    }
+
+    // Si está editando, verificar permisos para ese registro específico
+    if (state.editingId) {
+      const originalRecord = store.find('clinicalRecords', state.editingId);
+      if (originalRecord && !hasPermissionToEdit(originalRecord)) {
+        showNotification('No tiene permiso para editar este registro', 'error');
+        return;
+      }
+    }
+
     if (!validateForm()) {
       showNotification('Por favor, complete todos los campos requeridos correctamente.', 'warning');
       return;
@@ -1239,6 +1335,9 @@ export default function mountClinical(root, { bus, store, user, role }) {
     padding: 1rem;
     overflow: auto;
     `;
+
+    // Determinar si el usuario puede editar este registro
+    const canEditThisRecord = hasPermissionToEdit(record);
 
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 850px; background: var(--modal-bg);">
@@ -1463,7 +1562,9 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
         <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
           <button class="btn btn-primary" style="background: #4a7963; border: none; padding: 0.5rem 1rem;" id="print-record-btn">📄 Imprimir</button>
-          <button class="btn btn-primary" style="background: #7c9b1f; border: none; padding: 0.5rem 1rem;" id="edit-record-btn" data-id="${record.id}">✏️ Editar</button>
+          ${canEditThisRecord ? `
+            <button class="btn btn-primary" style="background: #7c9b1f; border: none; padding: 0.5rem 1rem;" id="edit-record-btn" data-id="${record.id}">✏️ Editar</button>
+          ` : ''}
           <button class="btn btn-danger" style="background: #d55050; border: none; padding: 0.5rem 1rem;" id="close-modal-btn">✕ Cerrar</button>
         </div>
       </div>
@@ -2307,15 +2408,15 @@ export default function mountClinical(root, { bus, store, user, role }) {
       }
     };
 
-    // Botón de cerrar - CORREGIDO
+    // Botón de cerrar
     const closeBtn = modalContainer.querySelector('#close-modal-btn');
     if (closeBtn) {
       closeBtn.addEventListener('click', closeModal);
     }
 
-    // Botón de editar
+    // Botón de editar - SOLO si tiene permisos
     const editBtn = modalContainer.querySelector('#edit-record-btn');
-    if (editBtn) {
+    if (editBtn && hasPermissionToEdit(record)) {
       editBtn.addEventListener('click', () => {
         closeModal();
         openModal(record);
