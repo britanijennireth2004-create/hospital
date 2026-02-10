@@ -85,34 +85,34 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // Función auxiliar para convertir colores de forma segura
   function parseColor(color) {
     if (!color) return [0, 0, 0];
-    
+
     // Si ya es un array, devolverlo
     if (Array.isArray(color) && color.length === 3) {
       return color;
     }
-    
+
     // Si es una clave de TRIAGE_LEVELS_RGB
     if (typeof color === 'string' && TRIAGE_LEVELS_RGB[color]) {
       return TRIAGE_LEVELS_RGB[color];
     }
-    
+
     // Si es string hexadecimal
     if (typeof color === 'string' && color.startsWith('#')) {
       const hex = color.replace('#', '');
-      
+
       // Expandir formato corto si es necesario
-      const fullHex = hex.length === 3 
+      const fullHex = hex.length === 3
         ? hex.split('').map(c => c + c).join('')
         : hex;
-      
+
       // Convertir a RGB
       const r = parseInt(fullHex.substring(0, 2), 16);
       const g = parseInt(fullHex.substring(2, 4), 16);
       const b = parseInt(fullHex.substring(4, 6), 16);
-      
+
       return [isNaN(r) ? 0 : r, isNaN(g) ? 0 : g, isNaN(b) ? 0 : b];
     }
-    
+
     // Por defecto negro
     return [0, 0, 0];
   }
@@ -125,14 +125,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
     render();
     loadData();
     setupEventListeners();
-    
+
     // Suscribirse a cambios
     const unsubscribePatients = store.subscribe('patients', loadData);
     const unsubscribeTriage = store.subscribe('triage', loadData);
-    
+
     // Actualizar cada 30 segundos
     const intervalId = setInterval(updateStats, 30000);
-    
+
     return { unsubscribePatients, unsubscribeTriage, intervalId };
   }
 
@@ -140,15 +140,15 @@ export default function mountTriage(root, { bus, store, user, role }) {
   function loadData() {
     const patients = store.get('patients');
     const triageRecords = store.get('triage') || [];
-    
+
     // Combinar datos de triage con pacientes
     state.patientsInQueue = triageRecords.map(record => {
       const patient = patients.find(p => p.id === record.patientId);
-      
+
       // Calcular tiempo de espera
       const waitingTime = calculateWaitingTime(record.createdAt);
       const waitingTimeFormatted = formatWaitingTime(waitingTime);
-      
+
       return {
         ...record,
         patient,
@@ -161,13 +161,13 @@ export default function mountTriage(root, { bus, store, user, role }) {
         allergies: patient?.allergies || []
       };
     });
-    
+
     // Filtrar y ordenar
     applyFilters();
-    
+
     // Actualizar UI
     updateUI();
-    
+
     // Actualizar contadores de niveles de triage
     updateTriageLevelCounters();
   }
@@ -175,7 +175,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // FUNCIÓN NUEVA: Actualizar contadores de niveles de triage
   function updateTriageLevelCounters() {
     if (!elements.triageLevels) return;
-    
+
     // Contar pacientes por prioridad en estado 'waiting'
     const waitingPatients = state.patientsInQueue.filter(p => p.status === 'waiting');
     const counts = {
@@ -185,7 +185,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       green: waitingPatients.filter(p => p.priority === 'green').length,
       blue: waitingPatients.filter(p => p.priority === 'blue').length
     };
-    
+
     // Actualizar cada contador
     Object.entries(counts).forEach(([priority, count]) => {
       const countElement = elements.triageLevels.querySelector(`.priority-count[data-priority="${priority}"]`);
@@ -207,7 +207,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (elements.triageLevels) {
       renderTriageLevels();
     }
-    
+
     // Actualizar contadores
     updateTriageLevelCounters();
   }
@@ -222,7 +222,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
   function formatWaitingTime(milliseconds) {
     const minutes = Math.floor(milliseconds / 60000);
     const hours = Math.floor(minutes / 60);
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m`;
     }
@@ -245,29 +245,29 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // Aplicar filtros
   function applyFilters() {
     let filteredPatients = [...state.patientsInQueue];
-    
+
     // Filtro por estado
     if (state.filters.status !== 'all') {
       filteredPatients = filteredPatients.filter(p => p.status === state.filters.status);
     }
-    
+
     // Filtro por prioridad
     if (state.filters.priority !== 'all') {
       filteredPatients = filteredPatients.filter(p => p.priority === state.filters.priority);
     }
-    
+
     // Filtro por búsqueda
     if (state.filters.search) {
       const searchTerm = state.filters.search.toLowerCase();
-      filteredPatients = filteredPatients.filter(p => 
+      filteredPatients = filteredPatients.filter(p =>
         p.fullName.toLowerCase().includes(searchTerm) ||
         p.symptoms?.toLowerCase().includes(searchTerm)
       );
     }
-    
+
     // Ordenar
     const priorityOrder = { red: 0, orange: 1, yellow: 2, green: 3, blue: 4 };
-    
+
     filteredPatients.sort((a, b) => {
       if (state.sortBy === 'priority') {
         if (a.priority === b.priority) {
@@ -281,14 +281,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
       }
       return 0;
     });
-    
+
     state.filteredPatients = filteredPatients;
   }
 
   // Actualizar estadísticas
   function updateStats() {
     const triageRecords = store.get('triage') || [];
-    
+
     const stats = {
       total: triageRecords.length,
       waiting: triageRecords.filter(t => t.status === 'waiting').length,
@@ -302,7 +302,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         blue: triageRecords.filter(t => t.priority === 'blue').length
       }
     };
-    
+
     // Calcular tiempos de espera solo para pacientes en espera
     const waitingRecords = triageRecords.filter(t => t.status === 'waiting');
     if (waitingRecords.length > 0) {
@@ -310,8 +310,8 @@ export default function mountTriage(root, { bus, store, user, role }) {
         return sum + calculateWaitingTime(record.createdAt);
       }, 0);
       stats.averageWaitingTime = Math.floor(totalTime / waitingRecords.length / 60000);
-      
-      const maxTime = Math.max(...waitingRecords.map(record => 
+
+      const maxTime = Math.max(...waitingRecords.map(record =>
         calculateWaitingTime(record.createdAt)
       ));
       stats.maxWaitingTime = Math.floor(maxTime / 60000);
@@ -319,9 +319,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
       stats.averageWaitingTime = 0;
       stats.maxWaitingTime = 0;
     }
-    
+
     state.stats = stats;
-    
+
     // Actualizar estadísticas si el elemento existe
     if (elements.statsContainer) {
       renderStats();
@@ -334,7 +334,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // FUNCIÓN NUEVA: Sugerir prioridad basada en síntomas y signos vitales
   function suggestPriority(symptoms, vitalSigns) {
     const symptomsLower = symptoms.toLowerCase();
-    
+
     // Extraer valores de signos vitales
     let bpSystolic = 0;
     if (vitalSigns.bloodPressure) {
@@ -348,7 +348,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     const temp = parseFloat(vitalSigns.temperature) || 0;
     const rr = parseInt(vitalSigns.respiratoryRate) || 0;
     const pain = parseInt(vitalSigns.painLevel) || 0;
-    
+
     // Evaluar criterios ROJO (amenaza vital inmediata)
     const redCriteria = [
       // Síntomas
@@ -366,11 +366,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
       bpSystolic > 0 && bpSystolic < 90,
       hr > 0 && (hr > 150 || hr < 40)
     ];
-    
+
     if (redCriteria.some(criteria => criteria)) {
       return 'red';
     }
-    
+
     // Evaluar criterios NARANJA (riesgo vital potencial)
     const orangeCriteria = [
       // Síntomas
@@ -387,11 +387,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
       bpSystolic >= 90 && bpSystolic <= 100,
       hr >= 130 && hr <= 150
     ];
-    
+
     if (orangeCriteria.some(criteria => criteria)) {
       return 'orange';
     }
-    
+
     // Evaluar criterios AMARILLO (urgente pero estable)
     const yellowCriteria = [
       // Síntomas
@@ -407,11 +407,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
       temp >= 38 && temp <= 39,
       hr >= 100 && hr <= 130
     ];
-    
+
     if (yellowCriteria.some(criteria => criteria)) {
       return 'yellow';
     }
-    
+
     // Evaluar criterios VERDE (poco urgente)
     const greenCriteria = [
       // Síntomas
@@ -426,17 +426,20 @@ export default function mountTriage(root, { bus, store, user, role }) {
       temp < 38,
       hr >= 60 && hr <= 100
     ];
-    
+
     if (greenCriteria.some(criteria => criteria)) {
       return 'green';
     }
-    
+
     // Por defecto, AZUL (no urgente)
     return 'blue';
   }
 
   // Renderizar componente principal
   function render() {
+    const canCreate = ['admin', 'doctor', 'nurse'].includes(role);
+    const canProcess = ['admin', 'doctor', 'nurse'].includes(role);
+
     root.innerHTML = `
       <div class="module-triage">
         <!-- Header -->
@@ -446,9 +449,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
               <h2>Triage de Urgencias</h2>
               <p class="text-muted">Sistema de priorización de pacientes en emergencias</p>
             </div>
+            ${canCreate ? `
             <button class="btn btn-primary" id="btn-new-triage">
               <span>+</span> Nuevo Triage
             </button>
+            ` : ''}
           </div>
         </div>
 
@@ -471,15 +476,19 @@ export default function mountTriage(root, { bus, store, user, role }) {
           <div class="card">
             <h3>Acciones Rápidas</h3>
             <div class="quick-actions">
+              ${canProcess ? `
               <button class="btn btn-danger" id="btn-emergency-alert">
                 ⚠️ Alerta de Emergencia
               </button>
+              ` : ''}
               <button class="btn btn-outline" id="btn-export-pdf">
                 📊 Exportar Reporte
               </button>
+              ${canProcess ? `
               <button class="btn btn-outline" id="btn-next-patient">
                 ⏭️ Siguiente Paciente
               </button>
+              ` : ''}
               ${role === 'admin' ? `
                 <button class="btn btn-outline" id="btn-clear-completed">
                   🧹 Limpiar Completados
@@ -564,20 +573,21 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
         <!-- Modal para nuevo triage -->
         <div class="modal-overlay hidden" id="triage-modal">
-          <div class="modal-content" style="max-width: 900px; max-height: 90vh;">
-            <div class="modal-header">
-              <h3 style="margin: 0;">Nuevo Triage</h3>
-              <button class="btn btn-outline btn-sm" id="btn-close-modal">×</button>
+          <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+              <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">SISTEMA DE TRIAGE Y PRIORIZACIÓN</div>
+              <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
             </div>
             
-            <div class="modal-body">
+            <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
               <!-- Pestañas para elegir paciente existente o crear nuevo -->
-              <div class="flex border-b mb-4">
-                <button type="button" class="tab-btn ${!state.isCreatingPatient ? 'active' : ''}" id="tab-existing-patient">
-                  Paciente Existente
+              <div class="flex border-b mb-6" style="gap: 1rem; justify-content: center;">
+                <button type="button" class="tab-btn ${!state.isCreatingPatient ? 'active' : ''}" id="tab-existing-patient" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer;">
+                  PACIENTE EXISTENTE
                 </button>
-                <button type="button" class="tab-btn ${state.isCreatingPatient ? 'active' : ''}" id="tab-new-patient">
-                  + Nuevo Paciente
+                <button type="button" class="tab-btn ${state.isCreatingPatient ? 'active' : ''}" id="tab-new-patient" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer;">
+                  + NUEVO PACIENTE
                 </button>
               </div>
               
@@ -585,7 +595,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
               <div id="existing-patient-form" style="${state.isCreatingPatient ? 'display: none;' : ''}">
                 <form id="triage-form">
                   <div class="form-group">
-                    <label class="form-label">Seleccionar paciente *</label>
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">SELECCIONAR PACIENTE *</label>
                     <div class="flex gap-2">
                       <select class="input" id="patient-select" required style="flex: 1;">
                         <option value="">Seleccione un paciente</option>
@@ -597,19 +607,19 @@ export default function mountTriage(root, { bus, store, user, role }) {
                   </div>
                   
                   <div class="form-group">
-                    <label class="form-label">Síntomas principales *</label>
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">SÍNTOMAS PRINCIPALES *</label>
                     <textarea class="input" id="symptoms" rows="3" required 
                               placeholder="Describa los síntomas..." 
                               oninput="window.triageModule?.updatePrioritySuggestion()"></textarea>
                   </div>
                   
                   <div class="form-group">
-                    <label class="form-label">Observaciones</label>
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">OBSERVACIONES</label>
                     <textarea class="input" id="observations" rows="2" placeholder="Observaciones adicionales..."></textarea>
                   </div>
                   
                   <div class="form-group">
-                    <label class="form-label">Signos vitales</label>
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">SIGNOS VITALES</label>
                     <div class="grid grid-3">
                       <input type="text" class="input" id="blood-pressure" placeholder="PA (120/80)"
                              oninput="window.triageModule?.updatePrioritySuggestion()">
@@ -644,7 +654,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
                   </div>
                   
                   <div class="form-group">
-                    <label class="form-label">Prioridad *</label>
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">PRIORIDAD *</label>
                     <div style="display: flex; gap: 0.5rem; justify-content: space-between; margin-top: 0.5rem;">
                       ${Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
                         <div class="priority-option compact" data-priority="${key}" 
@@ -679,22 +689,22 @@ export default function mountTriage(root, { bus, store, user, role }) {
                   <div class="tab-pane-sm active" data-tab="quick-basic">
                     <div class="grid grid-2">
                       <div class="form-group">
-                        <label class="form-label">Nombre completo *</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
                         <input type="text" class="input" id="quick-name" required>
                       </div>
                       <div class="form-group">
-                        <label class="form-label">DNI/NIE *</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DNI/NIE *</label>
                         <input type="text" class="input" id="quick-dni" required>
                       </div>
                     </div>
                     
                     <div class="grid grid-3">
                       <div class="form-group">
-                        <label class="form-label">Fecha de nacimiento *</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO *</label>
                         <input type="date" class="input" id="quick-birthdate" required>
                       </div>
                       <div class="form-group">
-                        <label class="form-label">Género *</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO *</label>
                         <select class="input" id="quick-gender" required>
                           <option value="">Seleccionar</option>
                           <option value="M">Masculino</option>
@@ -703,7 +713,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
                         </select>
                       </div>
                       <div class="form-group">
-                        <label class="form-label">Tipo de sangre</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TIPO DE SANGRE</label>
                         <select class="input" id="quick-blood-type">
                           <option value="">Desconocido</option>
                           <option value="O+">O+</option>
@@ -723,17 +733,17 @@ export default function mountTriage(root, { bus, store, user, role }) {
                   <div class="tab-pane-sm" data-tab="quick-contact">
                     <div class="grid grid-2">
                       <div class="form-group">
-                        <label class="form-label">Teléfono *</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO *</label>
                         <input type="tel" class="input" id="quick-phone" required>
                       </div>
                       <div class="form-group">
-                        <label class="form-label">Email</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL</label>
                         <input type="email" class="input" id="quick-email">
                       </div>
                     </div>
                     
                     <div class="form-group">
-                      <label class="form-label">Dirección</label>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DIRECCIÓN</label>
                       <textarea class="input" id="quick-address" rows="2"></textarea>
                     </div>
                     
@@ -863,15 +873,15 @@ export default function mountTriage(root, { bus, store, user, role }) {
               </div>
             </div>
             
-            <div class="modal-footer">
+            <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
               ${state.isCreatingPatient ? `
-                <button class="btn btn-outline" id="btn-back-to-existing">
-                  ← Volver
+                <button class="btn" id="btn-back-to-existing" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; font-weight: 600;">
+                  ← VOLVER
                 </button>
               ` : ''}
-              <button class="btn btn-outline" id="btn-cancel-triage">Cancelar</button>
-              <button class="btn btn-primary" id="btn-save-triage">
-                ${state.isCreatingPatient ? 'Crear Paciente y Triage' : 'Guardar Triage'}
+              <button class="btn" id="btn-cancel-triage" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+              <button class="btn" id="btn-save-triage" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                ${state.isCreatingPatient ? 'REGISTRAR PACIENTE Y TRIAGE' : 'GUARDAR TRIAGE'}
               </button>
             </div>
           </div>
@@ -879,40 +889,48 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
         <!-- Modal de alerta de emergencia -->
         <div class="modal-overlay hidden" id="emergency-modal">
-          <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-              <h3 style="margin: 0; color: var(--danger);">⚠️ Alerta de Emergencia</h3>
-              <button class="btn btn-outline btn-sm" id="btn-close-emergency">×</button>
+          <div class="modal-content" style="max-width: 550px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
+            <div class="modal-header" style="background: #e53e3e; flex-direction: column; align-items: center; padding: 2rem; position: relative;">
+               <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🚨</div>
+               <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 800;">ALERTA DE EMERGENCIA</h2>
+               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500;">SISTEMA DE NOTIFICACIÓN CRÍTICA</div>
+               <button class="btn-close-modal" id="btn-close-emergency" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
             </div>
             
-            <div class="modal-body">
-              <p>Esta acción activará una alerta de emergencia para todo el personal.</p>
+            <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
+              <div style="background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; margin-bottom: 1.5rem; text-align: center;">
+                ATENCIÓN: Esta acción notificará a todo el personal de guardia de forma inmediata.
+              </div>
               
-              <div class="form-group">
-                <label class="form-label">Tipo de emergencia *</label>
-                <select class="input" id="emergency-type">
-                  <option value="code_blue">Código Azul - Paro cardiorrespiratorio</option>
-                  <option value="code_red">Código Rojo - Incendio</option>
-                  <option value="code_black">Código Negro - Amenaza violenta</option>
-                  <option value="mass_casualty">Incidente con múltiples víctimas</option>
-                  <option value="evacuation">Evacuación</option>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.85rem;">TIPO DE EMERGENCIA / CÓDIGO *</label>
+                <select class="input" id="emergency-type" style="border-color: #feb2b2; background: #fffaf0; font-weight: 700; color: #c53030;">
+                  <option value="code_blue">🔵 Código Azul - Paro cardiorrespiratorio</option>
+                  <option value="code_red">🔴 Código Rojo - Incendio / Fuego</option>
+                  <option value="code_black">⚫ Código Negro - Amenaza Violenta</option>
+                  <option value="mass_casualty">⚠️ Múltiples Víctimas / Triaje Masivo</option>
+                  <option value="evacuation">📢 Evacuación Inmediata</option>
                 </select>
               </div>
               
-              <div class="form-group">
-                <label class="form-label">Ubicación *</label>
-                <input type="text" class="input" id="emergency-location" required placeholder="Ej: Sala de Urgencias">
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.85rem;">UBICACIÓN EXACTA *</label>
+                <input type="text" class="input" id="emergency-location" required 
+                       placeholder="Ej: Quirófano 2, Pasillo Ala Norte, Piso 3" style="border-color: #e2e8f0;">
               </div>
               
               <div class="form-group">
-                <label class="form-label">Descripción</label>
-                <textarea class="input" id="emergency-description" rows="3" placeholder="Descripción detallada..."></textarea>
+                <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.85rem;">DESCRIPCIÓN DE LA SITUACIÓN</label>
+                <textarea class="input" id="emergency-description" rows="3" 
+                          placeholder="Indique detalles relevantes para el equipo de respuesta..." style="border-color: #e2e8f0;"></textarea>
               </div>
             </div>
             
-            <div class="modal-footer">
-              <button class="btn btn-outline" id="btn-cancel-emergency">Cancelar</button>
-              <button class="btn btn-danger" id="btn-activate-emergency">Activar Alerta</button>
+            <div class="modal-footer" style="background: #f7fafc; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #edf2f7;">
+              <button class="btn" id="btn-cancel-emergency" style="background: white; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+              <button class="btn" id="btn-activate-emergency" style="background: #e53e3e; color: white; border: none; padding: 0.75rem 2rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 12px rgba(229, 62, 62, 0.4);">
+                ACTIVAR ALERTA AHORA
+              </button>
             </div>
           </div>
         </div>
@@ -924,7 +942,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       statsContainer: root.querySelector('#stats-container'),
       triageLevels: root.querySelector('#triage-levels'),
       contentContainer: root.querySelector('#triage-queue'),
-      
+
       // Filtros
       filterSearch: root.querySelector('#filter-search'),
       filterStatus: root.querySelector('#filter-status'),
@@ -932,18 +950,18 @@ export default function mountTriage(root, { bus, store, user, role }) {
       sortBy: root.querySelector('#sort-by'),
       btnSearch: root.querySelector('#btn-search'),
       btnRefresh: root.querySelector('#btn-refresh'),
-      
+
       // Botones principales
       btnNewTriage: root.querySelector('#btn-new-triage'),
       btnEmergencyAlert: root.querySelector('#btn-emergency-alert'),
       btnExportPdf: root.querySelector('#btn-export-pdf'),
       btnNextPatient: root.querySelector('#btn-next-patient'),
       btnClearCompleted: root.querySelector('#btn-clear-completed'),
-      
+
       // Modales
       triageModal: root.querySelector('#triage-modal'),
       emergencyModal: root.querySelector('#emergency-modal'),
-      
+
       // Elementos del modal de triage
       tabExistingPatient: root.querySelector('#tab-existing-patient'),
       tabNewPatient: root.querySelector('#tab-new-patient'),
@@ -951,7 +969,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       newPatientForm: root.querySelector('#new-patient-form'),
       btnSwitchToNew: root.querySelector('#btn-switch-to-new'),
       btnBackToExisting: root.querySelector('#btn-back-to-existing'),
-      
+
       // Formulario paciente existente
       patientSelect: root.querySelector('#patient-select'),
       symptoms: root.querySelector('#symptoms'),
@@ -962,7 +980,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       spo2: root.querySelector('#spo2'),
       respiratoryRate: root.querySelector('#respiratory-rate'),
       painLevel: root.querySelector('#pain-level'),
-      
+
       // Formulario paciente nuevo
       quickName: root.querySelector('#quick-name'),
       quickDni: root.querySelector('#quick-dni'),
@@ -992,7 +1010,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       quickRr: root.querySelector('#quick-rr'),
       quickPain: root.querySelector('#quick-pain'),
       btnQuickAddAllergy: root.querySelector('#btn-quick-add-allergy'),
-      
+
       // Sugerencias de prioridad
       prioritySuggestionContainer: root.querySelector('#priority-suggestion-container'),
       prioritySuggestion: root.querySelector('#priority-suggestion'),
@@ -1016,54 +1034,54 @@ export default function mountTriage(root, { bus, store, user, role }) {
       state.isApplyingSuggestion = false;
       return;
     }
-    
+
     const isQuickForm = state.isCreatingPatient;
-    
-    const symptoms = isQuickForm ? 
-      (elements.quickSymptoms?.value || '') : 
+
+    const symptoms = isQuickForm ?
+      (elements.quickSymptoms?.value || '') :
       (elements.symptoms?.value || '');
-    
+
     const vitalSigns = {
-      bloodPressure: isQuickForm ? 
-        (elements.quickBp?.value || '') : 
+      bloodPressure: isQuickForm ?
+        (elements.quickBp?.value || '') :
         (elements.bloodPressure?.value || ''),
-      heartRate: isQuickForm ? 
-        (elements.quickHr?.value || '') : 
+      heartRate: isQuickForm ?
+        (elements.quickHr?.value || '') :
         (elements.heartRate?.value || ''),
-      temperature: isQuickForm ? 
-        (elements.quickTemp?.value || '') : 
+      temperature: isQuickForm ?
+        (elements.quickTemp?.value || '') :
         (elements.temperature?.value || ''),
-      spo2: isQuickForm ? 
-        (elements.quickSpo2?.value || '') : 
+      spo2: isQuickForm ?
+        (elements.quickSpo2?.value || '') :
         (elements.spo2?.value || ''),
-      respiratoryRate: isQuickForm ? 
-        (elements.quickRr?.value || '') : 
+      respiratoryRate: isQuickForm ?
+        (elements.quickRr?.value || '') :
         (elements.respiratoryRate?.value || ''),
-      painLevel: isQuickForm ? 
-        (elements.quickPain?.value || '') : 
+      painLevel: isQuickForm ?
+        (elements.quickPain?.value || '') :
         (elements.painLevel?.value || '')
     };
-    
+
     // Solo sugerir si hay síntomas
     if (!symptoms.trim()) {
       return;
     }
-    
+
     const suggestedPriority = suggestPriority(symptoms, vitalSigns);
     state.suggestedPriority = suggestedPriority;
-    
+
     const triageLevel = TRIAGE_LEVELS[suggestedPriority];
-    
+
     // Determinar confianza
     let confidence = 'Media';
     let confidenceColor = '#ca8a04';
     let reason = '';
-    
+
     // Generar razón basada en los datos
     const reasons = [];
-    
+
     const symptomsLower = symptoms.toLowerCase();
-    
+
     if (symptomsLower.includes('paro') || symptomsLower.includes('parada')) {
       reasons.push('Paro cardiorespiratorio reportado');
       confidence = 'Alta';
@@ -1098,9 +1116,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
         }
       }
     }
-    
+
     reason = reasons.length > 0 ? reasons.join(', ') : 'Basado en síntomas reportados';
-    
+
     // Actualizar UI de sugerencia
     if (isQuickForm) {
       if (elements.quickPrioritySuggestionContainer) {
@@ -1138,27 +1156,27 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // FUNCIÓN MEJORADA: Aplicar sugerencia de prioridad
   function applySuggestion(suggestedPriority, isQuickForm = false) {
     state.isApplyingSuggestion = true;
-    
+
     const selector = isQuickForm ? '.priority-option.quick.compact' : '.priority-option.compact';
     const options = document.querySelectorAll(selector);
-    
+
     options.forEach(option => {
       const priority = option.dataset.priority;
       const triageLevel = TRIAGE_LEVELS[priority];
-      
+
       option.style.background = triageLevel.lightColor;
       option.style.boxShadow = '';
       option.style.transform = '';
-      
+
       // Eliminar indicador visual anterior
       const existingBadge = option.querySelector('.suggestion-badge');
       if (existingBadge) existingBadge.remove();
-      
+
       if (priority === suggestedPriority) {
         option.style.boxShadow = `0 0 0 2px ${triageLevel.color}`;
         option.style.transform = 'scale(1.02)';
         option.style.transition = 'all 0.2s ease';
-        
+
         // Agregar indicador visual
         const badge = document.createElement('div');
         badge.className = 'suggestion-badge';
@@ -1180,17 +1198,17 @@ export default function mountTriage(root, { bus, store, user, role }) {
         option.appendChild(badge);
       }
     });
-    
+
     // Guardar la prioridad seleccionada
     state.selectedPriority = suggestedPriority;
-    
+
     // Ocultar la sugerencia
     if (isQuickForm && elements.quickPrioritySuggestionContainer) {
       elements.quickPrioritySuggestionContainer.style.display = 'none';
     } else if (!isQuickForm && elements.prioritySuggestionContainer) {
       elements.prioritySuggestionContainer.style.display = 'none';
     }
-    
+
     // Mostrar notificación
     showMiniNotification(`Prioridad ${TRIAGE_LEVELS[suggestedPriority].name} aplicada`, 'success');
   }
@@ -1199,13 +1217,13 @@ export default function mountTriage(root, { bus, store, user, role }) {
   function showMiniNotification(message, type = 'info') {
     const modal = root.querySelector('#triage-modal');
     if (!modal) return;
-    
+
     // Eliminar notificación anterior si existe
     const existingNotification = modal.querySelector('.mini-notification');
     if (existingNotification) {
       existingNotification.remove();
     }
-    
+
     const notification = document.createElement('div');
     notification.className = 'mini-notification';
     notification.style.cssText = `
@@ -1213,9 +1231,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
       bottom: 80px;
       right: 20px;
       padding: 0.5rem 1rem;
-      background: ${type === 'success' ? '#38a169' : 
-                   type === 'error' ? '#e53e3e' : 
-                   type === 'warning' ? '#d69e2e' : '#3182ce'};
+      background: ${type === 'success' ? '#38a169' :
+        type === 'error' ? '#e53e3e' :
+          type === 'warning' ? '#d69e2e' : '#3182ce'};
       color: white;
       border-radius: 6px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -1223,10 +1241,10 @@ export default function mountTriage(root, { bus, store, user, role }) {
       font-size: 0.875rem;
       animation: slideInUp 0.3s ease;
     `;
-    
+
     notification.textContent = message;
     modal.appendChild(notification);
-    
+
     setTimeout(() => {
       notification.style.animation = 'slideOutDown 0.3s ease';
       setTimeout(() => notification.remove(), 300);
@@ -1236,10 +1254,10 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // FUNCIÓN NUEVA: Agregar campo de alergia en formulario rápido
   function addQuickAllergyField(value = '', index = null) {
     if (!elements.quickAllergiesContainer) return;
-    
+
     const allergyIndex = index !== null ? index : elements.quickAllergiesContainer.children.length;
     const allergyId = `quick-allergy-${allergyIndex}`;
-    
+
     const allergyDiv = document.createElement('div');
     allergyDiv.className = 'flex items-center gap-2 mb-2';
     allergyDiv.innerHTML = `
@@ -1252,9 +1270,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
         ×
       </button>
     `;
-    
+
     elements.quickAllergiesContainer.appendChild(allergyDiv);
-    
+
     // Configurar evento para eliminar
     const removeBtn = allergyDiv.querySelector('.remove-allergy');
     if (removeBtn) {
@@ -1268,12 +1286,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
   function switchQuickTab(tabName) {
     const tabBtns = document.querySelectorAll('.tab-btn-sm');
     const tabPanes = document.querySelectorAll('.tab-pane-sm');
-    
+
     // Actualizar botones de pestaña
     tabBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
-    
+
     // Actualizar contenido de pestañas
     tabPanes.forEach(pane => {
       pane.classList.toggle('active', pane.dataset.tab === tabName);
@@ -1359,23 +1377,23 @@ export default function mountTriage(root, { bus, store, user, role }) {
           </td>
         </tr>
       `;
-      
+
       // Configurar evento para el botón
       const btn = root.querySelector('#btn-add-first-triage');
       if (btn) {
         btn.addEventListener('click', openNewTriageModal);
       }
-      
+
       return;
     }
 
     elements.contentContainer.innerHTML = state.filteredPatients.map(patient => {
       const triageLevel = TRIAGE_LEVELS[patient.priority];
-      
+
       // Determinar clase de estado
       let statusClass = 'badge-secondary';
       let statusText = 'Esperando';
-      
+
       if (patient.status === 'in_progress') {
         statusClass = 'badge-info';
         statusText = 'En atención';
@@ -1383,7 +1401,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         statusClass = 'badge-success';
         statusText = 'Atendido';
       }
-      
+
       // Formatear signos vitales
       const vitalSigns = patient.vitalSigns ? `
         <div style="font-size: 0.875rem;">
@@ -1391,16 +1409,16 @@ export default function mountTriage(root, { bus, store, user, role }) {
           <div>FC: ${patient.vitalSigns.heartRate || 'N/A'} lpm</div>
         </div>
       ` : 'No registrados';
-      
+
       return `
         <tr>
-          <td>
+          <td data-label="Prioridad">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <div style="width: 12px; height: 12px; background: ${triageLevel.color}; border-radius: 50%;"></div>
               <span style="font-weight: 500;">${triageLevel.icon} ${patient.priority.toUpperCase()}</span>
             </div>
           </td>
-          <td>
+          <td data-label="Paciente">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
               <div style="width: 40px; height: 40px; background: ${triageLevel.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
                 ${patient.fullName.charAt(0)}
@@ -1413,10 +1431,10 @@ export default function mountTriage(root, { bus, store, user, role }) {
               </div>
             </div>
           </td>
-          <td>
+          <td data-label="Síntomas">
             <div>${patient.symptoms?.substring(0, 50) || 'No especificado'}${patient.symptoms?.length > 50 ? '...' : ''}</div>
           </td>
-          <td>
+          <td data-label="Espera">
             <div style="font-weight: 500; ${patient.waitingTime > 7200000 ? 'color: var(--danger);' : ''}">
               ${patient.waitingTimeFormatted}
             </div>
@@ -1424,11 +1442,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
               ${new Date(patient.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </td>
-          <td>
+          <td data-label="Estado">
             <span class="badge ${statusClass}">${statusText}</span>
           </td>
-          <td>${vitalSigns}</td>
-          <td>
+          <td data-label="Signos">${vitalSigns}</td>
+          <td data-label="Acciones">
             <div class="flex gap-2">
               ${patient.status === 'waiting' ? `
                 <button class="btn btn-outline btn-sm" data-action="start" data-id="${patient.id}">
@@ -1459,7 +1477,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         renderContent();
       });
     }
-    
+
     if (elements.filterPriority) {
       elements.filterPriority.addEventListener('change', () => {
         state.filters.priority = elements.filterPriority.value;
@@ -1467,7 +1485,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         renderContent();
       });
     }
-    
+
     if (elements.sortBy) {
       elements.sortBy.addEventListener('change', () => {
         state.sortBy = elements.sortBy.value;
@@ -1475,7 +1493,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         renderContent();
       });
     }
-    
+
     if (elements.filterSearch) {
       elements.filterSearch.addEventListener('input', debounce(() => {
         state.filters.search = elements.filterSearch.value;
@@ -1483,7 +1501,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         renderContent();
       }, 300));
     }
-    
+
     if (elements.btnSearch) {
       elements.btnSearch.addEventListener('click', () => {
         state.filters.search = elements.filterSearch.value;
@@ -1491,37 +1509,37 @@ export default function mountTriage(root, { bus, store, user, role }) {
         renderContent();
       });
     }
-    
+
     if (elements.btnRefresh) {
       elements.btnRefresh.addEventListener('click', loadData);
     }
-    
+
     // Botones principales
     if (elements.btnNewTriage) {
       elements.btnNewTriage.addEventListener('click', openNewTriageModal);
     }
-    
+
     if (elements.btnEmergencyAlert) {
       elements.btnEmergencyAlert.addEventListener('click', openEmergencyModal);
     }
-    
+
     if (elements.btnExportPdf) {
       elements.btnExportPdf.addEventListener('click', exportToPDF);
     }
-    
+
     if (elements.btnNextPatient) {
       elements.btnNextPatient.addEventListener('click', nextPatient);
     }
-    
+
     if (elements.btnClearCompleted) {
       elements.btnClearCompleted.addEventListener('click', clearCompleted);
     }
-    
+
     // Delegación de eventos en la tabla
     if (elements.contentContainer) {
       elements.contentContainer.addEventListener('click', handleQueueAction);
     }
-    
+
     // Modales
     setupModalListeners();
   }
@@ -1544,7 +1562,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
           }
         });
       }
-      
+
       if (elements.tabNewPatient) {
         elements.tabNewPatient.addEventListener('click', () => {
           state.isCreatingPatient = true;
@@ -1555,12 +1573,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
           if (elements.btnBackToExisting) {
             elements.btnBackToExisting.style.display = 'inline-block';
           }
-          
+
           // Inicializar pestañas internas
           switchQuickTab('quick-basic');
         });
       }
-      
+
       if (elements.btnSwitchToNew) {
         elements.btnSwitchToNew.addEventListener('click', () => {
           state.isCreatingPatient = true;
@@ -1571,12 +1589,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
           if (elements.btnBackToExisting) {
             elements.btnBackToExisting.style.display = 'inline-block';
           }
-          
+
           // Inicializar pestañas internas
           switchQuickTab('quick-basic');
         });
       }
-      
+
       if (elements.btnBackToExisting) {
         elements.btnBackToExisting.addEventListener('click', () => {
           state.isCreatingPatient = false;
@@ -1587,25 +1605,25 @@ export default function mountTriage(root, { bus, store, user, role }) {
           elements.btnBackToExisting.style.display = 'none';
         });
       }
-      
+
       // Botones del modal
       const btnClose = triageModal.querySelector('#btn-close-modal');
       const btnCancel = triageModal.querySelector('#btn-cancel-triage');
       const btnSave = triageModal.querySelector('#btn-save-triage');
       const priorityOptions = triageModal.querySelectorAll('.priority-option:not(.quick)');
       const quickPriorityOptions = triageModal.querySelectorAll('.priority-option.quick');
-      
+
       if (btnClose) btnClose.addEventListener('click', closeTriageModal);
       if (btnCancel) btnCancel.addEventListener('click', closeTriageModal);
       if (btnSave) btnSave.addEventListener('click', saveTriage);
-      
+
       // Opciones de prioridad para formulario existente
       priorityOptions.forEach(option => {
         if (!option.classList.contains('quick')) {
           option.addEventListener('click', () => {
             const priority = option.dataset.priority;
             const triageLevel = TRIAGE_LEVELS[priority];
-            
+
             priorityOptions.forEach(o => {
               if (!o.classList.contains('quick')) {
                 const p = o.dataset.priority;
@@ -1617,20 +1635,20 @@ export default function mountTriage(root, { bus, store, user, role }) {
                 if (badge) badge.remove();
               }
             });
-            
+
             option.style.boxShadow = `0 0 0 2px ${triageLevel.color}`;
             option.style.transform = 'scale(1.02)';
             state.selectedPriority = priority;
           });
         }
       });
-      
+
       // Opciones de prioridad para formulario rápido
       quickPriorityOptions.forEach(option => {
         option.addEventListener('click', () => {
           const priority = option.dataset.priority;
           const triageLevel = TRIAGE_LEVELS[priority];
-          
+
           quickPriorityOptions.forEach(o => {
             const p = o.dataset.priority;
             const tl = TRIAGE_LEVELS[p];
@@ -1640,31 +1658,31 @@ export default function mountTriage(root, { bus, store, user, role }) {
             const badge = o.querySelector('.suggestion-badge');
             if (badge) badge.remove();
           });
-          
+
           option.style.boxShadow = `0 0 0 2px ${triageLevel.color}`;
           option.style.transform = 'scale(1.02)';
           state.selectedPriority = priority;
         });
       });
-      
+
       // Eventos de entrada para sugerencias
       const inputElements = [
         'symptoms', 'blood-pressure', 'heart-rate', 'temperature', 'spo2', 'respiratory-rate', 'pain-level',
         'quick-symptoms', 'quick-bp', 'quick-hr', 'quick-temp', 'quick-spo2', 'quick-rr', 'quick-pain'
       ];
-      
+
       inputElements.forEach(id => {
         const element = document.getElementById(id);
         if (element) {
           element.addEventListener('input', updatePrioritySuggestion);
         }
       });
-      
+
       // Agregar alergia en formulario rápido
       if (elements.btnQuickAddAllergy) {
         elements.btnQuickAddAllergy.addEventListener('click', () => addQuickAllergyField());
       }
-      
+
       // Pestañas internas para formulario rápido
       const quickTabBtns = triageModal.querySelectorAll('.tab-btn-sm');
       quickTabBtns.forEach(btn => {
@@ -1674,14 +1692,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
         });
       });
     }
-    
+
     // Modal de emergencia
     const emergencyModal = root.querySelector('#emergency-modal');
     if (emergencyModal) {
       const btnClose = emergencyModal.querySelector('#btn-close-emergency');
       const btnCancel = emergencyModal.querySelector('#btn-cancel-emergency');
       const btnActivate = emergencyModal.querySelector('#btn-activate-emergency');
-      
+
       if (btnClose) btnClose.addEventListener('click', closeEmergencyModal);
       if (btnCancel) btnCancel.addEventListener('click', closeEmergencyModal);
       if (btnActivate) btnActivate.addEventListener('click', activateEmergency);
@@ -1735,7 +1753,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     state.selectedPriority = null;
     state.suggestedPriority = null;
     state.isApplyingSuggestion = false;
-    
+
     // Mostrar formulario de paciente existente por defecto
     if (elements.tabExistingPatient) {
       elements.tabExistingPatient.classList.add('active');
@@ -1767,16 +1785,16 @@ export default function mountTriage(root, { bus, store, user, role }) {
     // Resetear formularios
     const form = modal.querySelector('#triage-form');
     if (form) form.reset();
-    
+
     const quickForm = modal.querySelector('#quick-patient-form');
     if (quickForm) quickForm.reset();
-    
+
     // Resetear contenedor de alergias
     if (elements.quickAllergiesContainer) {
       elements.quickAllergiesContainer.innerHTML = '';
       addQuickAllergyField(); // Una alergia por defecto
     }
-    
+
     // Resetear selección de prioridad
     const priorityOptions = modal.querySelectorAll('.priority-option');
     priorityOptions.forEach(o => {
@@ -1788,7 +1806,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       const badge = o.querySelector('.suggestion-badge');
       if (badge) badge.remove();
     });
-    
+
     // Ocultar sugerencias
     if (elements.prioritySuggestionContainer) {
       elements.prioritySuggestionContainer.style.display = 'none';
@@ -1796,7 +1814,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (elements.quickPrioritySuggestionContainer) {
       elements.quickPrioritySuggestionContainer.style.display = 'none';
     }
-    
+
     // Inicializar pestañas internas
     switchQuickTab('quick-basic');
 
@@ -1831,7 +1849,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     const patientSelect = modal.querySelector('#patient-select');
     const symptoms = modal.querySelector('#symptoms');
     const observations = modal.querySelector('#observations');
-    
+
     if (!patientSelect.value || !symptoms.value || !state.selectedPriority) {
       alert('Por favor complete todos los campos requeridos');
       return;
@@ -1867,11 +1885,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
       };
 
       await store.add('triage', triageData);
-      
+
       closeTriageModal();
       showNotification('Triage registrado correctamente', 'success');
       loadData(); // Esto actualizará automáticamente los contadores
-      
+
     } catch (error) {
       console.error('Error guardando triage:', error);
       showNotification('Error al guardar el triage', 'error');
@@ -1884,9 +1902,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!modal) return;
 
     // Validar datos básicos del paciente
-    if (!elements.quickName?.value || !elements.quickDni?.value || 
-        !elements.quickBirthdate?.value || !elements.quickGender?.value || 
-        !elements.quickPhone?.value) {
+    if (!elements.quickName?.value || !elements.quickDni?.value ||
+      !elements.quickBirthdate?.value || !elements.quickGender?.value ||
+      !elements.quickPhone?.value) {
       alert('Por favor complete los datos básicos requeridos del paciente');
       return;
     }
@@ -1954,7 +1972,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       };
 
       const newPatient = await store.add('patients', patientData);
-      
+
       // Crear triage
       const vitalSigns = {
         bloodPressure: elements.quickBp?.value || null,
@@ -1978,11 +1996,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
       };
 
       await store.add('triage', triageData);
-      
+
       closeTriageModal();
       showNotification('Paciente y triage registrados correctamente', 'success');
       loadData(); // Esto actualizará automáticamente los contadores
-      
+
     } catch (error) {
       console.error('Error guardando paciente y triage:', error);
       showNotification('Error al guardar el paciente y triage', 'error');
@@ -2041,184 +2059,192 @@ export default function mountTriage(root, { bus, store, user, role }) {
       z-index: 1000;
       padding: 1rem;
     `;
-    
+
     const triageLevel = TRIAGE_LEVELS[triageRecord.priority];
-    
+
     modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 800px; background: var(--card); border-radius: var(--radius); width: 100%; max-height: 90vh; overflow-y: auto;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border);">
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="width: 60px; height: 60px; background: ${triageLevel.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold;">
-              ${triageLevel.icon}
-            </div>
-            <div>
-              <h3 style="margin: 0; color: ${triageLevel.color};">${triageLevel.name}</h3>
-              <div style="color: var(--muted);">${triageRecord.fullName} • ${triageRecord.age} años</div>
-            </div>
-          </div>
-          <button class="btn btn-outline btn-sm" id="close-view-triage-btn">×</button>
+      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">INFORME DE CLASIFICACIÓN DE TRIAGE</div>
+          <button class="btn-close-modal" id="close-view-triage-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>
         
-        <div class="modal-body" style="padding: 1.5rem;">
-          <div class="grid grid-2" style="margin-bottom: 2rem;">
-            <div>
-              <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Información del Paciente</div>
-              <div style="background: var(--bg-light); padding: 1rem; border-radius: var(--radius);">
-                <div><strong>Nombre:</strong> ${triageRecord.fullName}</div>
-                <div><strong>Edad:</strong> ${triageRecord.age} años</div>
-                <div><strong>Género:</strong> ${triageRecord.gender === 'M' ? 'Masculino' : triageRecord.gender === 'F' ? 'Femenino' : 'Otro'}</div>
-                <div><strong>Tipo de sangre:</strong> ${triageRecord.bloodType || 'Desconocido'}</div>
-                ${triageRecord.allergies && triageRecord.allergies.length > 0 ? `
-                  <div><strong>Alergias:</strong> ${triageRecord.allergies.join(', ')}</div>
-                ` : ''}
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
+          <!-- Encabezado de Clasificación -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+              <div style="width: 70px; height: 70px; background: ${triageLevel.color}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; box-shadow: 0 4px 10px ${triageLevel.color}44;">
+                ${triageLevel.icon}
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #666; letter-spacing: 0.05em;"> NIVEL DE PRIORIDAD</div>
+                <h3 style="margin: 0; color: ${triageLevel.color}; font-size: 1.75rem; font-weight: 800;">${triageLevel.name}</h3>
+                <div style="font-size: 0.85rem; color: #888; margin-top: 0.25rem;">Tiempo objetivo: ${triageLevel.time}</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">FECHA DE REGISTRO</div>
+              <div style="font-size: 1.1rem; font-weight: 700;">${new Date(triageRecord.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              <div style="font-size: 0.9rem; color: #555;">${new Date(triageRecord.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+          </div>
+
+          <!-- Información del Paciente -->
+          <div style="background: var(--card-patient); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; border-left: 5px solid rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+              <div style="width: 45px; height: 45px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">👤</div>
+              <div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">DATOS DEL PACIENTE</div>
+                <div style="font-weight: 700; font-size: 1.25rem; color: var(--modal-text);">${triageRecord.fullName}</div>
               </div>
             </div>
             
-            <div>
-              <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Estado del Triage</div>
-              <div style="background: var(--bg-light); padding: 1rem; border-radius: var(--radius);">
-                <div><strong>Estado:</strong> 
-                  <span class="badge ${triageRecord.status === 'waiting' ? 'badge-secondary' : 
-                                       triageRecord.status === 'in_progress' ? 'badge-info' : 
-                                       'badge-success'}">
-                    ${triageRecord.status === 'waiting' ? 'Esperando' : 
-                      triageRecord.status === 'in_progress' ? 'En atención' : 'Atendido'}
-                  </span>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; font-size: 0.85rem;">
+              <div>
+                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">EDAD</div>
+                <div style="font-weight: 600;">${triageRecord.age} años</div>
+              </div>
+              <div>
+                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">GÉNERO</div>
+                <div style="font-weight: 600;">${triageRecord.gender === 'M' ? 'Masculino' : triageRecord.gender === 'F' ? 'Femenino' : 'Otro'}</div>
+              </div>
+              <div>
+                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">SANGRE</div>
+                <div style="font-weight: 600;">${triageRecord.bloodType || 'N/A'}</div>
+              </div>
+              <div>
+                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">ESTADO</div>
+                <div>
+                   <span class="badge ${triageRecord.status === 'waiting' ? 'badge-secondary' : triageRecord.status === 'in_progress' ? 'badge-info' : 'badge-success'}" style="font-size: 0.7rem; padding: 2px 8px;">
+                     ${triageRecord.status === 'waiting' ? 'En Espera' : triageRecord.status === 'in_progress' ? 'Atendiendo' : 'Completado'}
+                   </span>
                 </div>
-                <div><strong>Prioridad:</strong> ${triageLevel.name}</div>
-                <div><strong>Tiempo de espera:</strong> ${triageRecord.waitingTimeFormatted}</div>
-                <div><strong>Registrado por:</strong> ${triageRecord.triagedByName || 'N/A'}</div>
-                <div><strong>Hora de registro:</strong> ${new Date(triageRecord.createdAt).toLocaleString('es-ES')}</div>
+              </div>
+            </div>
+            
+            ${triageRecord.allergies && triageRecord.allergies.length > 0 ? `
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dotted rgba(0,0,0,0.1);">
+                <div style="font-weight: 700; color: #e53e3e; font-size: 0.7rem;">ALERGIAS</div>
+                <div style="font-weight: 600; color: #e53e3e;">${triageRecord.allergies.join(', ')}</div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Cuadro Clínico -->
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                📋 SÍNTOMAS Y MOTIVO
+              </div>
+              <div style="background: var(--modal-section-gold-light); border: 1px solid var(--modal-section-gold); border-radius: 6px; padding: 1.25rem;">
+                <div style="font-size: 0.95rem; line-height: 1.6; color: #444;">${triageRecord.symptoms || 'No especificado'}</div>
+                ${triageRecord.observations ? `
+                  <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(184, 134, 11, 0.2);">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--modal-highlight); margin-bottom: 0.5rem;">OBSERVACIONES MÉDICAS</div>
+                    <div style="font-size: 0.9rem; font-style: italic;">${triageRecord.observations}</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                💓 SIGNOS VITALES
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  ${triageRecord.vitalSigns?.bloodPressure ? `
+                    <div>
+                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">TENSIÓN ART.</div>
+                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.bloodPressure}</div>
+                    </div>
+                  ` : ''}
+                  ${triageRecord.vitalSigns?.heartRate ? `
+                    <div>
+                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">FRECUENCIA C.</div>
+                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.heartRate} LPM</div>
+                    </div>
+                  ` : ''}
+                  ${triageRecord.vitalSigns?.temperature ? `
+                    <div>
+                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">TEMPERATURA</div>
+                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.temperature} °C</div>
+                    </div>
+                  ` : ''}
+                  ${triageRecord.vitalSigns?.spo2 ? `
+                    <div>
+                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SAT. O₂</div>
+                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.spo2} %</div>
+                    </div>
+                  ` : ''}
+                </div>
               </div>
             </div>
           </div>
-          
-          <div style="margin-bottom: 2rem;">
-            <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Síntomas y Observaciones</div>
-            <div style="background: var(--bg-light); padding: 1rem; border-radius: var(--radius);">
-              <div><strong>Síntomas principales:</strong></div>
-              <p style="margin: 0.5rem 0 1rem 0;">${triageRecord.symptoms || 'No especificado'}</p>
-              
-              ${triageRecord.observations ? `
-                <div><strong>Observaciones:</strong></div>
-                <p style="margin: 0.5rem 0 0 0;">${triageRecord.observations}</p>
-              ` : ''}
+
+          <!-- Auditoría -->
+          <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; justify-content: space-between; font-size: 0.75rem; color: #999;">
+            <div>
+              <div style="font-weight: 700; color: #666;">REALIZADO POR</div>
+              <div style="font-weight: 500;">${triageRecord.triagedByName || 'Personal de Urgencias'}</div>
             </div>
-          </div>
-          
-          ${triageRecord.vitalSigns ? `
-            <div style="margin-bottom: 2rem;">
-              <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Signos Vitales</div>
-              <div class="grid grid-3" style="background: var(--bg-light); padding: 1rem; border-radius: var(--radius);">
-                ${triageRecord.vitalSigns.bloodPressure ? `
-                  <div style="text-align: center;">
-                    <div style="font-size: 0.875rem; color: var(--muted);">Presión Arterial</div>
-                    <div style="font-size: 1.25rem; font-weight: bold;">${triageRecord.vitalSigns.bloodPressure}</div>
-                  </div>
-                ` : ''}
-                
-                ${triageRecord.vitalSigns.heartRate ? `
-                  <div style="text-align: center;">
-                    <div style="font-size: 0.875rem; color: var(--muted);">Frecuencia Cardíaca</div>
-                    <div style="font-size: 1.25rem; font-weight: bold;">${triageRecord.vitalSigns.heartRate} lpm</div>
-                  </div>
-                ` : ''}
-                
-                ${triageRecord.vitalSigns.temperature ? `
-                  <div style="text-align: center;">
-                    <div style="font-size: 0.875rem; color: var(--muted);">Temperatura</div>
-                    <div style="font-size: 1.25rem; font-weight: bold;">${triageRecord.vitalSigns.temperature}°C</div>
-                  </div>
-                ` : ''}
-                
-                ${triageRecord.vitalSigns.spo2 ? `
-                  <div style="text-align: center;">
-                    <div style="font-size: 0.875rem; color: var(--muted);">Saturación O₂</div>
-                    <div style="font-size: 1.25rem; font-weight: bold;">${triageRecord.vitalSigns.spo2}%</div>
-                  </div>
-                ` : ''}
-                
-                ${triageRecord.vitalSigns.respiratoryRate ? `
-                  <div style="text-align: center;">
-                    <div style="font-size: 0.875rem; color: var(--muted);">Frecuencia Respiratoria</div>
-                    <div style="font-size: 1.25rem; font-weight: bold;">${triageRecord.vitalSigns.respiratoryRate} rpm</div>
-                  </div>
-                ` : ''}
-                
-                ${triageRecord.vitalSigns.painLevel ? `
-                  <div style="text-align: center;">
-                    <div style="font-size: 0.875rem; color: var(--muted);">Nivel de Dolor</div>
-                    <div style="font-size: 1.25rem; font-weight: bold;">${triageRecord.vitalSigns.painLevel}/10</div>
-                  </div>
-                ` : ''}
-              </div>
-            </div>
-          ` : ''}
-          
-          <div>
-            <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Criterios Aplicados</div>
-            <div style="background: var(--bg-light); padding: 1rem; border-radius: var(--radius);">
-              <div style="font-size: 0.9rem;">${triageLevel.criteria.join(', ')}</div>
-              <div style="font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem;">
-                Tiempo objetivo de atención: ${triageLevel.time}
-              </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700; color: #666;">TIEMPO EN ESPERA</div>
+              <div style="font-weight: 600; color: #4a5568;">${triageRecord.waitingTimeFormatted}</div>
             </div>
           </div>
         </div>
         
-        <div class="modal-footer" style="padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between;">
-          <div style="font-size: 0.75rem; color: var(--muted);">
-            ID: ${triageRecord.id} • Última actualización: ${new Date(triageRecord.updatedAt || triageRecord.createdAt).toLocaleString('es-ES')}
-          </div>
-          <div class="flex gap-2">
-            <button class="btn btn-outline" id="close-view-triage-btn-2">Cerrar</button>
-            ${triageRecord.status === 'waiting' ? `
-              <button class="btn btn-primary" id="btn-start-from-view" data-id="${triageRecord.id}">
-                Iniciar Atención
-              </button>
-            ` : triageRecord.status === 'in_progress' ? `
-              <button class="btn btn-success" id="btn-complete-from-view" data-id="${triageRecord.id}">
-                Completar Atención
-              </button>
-            ` : ''}
-          </div>
+        <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+          <button class="btn" id="close-view-triage-btn-2" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CERRAR</button>
+          
+          ${triageRecord.status === 'waiting' ? `
+            <button class="btn" id="btn-start-from-view" data-id="${triageRecord.id}" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+              INICIAR ATENCIÓN
+            </button>
+          ` : triageRecord.status === 'in_progress' ? `
+            <button class="btn" id="btn-complete-from-view" data-id="${triageRecord.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700;">
+              COMPLETAR ATENCIÓN
+            </button>
+          ` : ''}
         </div>
       </div>
     `;
-    
+
     // Agregar al DOM
     document.body.appendChild(modalContainer);
-    
+
     // Configurar event listeners
     const closeModal = () => modalContainer.remove();
-    
+
     const closeBtn1 = modalContainer.querySelector('#close-view-triage-btn');
     const closeBtn2 = modalContainer.querySelector('#close-view-triage-btn-2');
     const startBtn = modalContainer.querySelector('#btn-start-from-view');
     const completeBtn = modalContainer.querySelector('#btn-complete-from-view');
-    
+
     if (closeBtn1) closeBtn1.addEventListener('click', closeModal);
     if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
-    
+
     if (startBtn) {
       startBtn.addEventListener('click', () => {
         closeModal();
         startTriage(triageRecord);
       });
     }
-    
+
     if (completeBtn) {
       completeBtn.addEventListener('click', () => {
         closeModal();
         completeTriage(triageRecord);
       });
     }
-    
+
     // Cerrar al hacer clic fuera o con ESC
     modalContainer.addEventListener('click', (e) => {
       if (e.target === modalContainer) closeModal();
     });
-    
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
@@ -2263,12 +2289,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
       await store.add('emergency_alerts', emergencyAlert);
       closeEmergencyModal();
-      
+
       // Mostrar alerta visual
       showEmergencyAlert(type, location);
-      
+
       showNotification('Alerta de emergencia activada', 'success');
-      
+
     } catch (error) {
       showNotification('Error al activar alerta', 'error');
     }
@@ -2323,12 +2349,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // Exportar a PDF (FUNCIÓN COMPLETA Y MEJORADA)
   function exportToPDF() {
     if (state.isExportingPDF) return;
-    
+
     state.isExportingPDF = true;
-    
+
     try {
       // Verificar si jsPDF está disponible
-      if (typeof jsPDF === 'undefined') {
+      if (typeof window.jspdf === 'undefined') {
         // Cargar jsPDF dinámicamente
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -2354,480 +2380,488 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
   // FUNCIÓN MEJORADA: Generar PDF formal para hospital
   // FUNCIÓN MEJORADA: Generar PDF formal para hospital - VERSIÓN CORREGIDA
-function generatePDF() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    
-    // Configuración
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 15;
-    const contentWidth = pageWidth - 2 * margin;
-    const lineHeight = 5;
-    
-    // Función auxiliar para establecer colores de forma segura
-    const safeSetFillColor = (color) => {
-      try {
-        if (Array.isArray(color) && color.length === 3) {
-          doc.setFillColor(color[0], color[1], color[2]);
-        } else if (typeof color === 'string' && color.startsWith('#')) {
-          const hex = color.replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          doc.setFillColor(r, g, b);
-        } else if (typeof color === 'number') {
-          doc.setFillColor(color, color, color);
-        } else {
-          doc.setFillColor(0, 0, 0); // Negro por defecto
-        }
-      } catch (error) {
-        console.warn('Error al establecer color:', color, error);
-        doc.setFillColor(0, 0, 0);
-      }
-    };
-    
-    const safeSetTextColor = (color) => {
-      try {
-        if (Array.isArray(color) && color.length === 3) {
-          doc.setTextColor(color[0], color[1], color[2]);
-        } else if (typeof color === 'string' && color.startsWith('#')) {
-          const hex = color.replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          doc.setTextColor(r, g, b);
-        } else if (typeof color === 'number') {
-          doc.setTextColor(color, color, color);
-        } else {
-          doc.setTextColor(0, 0, 0);
-        }
-      } catch (error) {
-        console.warn('Error al establecer color de texto:', color, error);
-        doc.setTextColor(0, 0, 0);
-      }
-    };
-    
-    // --- ENCABEZADO FORMAL ---
-    doc.setFontSize(16);
-    doc.setTextColor(0, 51, 102);
-    doc.setFont('helvetica', 'bold');
-    doc.text('HOSPITAL CENTRAL', pageWidth / 2, margin, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setTextColor(102, 102, 102);
-    doc.setFont('helvetica', 'normal');
-    doc.text('SERVICIO DE URGENCIAS - SISTEMA DE TRIAGE', pageWidth / 2, margin + 6, { align: 'center' });
-    doc.text('Reporte Oficial', pageWidth / 2, margin + 11, { align: 'center' });
-    
-    // Línea separadora
-    doc.setDrawColor(0, 51, 102);
-    doc.setLineWidth(0.5);
-    doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
-    
-    let yPos = margin + 25;
-    
-    // --- INFORMACIÓN DEL REPORTE ---
-    doc.setFontSize(9);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INFORMACIÓN DEL REPORTE', margin, yPos);
-    yPos += 5;
-    
-    doc.setFont('helvetica', 'normal');
-    const reportInfo = [
-      `Fecha de generación: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`,
-      `Generado por: ${user.name} (${user.role || 'Personal médico'})`,
-      `Período: Últimas 24 horas`,
-      `Hospital: Hospital Central - Servicio de Urgencias`
-    ];
-    
-    reportInfo.forEach((text, i) => {
-      const colWidth = contentWidth / 2;
-      const xPos = margin + (i % 2) * colWidth;
-      const rowY = yPos + Math.floor(i / 2) * lineHeight;
-      doc.text(text, xPos, rowY);
-    });
-    
-    yPos += 10 + Math.ceil(reportInfo.length / 2) * lineHeight;
-    
-    // --- RESUMEN ESTADÍSTICO EN TABLA COMPACTA ---
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RESUMEN ESTADÍSTICO', margin, yPos);
-    yPos += 8;
-    
-    // Tabla de estadísticas
-    const statsData = [
-      ['MÉTRICA', 'VALOR', 'OBSERVACIÓN'],
-      ['Pacientes totales', `${state.stats.total || 0}`, 'Todos los casos'],
-      ['En espera', `${state.stats.waiting || 0}`, 'Pendientes de atención'],
-      ['En atención', `${state.stats.in_progress || 0}`, 'Actualmente siendo atendidos'],
-      ['Atendidos', `${state.stats.completed || 0}`, 'Finalizados'],
-      ['Tiempo promedio', `${state.stats.averageWaitingTime || 0} min`, 'Espera promedio'],
-      ['Tiempo máximo', `${state.stats.maxWaitingTime || 0} min`, 'Caso más crítico']
-    ];
-    
-    const colWidths = [50, 30, 70];
-    const rowHeight = 7;
-    
-    // Encabezado de tabla
-    safeSetFillColor([0, 51, 102]);
-    doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    
-    let xOffset = margin;
-    statsData[0].forEach((header, i) => {
-      doc.text(header, xOffset + 2, yPos);
-      xOffset += colWidths[i];
-    });
-    
-    yPos += rowHeight;
-    
-    // Filas de datos
-    doc.setFont('helvetica', 'normal');
-    statsData.slice(1).forEach((row, rowIndex) => {
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = margin + 10;
-      }
-      
-      // Fondo alternado
-      safeSetFillColor(rowIndex % 2 === 0 ? [245, 245, 245] : [255, 255, 255]);
-      doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
-      
-      doc.setTextColor(0, 0, 0);
-      
-      xOffset = margin;
-      row.forEach((cell, colIndex) => {
-        doc.text(cell.toString(), xOffset + 2, yPos);
-        xOffset += colWidths[colIndex];
-      });
-      
-      yPos += rowHeight;
-    });
-    
-    yPos += 10;
-    
-    // --- DISTRIBUCIÓN POR PRIORIDAD ---
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
-    doc.text('DISTRIBUCIÓN POR NIVEL DE PRIORIDAD', margin, yPos);
-    yPos += 8;
-    
-    // Tabla de prioridades
-    const priorityData = Object.entries(TRIAGE_LEVELS).map(([key, level]) => ({
-      priority: key,
-      name: level.name.split(' - ')[1] || level.name,
-      color: TRIAGE_LEVELS_RGB[key] || [0, 0, 0],
-      count: state.stats.byPriority?.[key] || 0,
-      time: level.time
-    }));
-    
-    const priorityColWidths = [25, 50, 25, 40, 30];
-    
-    // Encabezado
-    safeSetFillColor([77, 77, 77]);
-    doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.text('NIVEL', margin + 2, yPos);
-    doc.text('DESCRIPCIÓN', margin + 27, yPos);
-    doc.text('PAC.', margin + 77, yPos);
-    doc.text('TIEMPO OBJ.', margin + 102, yPos);
-    doc.text('%', margin + 142, yPos);
-    
-    yPos += rowHeight;
-    
-    // Calcular porcentajes
-    const totalPriorityPatients = priorityData.reduce((sum, item) => sum + item.count, 0);
-    
-    // Filas de prioridades
-    priorityData.forEach((item, index) => {
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = margin + 10;
-      }
-      
-      // Fondo alternado
-      safeSetFillColor(index % 2 === 0 ? [250, 250, 250] : [255, 255, 255]);
-      doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
-      
-      // Color de la prioridad
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'bold');
-      doc.text(item.priority.toUpperCase(), margin + 2, yPos);
-      
-      doc.setFont('helvetica', 'normal');
-      doc.text(item.name, margin + 27, yPos);
-      doc.text(item.count.toString(), margin + 77, yPos);
-      doc.text(item.time, margin + 102, yPos);
-      
-      // Porcentaje
-      const percentage = totalPriorityPatients > 0 ? 
-        Math.round((item.count / totalPriorityPatients) * 100) : 0;
-      doc.text(`${percentage}%`, margin + 142, yPos);
-      
-      // Barra de porcentaje visual
-      const barWidth = 30;
-      const barHeight = 3;
-      const fillWidth = (percentage / 100) * barWidth;
-      
-      // Fondo de la barra
-      safeSetFillColor([230, 230, 230]);
-      doc.rect(margin + 150, yPos - 2, barWidth, barHeight, 'F');
-      
-      // Barra de progreso con color de la prioridad - CORREGIDO
-      const rgbColor = item.color;
-      safeSetFillColor(rgbColor);
-      doc.rect(margin + 150, yPos - 2, fillWidth, barHeight, 'F');
-      
-      yPos += rowHeight;
-    });
-    
-    yPos += 10;
-    
-    // --- LISTA DETALLADA DE PACIENTES EN ESPERA ---
-    if (state.filteredPatients && state.filteredPatients.length > 0) {
-      const waitingPatients = state.filteredPatients.filter(p => p.status === 'waiting');
-      
-      if (waitingPatients.length > 0) {
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PACIENTES EN ESPERA DE ATENCIÓN', margin, yPos);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`(Ordenados por prioridad y tiempo de espera)`, margin, yPos + 4);
-        yPos += 12;
-        
-        // Encabezado compacto
-        const patientColWidths = [45, 20, 15, 35, 35, 25];
-        
-        safeSetFillColor([77, 77, 77]);
-        doc.rect(margin, yPos - 3, contentWidth, 6, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(7);
-        
-        let xPos = margin + 2;
-        const headers = ['PACIENTE', 'EDAD', 'GÉN.', 'PRIORIDAD', 'SÍNTOMAS PRINCIPALES', 'ESPERA'];
-        headers.forEach((header, i) => {
-          doc.text(header, xPos, yPos);
-          xPos += patientColWidths[i];
-        });
-        
-        yPos += 6;
-        
-        // Datos de pacientes
-        doc.setFontSize(7);
-        waitingPatients.forEach((patient, index) => {
-          if (yPos > 270) {
-            doc.addPage();
-            yPos = margin + 10;
-            // Repetir encabezado en nueva página
-            safeSetFillColor([77, 77, 77]);
-            doc.rect(margin, yPos - 3, contentWidth, 6, 'F');
-            doc.setTextColor(255, 255, 255);
-            
-            xPos = margin + 2;
-            headers.forEach((header, i) => {
-              doc.text(header, xPos, yPos);
-              xPos += patientColWidths[i];
-            });
-            
-            yPos += 6;
+  function generatePDF() {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+
+      // Configuración
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 15;
+      const contentWidth = pageWidth - 2 * margin;
+      const lineHeight = 5;
+
+      // Función auxiliar para convertir a escala de grises
+      const toGrayscale = (r, g, b) => {
+        const gsc = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+        return [gsc, gsc, gsc];
+      };
+
+      // Función auxiliar para establecer colores de forma segura (SOPORTA ESCALA DE GRISES)
+      const safeSetFillColor = (color) => {
+        try {
+          let r, g, b;
+          if (Array.isArray(color) && color.length === 3) {
+            [r, g, b] = color;
+          } else if (typeof color === 'string' && color.startsWith('#')) {
+            const hex = color.replace('#', '');
+            r = parseInt(hex.substring(0, 2), 16);
+            g = parseInt(hex.substring(2, 4), 16);
+            b = parseInt(hex.substring(4, 6), 16);
+          } else if (typeof color === 'number') {
+            [r, g, b] = [color, color, color];
+          } else {
+            [r, g, b] = [0, 0, 0];
           }
-          
-          // Fondo alternado
-          safeSetFillColor(index % 2 === 0 ? [255, 255, 255] : [250, 250, 250]);
-          doc.rect(margin, yPos - 2, contentWidth, 5, 'F');
-          
-          // Color según prioridad
-          const rgbColor = TRIAGE_LEVELS_RGB[patient.priority] || [0, 0, 0];
-          safeSetTextColor(rgbColor);
-          doc.setFont('helvetica', 'bold');
-          
-          xPos = margin + 2;
-          
-          // Nombre
-          const shortName = patient.fullName.length > 20 ? 
-            patient.fullName.substring(0, 20) + '...' : patient.fullName;
-          doc.text(shortName, xPos, yPos);
-          xPos += patientColWidths[0];
-          
-          // Edad y género
+          const [gr, gg, gb] = toGrayscale(r, g, b);
+          doc.setFillColor(gr, gg, gb);
+        } catch (error) {
+          doc.setFillColor(0, 0, 0);
+        }
+      };
+
+      const safeSetTextColor = (color) => {
+        try {
+          let r, g, b;
+          if (Array.isArray(color) && color.length === 3) {
+            [r, g, b] = color;
+          } else if (typeof color === 'string' && color.startsWith('#')) {
+            const hex = color.replace('#', '');
+            r = parseInt(hex.substring(0, 2), 16);
+            g = parseInt(hex.substring(2, 4), 16);
+            b = parseInt(hex.substring(4, 6), 16);
+          } else if (typeof color === 'number') {
+            [r, g, b] = [color, color, color];
+          } else {
+            [r, g, b] = [0, 0, 0];
+          }
+          const [gr, gg, gb] = toGrayscale(r, g, b);
+          doc.setTextColor(gr, gg, gb);
+        } catch (error) {
           doc.setTextColor(0, 0, 0);
-          doc.setFont('helvetica', 'normal');
-          doc.text(patient.age.toString(), xPos, yPos);
-          xPos += patientColWidths[1];
-          
-          const genderSymbol = patient.gender === 'M' ? '♂' : patient.gender === 'F' ? '♀' : '⚧';
-          doc.text(genderSymbol, xPos, yPos);
-          xPos += patientColWidths[2];
-          
-          // Prioridad
-          doc.setFont('helvetica', 'bold');
-          safeSetTextColor(rgbColor);
-          const shortPriority = patient.priority.toUpperCase();
-          doc.text(shortPriority, xPos, yPos);
-          xPos += patientColWidths[3];
-          
-          // Síntomas
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(0, 0, 0);
-          const shortSymptoms = patient.symptoms ? 
-            (patient.symptoms.length > 25 ? patient.symptoms.substring(0, 25) + '...' : patient.symptoms) : 
-            'No especificado';
-          doc.text(shortSymptoms, xPos, yPos);
-          xPos += patientColWidths[4];
-          
-          // Tiempo de espera
-          const waitingColor = patient.waitingTime > 7200000 ? 
-            [220, 38, 38] : [0, 0, 0];
-          doc.setTextColor(waitingColor[0], waitingColor[1], waitingColor[2]);
-          doc.text(patient.waitingTimeFormatted, xPos, yPos);
-          
-          yPos += 5;
+        }
+      };
+
+      // --- ENCABEZADO FORMAL ---
+      doc.setFontSize(16);
+      safeSetTextColor([0, 51, 102]);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HOSPITAL CENTRAL', pageWidth / 2, margin, { align: 'center' });
+
+      doc.setFontSize(10);
+      safeSetTextColor([102, 102, 102]);
+      doc.setFont('helvetica', 'normal');
+      doc.text('SERVICIO DE URGENCIAS - SISTEMA DE TRIAGE', pageWidth / 2, margin + 6, { align: 'center' });
+      doc.text('Reporte Oficial', pageWidth / 2, margin + 11, { align: 'center' });
+
+      // Línea separadora
+      const [gr, gg, gb] = toGrayscale(0, 51, 102);
+      doc.setDrawColor(gr, gg, gb);
+      doc.setLineWidth(0.5);
+      doc.line(margin, margin + 15, pageWidth - margin, margin + 15);
+
+      let yPos = margin + 25;
+
+      // --- INFORMACIÓN DEL REPORTE ---
+      doc.setFontSize(9);
+      safeSetTextColor([0, 0, 0]);
+      doc.setFont('helvetica', 'bold');
+      doc.text('INFORMACIÓN DEL REPORTE', margin, yPos);
+      yPos += 5;
+
+      doc.setFont('helvetica', 'normal');
+      const reportInfo = [
+        `Fecha de generación: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`,
+        `Generado por: ${user.name} (${user.role || 'Personal médico'})`,
+        `Período: Últimas 24 horas`,
+        `Hospital: Hospital Central - Servicio de Urgencias`
+      ];
+
+      reportInfo.forEach((text, i) => {
+        const colWidth = contentWidth / 2;
+        const xPos = margin + (i % 2) * colWidth;
+        const rowY = yPos + Math.floor(i / 2) * lineHeight;
+        doc.text(text, xPos, rowY);
+      });
+
+      yPos += 10 + Math.ceil(reportInfo.length / 2) * lineHeight;
+
+      // --- RESUMEN ESTADÍSTICO EN TABLA COMPACTA ---
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RESUMEN ESTADÍSTICO', margin, yPos);
+      yPos += 8;
+
+      // Tabla de estadísticas
+      const statsData = [
+        ['MÉTRICA', 'VALOR', 'OBSERVACIÓN'],
+        ['Pacientes totales', `${state.stats.total || 0}`, 'Todos los casos'],
+        ['En espera', `${state.stats.waiting || 0}`, 'Pendientes de atención'],
+        ['En atención', `${state.stats.in_progress || 0}`, 'Actualmente siendo atendidos'],
+        ['Atendidos', `${state.stats.completed || 0}`, 'Finalizados'],
+        ['Tiempo promedio', `${state.stats.averageWaitingTime || 0} min`, 'Espera promedio'],
+        ['Tiempo máximo', `${state.stats.maxWaitingTime || 0} min`, 'Caso más crítico']
+      ];
+
+      const colWidths = [50, 30, 70];
+      const rowHeight = 7;
+
+      // Encabezado de tabla
+      safeSetFillColor([0, 51, 102]);
+      doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
+      safeSetTextColor([255, 255, 255]);
+      doc.setFont('helvetica', 'bold');
+
+      let xOffset = margin;
+      statsData[0].forEach((header, i) => {
+        doc.text(header, xOffset + 2, yPos);
+        xOffset += colWidths[i];
+      });
+
+      yPos += rowHeight;
+
+      // Filas de datos
+      doc.setFont('helvetica', 'normal');
+      statsData.slice(1).forEach((row, rowIndex) => {
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = margin + 10;
+        }
+
+        // Fondo alternado
+        safeSetFillColor(rowIndex % 2 === 0 ? [245, 245, 245] : [255, 255, 255]);
+        doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
+
+        safeSetTextColor([0, 0, 0]);
+
+        xOffset = margin;
+        row.forEach((cell, colIndex) => {
+          doc.text(cell.toString(), xOffset + 2, yPos);
+          xOffset += colWidths[colIndex];
         });
-        
-        yPos += 10;
+
+        yPos += rowHeight;
+      });
+
+      yPos += 10;
+
+      // --- DISTRIBUCIÓN POR PRIORIDAD ---
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      safeSetTextColor([0, 0, 0]);
+      doc.text('DISTRIBUCIÓN POR NIVEL DE PRIORIDAD', margin, yPos);
+      yPos += 8;
+
+      // Tabla de prioridades
+      const priorityData = Object.entries(TRIAGE_LEVELS).map(([key, level]) => ({
+        priority: key,
+        name: level.name.split(' - ')[1] || level.name,
+        color: TRIAGE_LEVELS_RGB[key] || [0, 0, 0],
+        count: state.stats.byPriority?.[key] || 0,
+        time: level.time
+      }));
+
+      const priorityColWidths = [25, 50, 25, 40, 30];
+
+      // Encabezado
+      safeSetFillColor([77, 77, 77]);
+      doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
+      safeSetTextColor([255, 255, 255]);
+      doc.text('NIVEL', margin + 2, yPos);
+      doc.text('DESCRIPCIÓN', margin + 27, yPos);
+      doc.text('PAC.', margin + 77, yPos);
+      doc.text('TIEMPO OBJ.', margin + 102, yPos);
+      doc.text('%', margin + 142, yPos);
+
+      yPos += rowHeight;
+
+      // Calcular porcentajes
+      const totalPriorityPatients = priorityData.reduce((sum, item) => sum + item.count, 0);
+
+      // Filas de prioridades
+      priorityData.forEach((item, index) => {
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = margin + 10;
+        }
+
+        // Fondo alternado
+        safeSetFillColor(index % 2 === 0 ? [250, 250, 250] : [255, 255, 255]);
+        doc.rect(margin, yPos - 3, contentWidth, rowHeight, 'F');
+
+        // Color de la prioridad
+        safeSetTextColor([0, 0, 0]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(item.priority.toUpperCase(), margin + 2, yPos);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(item.name, margin + 27, yPos);
+        doc.text(item.count.toString(), margin + 77, yPos);
+        doc.text(item.time, margin + 102, yPos);
+
+        // Porcentaje
+        const percentage = totalPriorityPatients > 0 ?
+          Math.round((item.count / totalPriorityPatients) * 100) : 0;
+        doc.text(`${percentage}%`, margin + 142, yPos);
+
+        // Barra de porcentaje visual
+        const barWidth = 30;
+        const barHeight = 3;
+        const fillWidth = (percentage / 100) * barWidth;
+
+        // Fondo de la barra
+        safeSetFillColor([230, 230, 230]);
+        doc.rect(margin + 150, yPos - 2, barWidth, barHeight, 'F');
+
+        // Barra de progreso con color de la prioridad - CORREGIDO
+        safeSetFillColor(item.color);
+        doc.rect(margin + 150, yPos - 2, fillWidth, barHeight, 'F');
+
+        yPos += rowHeight;
+      });
+
+      yPos += 10;
+
+      // --- LISTA DETALLADA DE PACIENTES EN ESPERA ---
+      if (state.filteredPatients && state.filteredPatients.length > 0) {
+        const waitingPatients = state.filteredPatients.filter(p => p.status === 'waiting');
+
+        if (waitingPatients.length > 0) {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text('PACIENTES EN ESPERA DE ATENCIÓN', margin, yPos);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`(Ordenados por prioridad y tiempo de espera)`, margin, yPos + 4);
+          yPos += 12;
+
+          // Encabezado compacto
+          const patientColWidths = [45, 20, 15, 35, 35, 25];
+
+          safeSetFillColor([77, 77, 77]);
+          doc.rect(margin, yPos - 3, contentWidth, 6, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(7);
+
+          let xPos = margin + 2;
+          const headers = ['PACIENTE', 'EDAD', 'GÉN.', 'PRIORIDAD', 'SÍNTOMAS PRINCIPALES', 'ESPERA'];
+          headers.forEach((header, i) => {
+            doc.text(header, xPos, yPos);
+            xPos += patientColWidths[i];
+          });
+
+          yPos += 6;
+
+          // Datos de pacientes
+          doc.setFontSize(7);
+          waitingPatients.forEach((patient, index) => {
+            if (yPos > 270) {
+              doc.addPage();
+              yPos = margin + 10;
+              // Repetir encabezado en nueva página
+              safeSetFillColor([77, 77, 77]);
+              doc.rect(margin, yPos - 3, contentWidth, 6, 'F');
+              doc.setTextColor(255, 255, 255);
+
+              xPos = margin + 2;
+              headers.forEach((header, i) => {
+                doc.text(header, xPos, yPos);
+                xPos += patientColWidths[i];
+              });
+
+              yPos += 6;
+            }
+
+            // Fondo alternado
+            safeSetFillColor(index % 2 === 0 ? [255, 255, 255] : [250, 250, 250]);
+            doc.rect(margin, yPos - 2, contentWidth, 5, 'F');
+
+            // Color según prioridad
+            const rgbColor = TRIAGE_LEVELS_RGB[patient.priority] || [0, 0, 0];
+            safeSetTextColor(rgbColor);
+            doc.setFont('helvetica', 'bold');
+
+            xPos = margin + 2;
+
+            // Nombre
+            const shortName = patient.fullName.length > 20 ?
+              patient.fullName.substring(0, 20) + '...' : patient.fullName;
+            doc.text(shortName, xPos, yPos);
+            xPos += patientColWidths[0];
+
+            // Edad y género
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            doc.text(patient.age.toString(), xPos, yPos);
+            xPos += patientColWidths[1];
+
+            const genderSymbol = patient.gender === 'M' ? '♂' : patient.gender === 'F' ? '♀' : '⚧';
+            doc.text(genderSymbol, xPos, yPos);
+            xPos += patientColWidths[2];
+
+            // Prioridad
+            doc.setFont('helvetica', 'bold');
+            safeSetTextColor(rgbColor);
+            const shortPriority = patient.priority.toUpperCase();
+            doc.text(shortPriority, xPos, yPos);
+            xPos += patientColWidths[3];
+
+            // Síntomas
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(0, 0, 0);
+            const shortSymptoms = patient.symptoms ?
+              (patient.symptoms.length > 25 ? patient.symptoms.substring(0, 25) + '...' : patient.symptoms) :
+              'No especificado';
+            doc.text(shortSymptoms, xPos, yPos);
+            xPos += patientColWidths[4];
+
+            // Tiempo de espera
+            const waitingColor = patient.waitingTime > 7200000 ?
+              [220, 38, 38] : [0, 0, 0];
+            doc.setTextColor(waitingColor[0], waitingColor[1], waitingColor[2]);
+            doc.text(patient.waitingTimeFormatted, xPos, yPos);
+
+            yPos += 5;
+          });
+
+          yPos += 10;
+        }
       }
-    }
-    
-    // --- ANÁLISIS Y RECOMENDACIONES ---
-    if (yPos > 200) {
-      doc.addPage();
-      yPos = margin + 10;
-    }
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 51, 102);
-    doc.text('ANÁLISIS Y RECOMENDACIONES', margin, yPos);
-    yPos += 8;
-    
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
-    
-    const recommendations = [];
-    
-    // Análisis basado en estadísticas
-    if (state.stats.waiting > 10) {
-      recommendations.push(`• Alto volumen de pacientes en espera (${state.stats.waiting}). Considere activar personal adicional.`);
-    }
-    
-    if (state.stats.maxWaitingTime > 120) {
-      recommendations.push(`• Paciente(s) con espera crítica (>${state.stats.maxWaitingTime} min). Revisión inmediata requerida.`);
-    }
-    
-    if (state.stats.byPriority?.red > 0) {
-      recommendations.push(`• ${state.stats.byPriority.red} paciente(s) en nivel ROJO. Atención inmediata obligatoria.`);
-    }
-    
-    if (state.stats.byPriority?.orange > 3) {
-      recommendations.push(`• ${state.stats.byPriority.orange} paciente(s) en nivel NARANJA. Atención prioritaria recomendada.`);
-    }
-    
-    // Recomendaciones generales si no hay específicas
-    if (recommendations.length === 0) {
-      recommendations.push(
-        '• Situación controlada en el servicio de urgencias.',
-        '• Tiempos de espera dentro de parámetros aceptables.',
-        '• Continuar con el protocolo estándar de atención.'
-      );
-    }
-    
-    recommendations.push(
-      '• Este reporte es un documento oficial del Hospital Central.',
-      '• Los tiempos son aproximados y pueden variar según la situación clínica.'
-    );
-    
-    recommendations.forEach((rec, i) => {
-      if (yPos > 270) {
+
+      // --- ANÁLISIS Y RECOMENDACIONES ---
+      if (yPos > 200) {
         doc.addPage();
         yPos = margin + 10;
       }
-      doc.text(rec, margin + 5, yPos);
-      yPos += 5;
-    });
-    
-    yPos += 10;
-    
-    // --- FIRMA Y VALIDACIÓN ---
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.2);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 10;
-    
-    doc.setFontSize(8);
-    doc.setTextColor(102, 102, 102);
-    doc.text('Documento generado automáticamente por el Sistema de Triage del Hospital Central', 
-             pageWidth / 2, yPos, { align: 'center' });
-    yPos += 4;
-    doc.text('Válido como documentación interna del servicio de urgencias', 
-             pageWidth / 2, yPos, { align: 'center' });
-    yPos += 4;
-    doc.text(`ID de reporte: TRI-${Date.now().toString().slice(-8)}`, 
-             pageWidth / 2, yPos, { align: 'center' });
-    
-    // --- PIE DE PÁGINA EN TODAS LAS PÁGINAS ---
-    const totalPages = doc.internal.getNumberOfPages();
-    
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      
-      // Número de página
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 51, 102);
+      doc.text('ANÁLISIS Y RECOMENDACIONES', margin, yPos);
+      yPos += 8;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+
+      const recommendations = [];
+
+      // Análisis basado en estadísticas
+      if (state.stats.waiting > 10) {
+        recommendations.push(`• Alto volumen de pacientes en espera (${state.stats.waiting}). Considere activar personal adicional.`);
+      }
+
+      if (state.stats.maxWaitingTime > 120) {
+        recommendations.push(`• Paciente(s) con espera crítica (>${state.stats.maxWaitingTime} min). Revisión inmediata requerida.`);
+      }
+
+      if (state.stats.byPriority?.red > 0) {
+        recommendations.push(`• ${state.stats.byPriority.red} paciente(s) en nivel ROJO. Atención inmediata obligatoria.`);
+      }
+
+      if (state.stats.byPriority?.orange > 3) {
+        recommendations.push(`• ${state.stats.byPriority.orange} paciente(s) en nivel NARANJA. Atención prioritaria recomendada.`);
+      }
+
+      // Recomendaciones generales si no hay específicas
+      if (recommendations.length === 0) {
+        recommendations.push(
+          '• Situación controlada en el servicio de urgencias.',
+          '• Tiempos de espera dentro de parámetros aceptables.',
+          '• Continuar con el protocolo estándar de atención.'
+        );
+      }
+
+      recommendations.push(
+        '• Este reporte es un documento oficial del Hospital Central.',
+        '• Los tiempos son aproximados y pueden variar según la situación clínica.'
+      );
+
+      recommendations.forEach((rec, i) => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = margin + 10;
+        }
+        doc.text(rec, margin + 5, yPos);
+        yPos += 5;
+      });
+
+      yPos += 10;
+
+      // --- FIRMA Y VALIDACIÓN ---
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.2);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+
       doc.setFontSize(8);
       doc.setTextColor(102, 102, 102);
-      doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin - 10, 290, { align: 'right' });
-      
-      // Sello del hospital
-      doc.setFontSize(6);
-      doc.text('HOSPITAL CENTRAL - CONFIDENCIAL', margin, 290);
-      
-      // Fecha en pie de página
+      doc.text('Documento generado automáticamente por el Sistema de Triage del Hospital Central',
+        pageWidth / 2, yPos, { align: 'center' });
+      yPos += 4;
+      doc.text('Válido como documentación interna del servicio de urgencias',
+        pageWidth / 2, yPos, { align: 'center' });
+      yPos += 4;
+      doc.text(`ID de reporte: TRI-${Date.now().toString().slice(-8)}`,
+        pageWidth / 2, yPos, { align: 'center' });
+
+      // --- PIE DE PÁGINA EN TODAS LAS PÁGINAS ---
+      const totalPages = doc.internal.getNumberOfPages();
+
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+
+        // Número de página
+        doc.setFontSize(8);
+        doc.setTextColor(102, 102, 102);
+        doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin - 10, 290, { align: 'right' });
+
+        // Sello del hospital
+        doc.setFontSize(6);
+        doc.text('HOSPITAL CENTRAL - CONFIDENCIAL', margin, 290);
+
+        // Fecha en pie de página
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        doc.text(`Generado: ${formattedDate}`, pageWidth / 2, 290, { align: 'center' });
+      }
+
+      // --- GUARDAR PDF ---
       const now = new Date();
-      const formattedDate = now.toLocaleDateString('es-ES', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.text(`Generado: ${formattedDate}`, pageWidth / 2, 290, { align: 'center' });
-    }
-    
-    // --- GUARDAR PDF ---
-    const now = new Date();
-    const filename = `Reporte_Triage_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}.pdf`;
-    
-    doc.save(filename);
-    
-    showNotification('Reporte PDF generado exitosamente', 'success');
-    
-  } catch (error) {
-    console.error('Error en generatePDF:', error);
-    showNotification('Error al generar el PDF', 'error');
-    
-    // Fallback a texto
-    try {
-      const blob = new Blob([generateFormalTextReport()], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Reporte_Triage_${new Date().toISOString().split('T')[0]}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showNotification('Se descargó versión en texto como respaldo', 'warning');
-    } catch (fallbackError) {
-      console.error('Error en fallback:', fallbackError);
+      const filename = `Reporte_Triage_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.pdf`;
+
+      doc.save(filename);
+
+      showNotification('Reporte PDF generado exitosamente', 'success');
+
+    } catch (error) {
+      console.error('Error en generatePDF:', error);
+      showNotification('Error al generar el PDF', 'error');
+
+      // Fallback a texto
+      try {
+        const blob = new Blob([generateFormalTextReport()], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Reporte_Triage_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showNotification('Se descargó versión en texto como respaldo', 'warning');
+      } catch (fallbackError) {
+        console.error('Error en fallback:', fallbackError);
+      }
     }
   }
-}
 
   // Función mejorada para reporte de texto (fallback)
   function generateFormalTextReport() {
@@ -2836,12 +2870,12 @@ function generatePDF() {
     report += 'HOSPITAL CENTRAL - SERVICIO DE URGENCIAS\n';
     report += 'REPORTE OFICIAL DE TRIAGE\n';
     report += '='.repeat(80) + '\n\n';
-    
+
     report += `Fecha de generación: ${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}\n`;
     report += `Generado por: ${user.name}\n`;
     report += `Hospital: Hospital Central - Servicio de Urgencias\n`;
     report += '-'.repeat(80) + '\n\n';
-    
+
     report += 'RESUMEN ESTADÍSTICO:\n';
     report += '-'.repeat(40) + '\n';
     report += `Total de pacientes: ${state.stats.total || 0}\n`;
@@ -2850,7 +2884,7 @@ function generatePDF() {
     report += `Atendidos: ${state.stats.completed || 0}\n`;
     report += `Tiempo promedio de espera: ${state.stats.averageWaitingTime || 0} minutos\n`;
     report += `Tiempo máximo de espera: ${state.stats.maxWaitingTime || 0} minutos\n\n`;
-    
+
     report += 'DISTRIBUCIÓN POR PRIORIDAD:\n';
     report += '-'.repeat(40) + '\n';
     Object.entries(TRIAGE_LEVELS).forEach(([key, level]) => {
@@ -2858,19 +2892,19 @@ function generatePDF() {
       report += `${level.name}: ${count} pacientes\n`;
     });
     report += '\n';
-    
+
     const waitingPatients = state.filteredPatients?.filter(p => p.status === 'waiting') || [];
     if (waitingPatients.length > 0) {
       report += 'PACIENTES EN ESPERA DE ATENCIÓN:\n';
       report += '-'.repeat(80) + '\n';
       report += 'No. | Paciente                     | Edad | Prioridad | Síntomas principales                  | Espera\n';
       report += '-'.repeat(80) + '\n';
-      
+
       waitingPatients.forEach((patient, index) => {
-        const shortSymptoms = patient.symptoms ? 
-          (patient.symptoms.length > 35 ? patient.symptoms.substring(0, 35) + '...' : patient.symptoms) : 
+        const shortSymptoms = patient.symptoms ?
+          (patient.symptoms.length > 35 ? patient.symptoms.substring(0, 35) + '...' : patient.symptoms) :
           'No especificado';
-        
+
         report += `${(index + 1).toString().padStart(3)} | `;
         report += `${patient.fullName.padEnd(25)} | `;
         report += `${patient.age.toString().padStart(4)} | `;
@@ -2880,10 +2914,10 @@ function generatePDF() {
       });
       report += '\n';
     }
-    
+
     report += 'ANÁLISIS Y RECOMENDACIONES:\n';
     report += '-'.repeat(40) + '\n';
-    
+
     if (state.stats.waiting > 10) {
       report += `• Alto volumen de pacientes en espera (${state.stats.waiting}). Considere activar personal adicional.\n`;
     }
@@ -2893,19 +2927,19 @@ function generatePDF() {
     if (state.stats.byPriority?.red > 0) {
       report += `• ${state.stats.byPriority.red} paciente(s) en nivel ROJO. Atención inmediata obligatoria.\n`;
     }
-    
+
     report += '\n';
     report += 'FIRMA Y VALIDACIÓN:\n';
     report += '-'.repeat(40) + '\n';
     report += 'Documento generado automáticamente por el Sistema de Triage\n';
     report += 'Válido como documentación interna del servicio de urgencias\n';
     report += `ID de reporte: TRI-${Date.now().toString().slice(-8)}\n\n`;
-    
+
     report += '='.repeat(80) + '\n';
     report += 'HOSPITAL CENTRAL - CONFIDENCIAL\n';
     report += 'Documento oficial del servicio de urgencias\n';
     report += '='.repeat(80) + '\n';
-    
+
     return report;
   }
 
@@ -2915,14 +2949,14 @@ function generatePDF() {
     report += '='.repeat(50) + '\n\n';
     report += `Generado por: ${user.name}\n`;
     report += `Fecha: ${new Date().toLocaleDateString('es-ES')}\n\n`;
-    
+
     report += 'ESTADÍSTICAS:\n';
     report += `- Total en espera: ${state.stats.waiting || 0}\n`;
     report += `- En atención: ${state.stats.in_progress || 0}\n`;
     report += `- Atendidos: ${state.stats.completed || 0}\n`;
     report += `- Tiempo promedio: ${state.stats.averageWaitingTime || 0} min\n`;
     report += `- Tiempo máximo: ${state.stats.maxWaitingTime || 0} min\n\n`;
-    
+
     report += 'DISTRIBUCIÓN POR PRIORIDAD:\n';
     Object.entries(state.stats.byPriority || {}).forEach(([priority, count]) => {
       const level = TRIAGE_LEVELS[priority];
@@ -2931,25 +2965,25 @@ function generatePDF() {
       }
     });
     report += '\n';
-    
+
     if (state.filteredPatients && state.filteredPatients.length > 0) {
       report += 'PACIENTES EN TRIAGE:\n';
       report += '-'.repeat(80) + '\n';
-      
+
       state.filteredPatients.forEach(patient => {
         report += `\nNombre: ${patient.fullName}\n`;
         report += `Prioridad: ${patient.priority.toUpperCase()}\n`;
         report += `Síntomas: ${patient.symptoms || 'N/A'}\n`;
         report += `Tiempo de espera: ${patient.waitingTimeFormatted}\n`;
-        report += `Estado: ${patient.status === 'waiting' ? 'Esperando' : 
-                  patient.status === 'in_progress' ? 'En atención' : 'Atendido'}\n`;
+        report += `Estado: ${patient.status === 'waiting' ? 'Esperando' :
+          patient.status === 'in_progress' ? 'En atención' : 'Atendido'}\n`;
         report += '-'.repeat(40) + '\n';
       });
     }
-    
+
     report += '\n\n--- FIN DEL REPORTE ---\n';
     report += 'Hospital Central - Sistema de Triage\n';
-    
+
     return report;
   }
 
@@ -2984,7 +3018,7 @@ function generatePDF() {
     try {
       const triageRecords = store.get('triage') || [];
       const completedRecords = triageRecords.filter(t => t.status === 'completed');
-      
+
       for (const record of completedRecords) {
         await store.remove('triage', record.id);
       }
@@ -3004,19 +3038,19 @@ function generatePDF() {
       top: 20px;
       right: 20px;
       padding: 1rem 1.5rem;
-      background: ${type === 'success' ? '#38a169' : 
-                   type === 'error' ? '#e53e3e' : 
-                   type === 'warning' ? '#d69e2e' : '#3182ce'};
+      background: ${type === 'success' ? '#38a169' :
+        type === 'error' ? '#e53e3e' :
+          type === 'warning' ? '#d69e2e' : '#3182ce'};
       color: white;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       z-index: 10000;
       animation: slideIn 0.3s ease;
     `;
-    
+
     notification.textContent = message;
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
       notification.style.animation = 'slideOut 0.3s ease';
       setTimeout(() => notification.remove(), 300);
@@ -3025,25 +3059,25 @@ function generatePDF() {
 
   // Inicializar módulo
   const { unsubscribePatients, unsubscribeTriage, intervalId } = init();
-  
+
   // Exponer funciones globales
   window.triageModule = {
     updatePrioritySuggestion: updatePrioritySuggestion,
     applySuggestion: applySuggestion
   };
-  
+
   return {
     refresh: loadData,
-    
+
     destroy() {
       if (unsubscribePatients) unsubscribePatients();
       if (unsubscribeTriage) unsubscribeTriage();
       if (intervalId) clearInterval(intervalId);
-      
+
       // Remover banner de emergencia si existe
       const emergencyBanner = document.querySelector('#emergency-banner');
       if (emergencyBanner) emergencyBanner.remove();
-      
+
       // Limpiar referencia global
       delete window.triageModule;
     }

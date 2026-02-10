@@ -606,3 +606,124 @@
 .toast-info {
   border-left: 4px solid var(--info);
 }
+
+/* Calendar */
+.calendar-view {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--border);
+  gap: 1px;
+}
+
+.calendar-day-head {
+  background: var(--bg-light);
+  padding: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.calendar-day {
+  background: white;
+  min-height: 120px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: background 0.2s;
+}
+
+.calendar-day:hover {
+  background: var(--bg-light);
+}
+
+.calendar-day.outside {
+  background: #f8f9fa;
+  color: var(--text-muted);
+}
+
+.calendar-day.today {
+  background: #f0f7ff;
+}
+
+.calendar-day.today .day-number {
+  background: var(--accent);
+  color: white;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.day-number {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.calendar-appointment {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.calendar-appointment:hover {
+  filter: brightness(0.95);
+}
+
+.calendar-appointment.scheduled { border-left-color: var(--info); }
+.calendar-appointment.confirmed { border-left-color: var(--warning); }
+.calendar-appointment.completed { border-left-color: var(--success); }
+.calendar-appointment.cancelled { border-left-color: var(--danger); opacity: 0.6; }
+
+.view-toggle {
+  display: flex;
+  background: var(--bg-light);
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.view-toggle-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.view-toggle-btn.active {
+  background: white;
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}

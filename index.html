@@ -1,14 +1,16 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hospital Central - Gestión de Citas</title>
-  
+
   <!-- Estilos -->
   <link rel="stylesheet" href="styles/vars.css">
   <link rel="stylesheet" href="styles/base.css">
-  
+  <link rel="stylesheet" href="styles/components.css">
+
   <style>
     /* Estilos adicionales inline para asegurar funcionamiento */
     .error-state {
@@ -17,20 +19,20 @@
       padding: 2rem;
       background: white;
       border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
-    
+
     .error-state h2 {
       color: #ef4444;
       margin-bottom: 1rem;
     }
-    
+
     .error-state p {
       margin-bottom: 1.5rem;
       color: #666;
     }
-    
+
     .error-actions {
       display: flex;
       gap: 1rem;
@@ -38,6 +40,7 @@
     }
   </style>
 </head>
+
 <body>
   <div id="app">
     <!-- La aplicación se cargará aquí -->
@@ -46,4 +49,5 @@
   <!-- Script principal -->
   <script type="module" src="src/app/main.js"></script>
 </body>
+
 </html>

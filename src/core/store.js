@@ -2,27 +2,27 @@
 
 export async function createStore(bus) {
   const STORAGE_KEY = 'hospital_prototype_v3';
-  
+
   // Datos de ejemplo más completos
   const defaultData = {
     version: '3.0',
     users: [
-      { 
-        id: 'admin_1', 
-        username: 'admin', 
-        password: 'admin123', 
-        role: 'admin', 
-        name: 'Administrador', 
+      {
+        id: 'admin_1',
+        username: 'admin',
+        password: 'admin123',
+        role: 'admin',
+        name: 'Administrador',
         email: 'admin@hospital.com',
         isActive: true,
         createdAt: Date.now()
       },
-      { 
-        id: 'patient_1', 
-        username: 'maria', 
-        password: 'demo123', 
-        role: 'patient', 
-        name: 'María Gómez', 
+      {
+        id: 'patient_1',
+        username: 'maria',
+        password: 'demo123',
+        role: 'patient',
+        name: 'María Gómez',
         email: 'maria@email.com',
         patientId: 'p_1',
         phone: '555-0101',
@@ -30,21 +30,41 @@ export async function createStore(bus) {
         isActive: true,
         createdAt: Date.now()
       },
-      { 
-        id: 'doctor_1', 
-        username: 'daruiz', 
-        password: 'demo123', 
-        role: 'doctor', 
-        name: 'Dra. Ana Ruiz', 
+      {
+        id: 'doctor_1',
+        username: 'daruiz',
+        password: 'demo123',
+        role: 'doctor',
+        name: 'Dra. Ana Ruiz',
         email: 'ana.ruiz@hospital.com',
         doctorId: 'd_1',
         specialty: 'Medicina General',
         license: 'MG-12345',
         isActive: true,
         createdAt: Date.now()
+      },
+      {
+        id: 'nurse_1',
+        username: 'enfermera',
+        password: 'demo123',
+        role: 'nurse',
+        name: 'Enf. Elena Soler',
+        email: 'elena.soler@hospital.com',
+        isActive: true,
+        createdAt: Date.now()
+      },
+      {
+        id: 'receptionist_1',
+        username: 'recepcion',
+        password: 'demo123',
+        role: 'receptionist',
+        name: 'Recepcionista Carla',
+        email: 'carla.recepcion@hospital.com',
+        isActive: true,
+        createdAt: Date.now()
       }
     ],
-    
+
     patients: [
       {
         id: 'p_1',
@@ -75,7 +95,7 @@ export async function createStore(bus) {
         createdAt: Date.now()
       }
     ],
-    
+
     doctors: [
       {
         id: 'd_1',
@@ -114,7 +134,7 @@ export async function createStore(bus) {
         createdAt: Date.now()
       }
     ],
-    
+
     areas: [
       {
         id: 'area_1',
@@ -145,7 +165,7 @@ export async function createStore(bus) {
         isActive: true
       }
     ],
-    
+
     appointments: [
       {
         id: 'apt_1',
@@ -187,7 +207,7 @@ export async function createStore(bus) {
         createdBy: 'patient_1'
       }
     ],
-    
+
     clinicalRecords: [
       {
         id: 'cr_1',
@@ -417,7 +437,7 @@ export async function createStore(bus) {
       }
     ]
   };
-  
+
   // Cargar datos
   function loadData() {
     try {
@@ -436,22 +456,22 @@ export async function createStore(bus) {
     }
     return defaultData;
   }
-  
+
   // Migración simple de datos
   function migrateData(oldData, newData) {
     // Conservar datos existentes y agregar estructura nueva
     const migrated = { ...newData };
-    
+
     // Migrar colecciones existentes
     ['users', 'patients', 'doctors', 'areas', 'appointments'].forEach(collection => {
       if (oldData[collection] && Array.isArray(oldData[collection])) {
         migrated[collection] = oldData[collection];
       }
     });
-    
+
     return migrated;
   }
-  
+
   // Guardar datos
   function saveData(data) {
     try {
@@ -466,32 +486,32 @@ export async function createStore(bus) {
       }
     }
   }
-  
+
   let data = loadData();
-  
+
   // Funciones auxiliares
   function generateId(prefix) {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2, 9);
     return `${prefix}_${timestamp}_${random}`;
   }
-  
+
   function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
   }
-  
+
   const store = {
     // ===== GETTERS =====
     get(collection) {
       return deepClone(data[collection] || []);
     },
-    
+
     find(collection, id) {
       const items = data[collection] || [];
       const item = items.find(item => item.id === id);
       return item ? deepClone(item) : null;
     },
-    
+
     query(collection, query = {}) {
       const items = data[collection] || [];
       return deepClone(items.filter(item => {
@@ -503,13 +523,13 @@ export async function createStore(bus) {
         });
       }));
     },
-    
+
     // ===== MUTACIONES =====
     add(collection, itemData) {
       if (!data[collection]) {
         data[collection] = [];
       }
-      
+
       const now = Date.now();
       const item = {
         id: itemData.id || generateId(collection.slice(0, 3)),
@@ -518,64 +538,64 @@ export async function createStore(bus) {
         updatedAt: now,
         isActive: itemData.isActive !== false
       };
-      
+
       data[collection].push(item);
       saveData(data);
-      
+
       if (bus) {
         bus.emit(`store:${collection}:added`, { item });
         bus.emit('store:changed', { collection, action: 'add', item });
       }
-      
+
       return deepClone(item);
     },
-    
+
     update(collection, id, changes) {
       const items = data[collection] || [];
       const index = items.findIndex(item => item.id === id);
-      
+
       if (index === -1) {
         return null;
       }
-      
+
       const updatedItem = {
         ...items[index],
         ...changes,
         updatedAt: Date.now()
       };
-      
+
       items[index] = updatedItem;
       data[collection] = items;
       saveData(data);
-      
+
       if (bus) {
         bus.emit(`store:${collection}:updated`, { item: updatedItem });
         bus.emit('store:changed', { collection, action: 'update', item: updatedItem });
       }
-      
+
       return deepClone(updatedItem);
     },
-    
+
     remove(collection, id) {
       const items = data[collection] || [];
       const index = items.findIndex(item => item.id === id);
-      
+
       if (index === -1) {
         return false;
       }
-      
+
       const [removedItem] = items.splice(index, 1);
       data[collection] = items;
       saveData(data);
-      
+
       if (bus) {
         bus.emit(`store:${collection}:removed`, { item: removedItem });
         bus.emit('store:changed', { collection, action: 'remove', item: removedItem });
       }
-      
+
       return true;
     },
-    
+
     // ===== OPERACIONES ESPECIALES =====
     getStats() {
       const stats = {};
@@ -586,78 +606,78 @@ export async function createStore(bus) {
       });
       return stats;
     },
-    
+
     getTodayAppointments() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
+
       return this.query('appointments', appointment => {
         const appointmentDate = new Date(appointment.dateTime);
         return appointmentDate >= today && appointmentDate < tomorrow;
       });
     },
-    
+
     getUpcomingAppointments(days = 7) {
       const now = new Date();
       const futureDate = new Date(now);
       futureDate.setDate(futureDate.getDate() + days);
-      
+
       return this.query('appointments', appointment => {
         const appointmentDate = new Date(appointment.dateTime);
         return appointmentDate >= now && appointmentDate <= futureDate;
       });
     },
-    
+
     // ===== UTILIDADES =====
     reset() {
       if (confirm('¿Estás seguro de resetear todos los datos? Se perderá toda la información.')) {
         data = deepClone(defaultData);
         saveData(data);
-        
+
         if (bus) {
           bus.emit('store:reset');
         }
-        
+
         return true;
       }
       return false;
     },
-    
+
     exportData() {
       return deepClone(data);
     },
-    
+
     importData(newData) {
       data = deepClone(newData);
       saveData(data);
-      
+
       if (bus) {
         bus.emit('store:imported');
       }
-      
+
       return true;
     },
-    
+
     // ===== SUSCRIPCIONES =====
     subscribe(collection, callback) {
-      if (!bus) return () => {};
-      
+      if (!bus) return () => { };
+
       const listener = (event) => {
         if (event.detail.collection === collection) {
           callback(event.detail);
         }
       };
-      
+
       bus.on('store:changed', listener);
-      
+
       // Retornar función para desuscribirse
       return () => {
         bus.off('store:changed', listener);
       };
     }
   };
-  
+
   return store;
 }

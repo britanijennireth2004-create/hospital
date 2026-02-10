@@ -90,37 +90,42 @@ export default function mountClinical(root, { bus, store, user, role }) {
   // Verificar si el usuario tiene permiso para ver un registro específico
   function hasPermissionToView(record) {
     if (role === 'admin') return true;
-    
+
     if (role === 'doctor') {
       // Los doctores pueden ver sus propios registros y todos los registros si están asignados
       // En este caso, permitimos que vean todos para propósitos del sistema
       return true;
     }
-    
+
     if (role === 'patient') {
       // Los pacientes solo pueden ver sus propios registros
       return record.patientId === user.patientId;
     }
-    
+
     return false;
   }
 
   // Verificar si el usuario tiene permiso para editar un registro específico
   function hasPermissionToEdit(record) {
     if (role === 'admin') return true;
-    
+
     if (role === 'doctor') {
       // Los doctores solo pueden editar sus propios registros
       return record.doctorId === user.doctorId;
     }
-    
+
     // Los pacientes NUNCA pueden editar registros
+    // Las enfermeras pueden editar los registros que ellas crearon
+    if (role === 'nurse') {
+      return record.createdBy === user.id;
+    }
+
     return false;
   }
 
   // Verificar si el usuario puede crear nuevos registros
   function canCreateRecords() {
-    return role === 'admin' || role === 'doctor';
+    return ['admin', 'doctor', 'nurse'].includes(role);
   }
 
   // ===== FUNCIONES PRINCIPALES =====
@@ -364,148 +369,142 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
       <!-- Modal para nuevo/editar registro -->
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="record-modal">
-        <div class="modal-content" style="max-width: 900px; background: var(--modal-bg);">
-          <div class="modal-header" style="flex-direction: column; align-items: center; padding: 1.25rem;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.25rem;">HOSPITAL GENERAL</h2>
-            <div style="color: rgba(255,255,255,0.8); font-size: 0.75rem; font-weight: 500;">REGISTRO DE ATENCIÓN MÉDICA</div>
+        <div class="modal-content" style="max-width: 950px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+          <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
+              ${state.editingId ? 'ACTUALIZACIÓN DE HISTORIA CLÍNICA' : 'NUEVO REGISTRO DE ATENCIÓN MÉDICA'}
+            </div>
+            <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
           </div>
           
-          <div class="modal-body" style="padding: 1.5rem;">
+          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
             <form id="record-form">
-              <div style="background: white; border-radius: 4px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                <!-- Información básica -->
-                <div class="clinical-section">
-                  <div class="clinical-section-header sage">DATOS DE LA CONSULTA</div>
-                  <div class="clinical-section-content">
-                    <div class="grid grid-2">
-                      <div class="form-group">
-                        <label class="clinical-label">Paciente *</label>
-                        <select class="input" id="form-patient" required></select>
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Médico *</label>
-                        ${role !== 'doctor' ? `
-                          <select class="input" id="form-doctor" required></select>
-                        ` : `<input type="text" class="input" value="${user.name}" readonly>
-                             <input type="hidden" id="form-doctor" value="${user?.doctorId || ''}">`}
-                      </div>
-                    </div>
-                    
-                    <div class="grid grid-3">
-                      <div class="form-group">
-                        <label class="clinical-label">Fecha de Atención *</label>
-                        <input type="date" class="input" id="form-date" required value="${new Date().toISOString().split('T')[0]}">
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Tipo de Atención *</label>
-                        <select class="input" id="form-type" required>
-                          <option value="consultation">Consulta General</option>
-                          <option value="followup">Seguimiento</option>
-                          <option value="emergency">Urgencia</option>
-                          <option value="lab">Laboratorio</option>
-                          <option value="prescription">Receta</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Estado del Registro</label>
-                        <select class="input" id="form-status">
-                          <option value="draft">Borrador</option>
-                          <option value="finalized">Finalizado</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
+              <!-- Información de Cabecera -->
+              <div style="background: #f8fafc; border-radius: 8px; padding: 1.5rem; border: 1px solid #e2e8f0; margin-bottom: 2rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-header); margin-bottom: 1.25rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.5rem;">📌 DATOS GENERALES DE LA ATENCIÓN</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                   <div class="form-group">
+                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">PACIENTE *</label>
+                      <select class="input" id="form-patient" required style="border-color: #cbd5e1;"></select>
+                   </div>
+                   <div class="form-group">
+                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">MÉDICO RESPONSABLE *</label>
+                      ${role !== 'doctor' ? `
+                        <select class="input" id="form-doctor" required style="border-color: #cbd5e1;"></select>
+                      ` : `
+                        <input type="text" class="input" value="${user.name}" readonly style="background: #edf2f7; border-color: #cbd5e1;">
+                        <input type="hidden" id="form-doctor" value="${user?.doctorId || ''}">
+                      `}
+                   </div>
                 </div>
-
-                <!-- Signos vitales -->
-                <div class="clinical-section">
-                  <div class="clinical-section-header sage">SIGNOS VITALES</div>
-                  <div class="clinical-section-content" style="background: var(--modal-section-green-light);">
-                    <div class="grid grid-4">
-                      <div class="form-group">
-                        <label class="clinical-label">Presión arterial</label>
-                        <input type="text" class="input" id="form-bp" placeholder="120/80">
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Frec. Cardíaca (lpm)</label>
-                        <input type="number" class="input" id="form-heart-rate" placeholder="72">
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Temperatura (°C)</label>
-                        <input type="number" class="input" id="form-temperature" placeholder="36.5" step="0.1">
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Saturación O₂ (%)</label>
-                        <input type="number" class="input" id="form-spo2" placeholder="98">
-                      </div>
-                    </div>
-                    <div class="grid grid-2" style="margin-top: 1rem;">
-                      <div class="form-group">
-                        <label class="clinical-label">Peso (kg)</label>
-                        <input type="number" class="input" id="form-weight" placeholder="0.0" step="0.1">
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Altura (cm)</label>
-                        <input type="number" class="input" id="form-height" placeholder="0">
-                      </div>
-                    </div>
-                  </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1.25rem;">
+                   <div class="form-group">
+                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">FECHA *</label>
+                      <input type="date" class="input" id="form-date" required value="${new Date().toISOString().split('T')[0]}" style="border-color: #cbd5e1;">
+                   </div>
+                   <div class="form-group">
+                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">TIPO DE ATENCIÓN *</label>
+                      <select class="input" id="form-type" required style="border-color: #cbd5e1;">
+                        <option value="consultation">Consulta General</option>
+                        <option value="followup">Seguimiento</option>
+                        <option value="emergency">Urgencia</option>
+                        <option value="lab">Laboratorio</option>
+                        <option value="prescription">Receta</option>
+                      </select>
+                   </div>
+                   <div class="form-group">
+                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">ESTADO</label>
+                      <select class="input" id="form-status" style="border-color: #cbd5e1; font-weight: 700;">
+                        <option value="draft">Borrador (Edición)</option>
+                        <option value="finalized">Finalizado (Solo lectura)</option>
+                      </select>
+                   </div>
                 </div>
-
-                <!-- Evaluación -->
-                <div class="clinical-section">
-                  <div class="clinical-section-header gold">MOTIVO Y SÍNTOMAS</div>
-                  <div class="clinical-section-content" style="background: var(--modal-section-gold-light);">
-                    <textarea class="input" id="form-reason" rows="2" placeholder="Describa el motivo de la consulta..." style="background: white; border-color: var(--modal-highlight);"></textarea>
-                  </div>
-                </div>
-
-                <div class="clinical-section">
-                  <div class="clinical-section-header olive">DIAGNÓSTICO Y TRATAMIENTO</div>
-                  <div class="clinical-section-content" style="background: var(--modal-section-olive-light);">
-                    <div class="form-group">
-                      <label class="clinical-label">Diagnóstico Principal *</label>
-                      <textarea class="input" id="form-diagnosis" rows="2" required placeholder="Diagnóstico..." style="background: white; border-color: var(--modal-section-olive);"></textarea>
-                    </div>
-                    <div class="form-group">
-                      <label class="clinical-label">Plan de Tratamiento</label>
-                      <textarea class="input" id="form-treatment" rows="3" placeholder="Instrucciones del médico..." style="background: white; border-color: var(--modal-section-olive);"></textarea>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Recetas y Notas -->
-                <div class="clinical-section">
-                  <div class="clinical-section-header forest">RECETAS Y SEGUIMIENTO</div>
-                  <div class="clinical-section-content" style="background: var(--modal-section-forest-light);">
-                    <div class="form-group">
-                      <label class="clinical-label">Prescripciones (Medicamento - Dosis - Frecuencia - Duración)</label>
-                      <textarea class="input" id="form-prescriptions" rows="3" placeholder="Ej: Paracetamol - 500mg - cada 8h - 5 días" style="background: white; border-color: var(--modal-section-forest);"></textarea>
-                    </div>
-                    <div class="grid grid-2">
-                       <div class="form-group">
-                        <label class="clinical-label">Próximo Control</label>
-                        <input type="date" class="input" id="form-followup" style="background: white; border-color: var(--modal-section-forest);">
-                      </div>
-                      <div class="form-group">
-                        <label class="clinical-label">Notas Adicionales</label>
-                        <textarea class="input" id="form-notes" rows="1" placeholder="Notas internas..." style="background: white; border-color: var(--modal-section-forest);"></textarea>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Campos ocultos para compatibilidad -->
-                <textarea id="form-symptoms" class="hidden"></textarea>
-                <textarea id="form-recommendations" class="hidden"></textarea>
               </div>
+
+              <!-- Signos Vitales (Sección Verde) -->
+              <div style="background: var(--modal-section-forest-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-forest); margin-bottom: 2rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">🌡️ SIGNOS VITALES Y BIOMETRÍA</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">PRESIÓN ARTERIAL</label>
+                    <input type="text" class="input" id="form-bp" placeholder="120/80" style="background: white;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">FREC. CARDÍACA (LPM)</label>
+                    <input type="number" class="input" id="form-heart-rate" placeholder="72" style="background: white;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">TEMP. (°C)</label>
+                    <input type="number" class="input" id="form-temperature" placeholder="36.5" step="0.1" style="background: white;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">SAT. O₂ (%)</label>
+                    <input type="number" class="input" id="form-spo2" placeholder="98" style="background: white;">
+                  </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">PESO (KG)</label>
+                    <input type="number" class="input" id="form-weight" placeholder="0.0" step="0.1" style="background: white;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">ALTURA (CM)</label>
+                    <input type="number" class="input" id="form-height" placeholder="0" style="background: white;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Motivo y Síntomas (Sección Oro) -->
+              <div style="background: var(--modal-section-gold-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-gold); margin-bottom: 2rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #b8860b; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">📋 MOTIVO Y SÍNTOMAS</div>
+                <textarea class="input" id="form-reason" rows="2" placeholder="Describa el motivo de la consulta..." style="background: white; border-color: var(--modal-section-gold);"></textarea>
+              </div>
+
+              <!-- Diagnóstico y Tratamiento (Sección Oliva) -->
+              <div style="background: var(--modal-section-olive-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-olive); margin-bottom: 2rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">🩺 EVALUACIÓN MÉDICA</div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="form-label" style="font-weight: 700; color: var(--modal-section-olive); font-size: 0.75rem;">DIAGNÓSTICO PRINCIPAL *</label>
+                  <textarea class="input" id="form-diagnosis" rows="2" required placeholder="Diagnóstico..." style="background: white; border-color: var(--modal-section-olive); font-weight: 700;"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-weight: 700; color: var(--modal-section-olive); font-size: 0.75rem;">PLAN DE TRATAMIENTO</label>
+                  <textarea class="input" id="form-treatment" rows="3" placeholder="Instrucciones del médico..." style="background: white; border-color: var(--modal-section-olive);"></textarea>
+                </div>
+              </div>
+
+              <!-- Recetas y Seguimiento -->
+              <div style="background: #f1f5f9; border-radius: 8px; padding: 1.5rem; border: 1px solid #cbd5e1;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">💊 PRESCRIPCIONES Y SEGUIMIENTO</div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="form-label" style="font-weight: 700; color: #475569; font-size: 0.75rem;">DETALLE DE MEDICACIÓN</label>
+                  <textarea class="input" id="form-prescriptions" rows="3" placeholder="Medicamento - Dosis - Frecuencia..." style="background: white; border-color: #cbd5e1;"></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                   <div class="form-group">
+                      <label class="form-label" style="font-weight: 700; color: #475569; font-size: 0.75rem;">PRÓXIMO CONTROL</label>
+                      <input type="date" class="input" id="form-followup" style="background: white; border-color: #cbd5e1;">
+                   </div>
+                   <div class="form-group">
+                      <label class="form-label" style="font-weight: 700; color: #475569; font-size: 0.75rem;">NOTAS ADICIONALES</label>
+                      <textarea class="input" id="form-notes" rows="1" placeholder="Notas internas..." style="background: white; border-color: #cbd5e1;"></textarea>
+                   </div>
+                </div>
+              </div>
+
+              <!-- Campos ocultos para compatibilidad -->
+              <textarea id="form-symptoms" class="hidden"></textarea>
+              <textarea id="form-recommendations" class="hidden"></textarea>
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); border: none;">
-            <button class="btn btn-outline" id="btn-cancel" style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.3);">Cancelar</button>
-            <button class="btn btn-primary" id="btn-save" style="background: #daa722; border: none;">
-              ${state.editingId ? 'Actualizar Registro' : 'Guardar Historia Clínica'}
+          <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+            <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+            <button class="btn" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2.5rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+              ${state.editingId ? 'ACTUALIZAR REGISTRO' : 'FINALIZAR HISTORIA CLÍNICA'}
             </button>
           </div>
         </div>
@@ -1034,7 +1033,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
       showNotification('No tiene permiso para crear o editar registros clínicos', 'error');
       return;
     }
-    
+
     // Si está editando, verificar permisos específicos para ese registro
     if (record && !hasPermissionToEdit(record)) {
       showNotification('No tiene permiso para editar este registro', 'error');
@@ -1340,13 +1339,14 @@ export default function mountClinical(root, { bus, store, user, role }) {
     const canEditThisRecord = hasPermissionToEdit(record);
 
     modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg);">
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem;">HOSPITAL GENERAL</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem; margin-top: 0.25rem; letter-spacing: 0.05em;">HISTORIA CLÍNICA ELECTRÓNICA</div>
+      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">HISTORIA CLÍNICA ELECTRÓNICA</div>
+          <button class="btn-close-modal" id="close-record-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>
         
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 4px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 4px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
           <!-- Encabezado de Datos -->
           <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
             <div>
@@ -1578,795 +1578,210 @@ export default function mountClinical(root, { bus, store, user, role }) {
   }
 
   // ===== FUNCIÓN PARA IMPRIMIR INFORME CLÍNICO EN FORMATO OFICIO - UNA SOLA PÁGINA =====
-  function generateClinicalReport(record) {
+  // Función para descargar PDF directo en escala de grises
+  async function generateClinicalReport(record) {
     const patient = store.find('patients', record.patientId);
     const doctor = store.find('doctors', record.doctorId);
     const date = new Date(record.date);
     const vitals = record.vitalSigns || {};
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      showNotification('Permite ventanas emergentes para imprimir', 'warning');
-      return;
+    showNotification('Generando PDF en escala de grises...', 'info');
+
+    try {
+      // Verificar si jsPDF está disponible
+      if (typeof window.jspdf === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - 2 * margin;
+
+      // Auxiliares de escala de grises
+      const toGrayscale = (r, g, b) => {
+        const gsc = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+        return [gsc, gsc, gsc];
+      };
+
+      const safeSetFillColor = (color) => {
+        let r, g, b;
+        if (Array.isArray(color)) [r, g, b] = color;
+        else if (typeof color === 'string' && color.startsWith('#')) {
+          const hex = color.replace('#', '');
+          r = parseInt(hex.substring(0, 2), 16);
+          g = parseInt(hex.substring(2, 4), 16);
+          b = parseInt(hex.substring(4, 6), 16);
+        } else[r, g, b] = [0, 0, 0];
+        const [gr, gg, gb] = toGrayscale(r, g, b);
+        doc.setFillColor(gr, gg, gb);
+      };
+
+      const safeSetTextColor = (color) => {
+        let r, g, b;
+        if (Array.isArray(color)) [r, g, b] = color;
+        else if (typeof color === 'string' && color.startsWith('#')) {
+          const hex = color.replace('#', '');
+          r = parseInt(hex.substring(0, 2), 16);
+          g = parseInt(hex.substring(2, 4), 16);
+          b = parseInt(hex.substring(4, 6), 16);
+        } else[r, g, b] = [0, 0, 0];
+        const [gr, gg, gb] = toGrayscale(r, g, b);
+        doc.setTextColor(gr, gg, gb);
+      };
+
+      // --- ENCABEZADO ---
+      doc.setFontSize(18);
+      safeSetTextColor([10, 40, 80]);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HOSPITAL CENTRAL', pageWidth / 2, margin + 5, { align: 'center' });
+
+      doc.setFontSize(12);
+      safeSetTextColor([80, 80, 80]);
+      doc.text('HISTORIA CLÍNICA ELECTRÓNICA', pageWidth / 2, margin + 12, { align: 'center' });
+
+      const [dr, dg, db] = toGrayscale(10, 40, 80);
+      doc.setDrawColor(dr, dg, db);
+      doc.setLineWidth(0.5);
+      doc.line(margin, margin + 18, pageWidth - margin, margin + 18);
+
+      let yPos = margin + 28;
+
+      // --- INFO DEL REGISTRO ---
+      doc.setFontSize(9);
+      safeSetTextColor([100, 100, 100]);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Registro ID: ${record.id.split('_').pop()}`, margin, yPos);
+      doc.text(`Fecha: ${date.toLocaleDateString('es-ES')}`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += 8;
+
+      // --- BLOQUES DE PACIENTE Y MÉDICO ---
+      safeSetFillColor([240, 245, 240]);
+      doc.rect(margin, yPos, contentWidth / 2 - 2, 35, 'F');
+
+      safeSetFillColor([240, 240, 245]);
+      doc.rect(pageWidth / 2 + 2, yPos, contentWidth / 2 - 2, 35, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      safeSetTextColor([40, 80, 40]);
+      doc.text('DATOS DEL PACIENTE', margin + 3, yPos + 6);
+
+      doc.setFont('helvetica', 'normal');
+      safeSetTextColor([0, 0, 0]);
+      doc.text(`Nombre: ${patient?.name || 'N/A'}`, margin + 3, yPos + 12);
+      doc.text(`DNI: ${patient?.dni || 'N/A'}`, margin + 3, yPos + 18);
+      doc.text(`Edad: ${patient?.birthDate ? calculateAge(patient.birthDate) + ' años' : 'N/A'}`, margin + 3, yPos + 24);
+      doc.text(`Tel: ${patient?.phone || 'N/A'}`, margin + 3, yPos + 30);
+
+      doc.setFont('helvetica', 'bold');
+      safeSetTextColor([40, 40, 80]);
+      doc.text('MÉDICO TRATANTE', pageWidth / 2 + 5, yPos + 6);
+
+      doc.setFont('helvetica', 'normal');
+      safeSetTextColor([0, 0, 0]);
+      doc.text(`Nombre: ${doctor?.name || 'N/A'}`, pageWidth / 2 + 5, yPos + 12);
+      doc.text(`Especialidad: ${doctor?.specialty || 'N/A'}`, pageWidth / 2 + 5, yPos + 18);
+      doc.text(`Matrícula: ${doctor?.license || 'N/A'}`, pageWidth / 2 + 5, yPos + 24);
+
+      yPos += 45;
+
+      // --- SIGNOS VITALES ---
+      safeSetFillColor([90, 137, 115]); // Sage
+      doc.rect(margin, yPos, contentWidth, 7, 'F');
+      safeSetTextColor([255, 255, 255]);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SIGNOS VITALES', margin + 3, yPos + 5);
+
+      yPos += 7;
+      doc.setFontSize(8);
+      safeSetTextColor([0, 0, 0]);
+      doc.setFont('helvetica', 'normal');
+
+      const vitalLabels = ['P. Arterial', 'F. Cardíaca', 'Temp.', 'Sat. O2', 'Peso', 'Altura'];
+      const vitalValues = [`${vitals.bloodPressure || '-'} mmHg`, `${vitals.heartRate || '-'} lpm`, `${vitals.temperature || '-'} °C`, `${vitals.spo2 || '-'} %`, `${vitals.weight || '-'} kg`, `${vitals.height || '-'} cm`];
+
+      let xOffset = margin;
+      const colW = contentWidth / 6;
+
+      vitalLabels.forEach((label, i) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, xOffset + colW / 2, yPos + 5, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.text(vitalValues[i], xOffset + colW / 2, yPos + 10, { align: 'center' });
+        xOffset += colW;
+      });
+
+      yPos += 18;
+
+      // --- SECCIONES DE TEXTO ---
+      const sections = [
+        { title: 'MOTIVO DE CONSULTA Y SÍNTOMAS', content: `${record.reason || ''} ${record.symptoms || 'No especificados'}`, color: [214, 158, 46] },
+        { title: 'DIAGNÓSTICO', content: record.diagnosis || 'Pendiente', color: [104, 159, 56] },
+        { title: 'PLAN DE TRATAMIENTO', content: record.treatment || 'No especificado', color: [104, 159, 56] }
+      ];
+
+      sections.forEach(sec => {
+        safeSetFillColor(sec.color);
+        doc.rect(margin, yPos, contentWidth, 7, 'F');
+        safeSetTextColor([255, 255, 255]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(sec.title, margin + 3, yPos + 5);
+
+        yPos += 7;
+        safeSetTextColor([0, 0, 0]);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(sec.content, contentWidth - 6);
+        doc.text(lines, margin + 3, yPos + 6);
+        yPos += (lines.length * 5) + 8;
+      });
+
+      // --- RECETAS ---
+      safeSetFillColor([39, 103, 73]); // Forest
+      doc.rect(margin, yPos, contentWidth, 7, 'F');
+      safeSetTextColor([255, 255, 255]);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RECETAS MÉDICAS', margin + 3, yPos + 5);
+
+      yPos += 7;
+      doc.setFontSize(8);
+      safeSetTextColor([0, 0, 0]);
+      if (record.prescriptions && record.prescriptions.length > 0) {
+        record.prescriptions.forEach((p, idx) => {
+          doc.text(`${idx + 1}. ${p.medication} - ${p.dosage} - Cada ${p.frequency} - Durante ${p.duration}`, margin + 3, yPos + 6);
+          yPos += 6;
+        });
+      } else {
+        doc.setFont('helvetica', 'italic');
+        doc.text('Sin prescripciones activas', margin + 3, yPos + 6);
+        yPos += 6;
+      }
+      yPos += 5;
+
+      // --- FIRMA ---
+      doc.setLineWidth(0.2);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 20;
+      doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
+      doc.text(doctor?.name || 'Médico Tratante', pageWidth - margin - 30, yPos + 5, { align: 'center' });
+      doc.text(`Mat. ${doctor?.license || 'N/A'}`, pageWidth - margin - 30, yPos + 10, { align: 'center' });
+
+      doc.save(`Historia_Clinica_${patient?.name.replace(/\s+/g, '_') || 'Paciente'}.pdf`);
+      showNotification('PDF descargado exitosamente', 'success');
+
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      showNotification('Error al crear el PDF', 'error');
     }
-
-    // Funciones de utilidad
-    const formatDateLong = (dateObj) => dateObj.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    const formatDateShort = (dateObj) => dateObj.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-
-    const calculateAge = (birthDate) => {
-      const today = new Date();
-      const birth = new Date(birthDate);
-      let age = today.getFullYear() - birth.getFullYear();
-      const monthDiff = today.getMonth() - birth.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-        age--;
-      }
-      return age;
-    };
-
-    // Calcular IMC
-    const calculateBMI = () => {
-      if (vitals.weight && vitals.height) {
-        const heightM = vitals.height / 100;
-        const bmi = (vitals.weight / (heightM * heightM)).toFixed(1);
-        let category = '';
-        if (bmi < 18.5) category = 'Bajo peso';
-        else if (bmi < 25) category = 'Normal';
-        else if (bmi < 30) category = 'Sobrepeso';
-        else category = 'Obesidad';
-        return `${bmi} (${category})`;
-      }
-      return 'N/A';
-    };
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>Historia Clínica - ${patient?.name || 'Paciente'}</title>
-        <style>
-          /* TAMAÑO OFICIO: 215.9mm × 330.2mm - MARGENES REDUCIDOS */
-          @page {
-            size: 215.9mm 330.2mm;
-            margin: 8mm 12mm 8mm 12mm;
-          }
-          
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
-          }
-          
-          body {
-            width: 191.9mm; /* Ancho total menos márgenes */
-            height: 314.2mm; /* Alto total menos márgenes */
-            color: #333;
-            font-size: 9pt;
-            line-height: 1.2;
-          }
-          
-          /* CONTENEDOR PRINCIPAL - COMPACTO */
-          .page-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-          }
-          
-          /* ENCABEZADO COMPACTO */
-          .header-compact {
-            text-align: center;
-            padding: 3mm 0 4mm 0;
-            margin-bottom: 3mm;
-            border-bottom: 1pt solid #2c5282;
-          }
-          
-          .hospital-name-compact {
-            font-size: 14pt;
-            font-weight: 700;
-            color: #1a365d;
-            letter-spacing: 0.5px;
-            margin-bottom: 1mm;
-          }
-          
-          .document-title-compact {
-            font-size: 12pt;
-            font-weight: 700;
-            color: #2c5282;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 2mm 0;
-          }
-          
-          .document-subtitle-compact {
-            font-size: 9pt;
-            color: #718096;
-            font-weight: 500;
-          }
-          
-          /* INFORMACIÓN DEL REGISTRO - UNA LÍNEA */
-          .record-info-compact {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5mm;
-            padding: 2mm 3mm;
-            background: #f8fafc;
-            border: 0.5pt solid #e2e8f0;
-            border-radius: 2px;
-            font-size: 9pt;
-          }
-          
-          .record-id-compact {
-            font-weight: 700;
-            color: #4a5568;
-          }
-          
-          .record-date-compact {
-            text-align: right;
-            font-weight: 700;
-            color: #4a5568;
-          }
-          
-          .record-meta-compact {
-            font-size: 8pt;
-            color: #718096;
-            margin-top: 0.5mm;
-          }
-          
-          /* DATOS DE PACIENTE Y MÉDICO - COMPACTO */
-          .data-grid-compact {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4mm;
-            margin-bottom: 5mm;
-          }
-          
-          .data-card-compact {
-            padding: 3mm;
-            border: 0.5pt solid #cbd5e0;
-            border-radius: 2px;
-            font-size: 9pt;
-          }
-          
-          .data-card-patient {
-            background: #f0fff4;
-            border-color: #38a169;
-          }
-          
-          .data-card-doctor {
-            background: #ebf8ff;
-            border-color: #4299e1;
-          }
-          
-          .data-card-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 2mm;
-          }
-          
-          .data-card-icon {
-            width: 8mm;
-            height: 8mm;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10pt;
-            margin-right: 2mm;
-            border: 0.5pt solid #cbd5e0;
-          }
-          
-          .data-card-title {
-            font-size: 8pt;
-            font-weight: 700;
-            color: #4a5568;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-          }
-          
-          .data-card-name {
-            font-size: 10pt;
-            font-weight: 700;
-            color: #2d3748;
-          }
-          
-          .data-details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1mm;
-            font-size: 8pt;
-          }
-          
-          .data-detail-label {
-            font-weight: 600;
-            color: #718096;
-          }
-          
-          .data-detail-value {
-            font-weight: 500;
-          }
-          
-          /* SIGNOS VITALES - COMPACTO */
-          .vitals-compact {
-            margin-bottom: 5mm;
-          }
-          
-          .section-header-compact {
-            background: #5a8973;
-            color: white;
-            padding: 2mm 3mm;
-            font-weight: 700;
-            font-size: 9pt;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-radius: 1px 1px 0 0;
-          }
-          
-          .vitals-grid-compact {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            text-align: center;
-            border: 0.5pt solid #cbd5e0;
-            border-top: none;
-          }
-          
-          .vital-item-compact {
-            padding: 2mm 1mm;
-            border-right: 0.5pt solid #cbd5e0;
-          }
-          
-          .vital-item-compact:last-child {
-            border-right: none;
-          }
-          
-          .vital-label-compact {
-            font-size: 7pt;
-            font-weight: 700;
-            color: #4a5568;
-            margin-bottom: 0.5mm;
-          }
-          
-          .vital-value-compact {
-            font-size: 10pt;
-            font-weight: 700;
-            color: #2d3748;
-          }
-          
-          .vital-unit-compact {
-            font-size: 7pt;
-            color: #a0aec0;
-          }
-          
-          /* SECCIONES DE CONTENIDO - COMPACTAS */
-          .content-section-compact {
-            margin-bottom: 4mm;
-          }
-          
-          .section-header-gold-compact {
-            background: #d69e2e;
-            color: white;
-            padding: 2mm 3mm;
-            font-weight: 700;
-            font-size: 9pt;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-radius: 1px 1px 0 0;
-          }
-          
-          .section-header-olive-compact {
-            background: #689f38;
-            color: white;
-            padding: 2mm 3mm;
-            font-weight: 700;
-            font-size: 9pt;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-radius: 1px 1px 0 0;
-          }
-          
-          .section-header-forest-compact {
-            background: #276749;
-            color: white;
-            padding: 2mm 3mm;
-            font-weight: 700;
-            font-size: 9pt;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-radius: 1px 1px 0 0;
-          }
-          
-          .section-content-compact {
-            padding: 3mm;
-            border: 0.5pt solid #e2e8f0;
-            border-top: none;
-            border-radius: 0 0 1px 1px;
-            min-height: 10mm;
-            font-size: 9pt;
-            line-height: 1.3;
-          }
-          
-          /* MOTIVO Y DIAGNÓSTICO EN UNA FILA */
-          .diagnosis-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4mm;
-            margin-bottom: 4mm;
-          }
-          
-          /* TRATAMIENTO COMPACTO */
-          .treatment-compact {
-            margin-bottom: 4mm;
-          }
-          
-          /* TABLA DE RECETAS COMPACTA */
-          .prescriptions-table-compact {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1mm;
-            font-size: 8pt;
-          }
-          
-          .prescriptions-table-compact th {
-            background: #e2e8f0;
-            color: #4a5568;
-            font-weight: 700;
-            text-align: left;
-            padding: 1.5mm 2mm;
-            border: 0.5pt solid #cbd5e0;
-          }
-          
-          .prescriptions-table-compact td {
-            padding: 1.5mm 2mm;
-            border: 0.5pt solid #cbd5e0;
-          }
-          
-          /* SEGUIMIENTO COMPACTO */
-          .followup-compact {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4mm;
-            margin-top: 2mm;
-          }
-          
-          .notes-compact {
-            padding: 2mm;
-            border: 0.5pt solid #cbd5e0;
-            border-radius: 1px;
-            font-size: 8pt;
-          }
-          
-          .next-control-compact {
-            padding: 2mm;
-            border: 0.5pt solid #38a169;
-            border-radius: 1px;
-            background: #f0fff4;
-            text-align: center;
-          }
-          
-          .next-control-label {
-            font-size: 8pt;
-            font-weight: 700;
-            color: #276749;
-          }
-          
-          .next-control-date {
-            font-size: 9pt;
-            font-weight: 700;
-            color: #2d3748;
-            margin: 1mm 0;
-          }
-          
-          /* PIE DE PÁGINA COMPACTO */
-          .footer-compact {
-            margin-top: auto;
-            padding-top: 3mm;
-            border-top: 0.5pt solid #e2e8f0;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 3mm;
-            font-size: 7pt;
-            color: #718096;
-          }
-          
-          .footer-section-compact {
-            flex: 1;
-          }
-          
-          .footer-label-compact {
-            font-weight: 700;
-            color: #4a5568;
-            margin-bottom: 0.5mm;
-          }
-          
-          /* FIRMA COMPACTA */
-          .signature-compact {
-            margin-top: 5mm;
-            text-align: right;
-          }
-          
-          .signature-box-compact {
-            display: inline-block;
-            text-align: center;
-            width: 50mm;
-          }
-          
-          .signature-line-compact {
-            border-top: 0.75pt solid #333;
-            width: 100%;
-            margin-bottom: 1mm;
-          }
-          
-          .doctor-name-compact {
-            font-size: 10pt;
-            font-weight: 700;
-            color: #2d3748;
-          }
-          
-          .doctor-info-compact {
-            font-size: 8pt;
-            color: #718096;
-          }
-          
-          /* ESTILOS DE IMPRESIÓN */
-          @media print {
-            body {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            
-            .no-print {
-              display: none !important;
-            }
-          }
-          
-          /* BADGES COMPACTOS */
-          .badge-compact {
-            display: inline-block;
-            padding: 0.5mm 1mm;
-            font-size: 7pt;
-            font-weight: 600;
-            border-radius: 1px;
-            text-transform: uppercase;
-            letter-spacing: 0.2px;
-          }
-          
-          .badge-success-compact {
-            background: #c6f6d5;
-            color: #22543d;
-            border: 0.5pt solid #9ae6b4;
-          }
-          
-          .badge-warning-compact {
-            background: #feebc8;
-            color: #744210;
-            border: 0.5pt solid #fbd38d;
-          }
-          
-          /* UTILIDADES */
-          .text-small {
-            font-size: 8pt;
-          }
-          
-          .text-xsmall {
-            font-size: 7pt;
-          }
-          
-          .mb-1 {
-            margin-bottom: 1mm;
-          }
-          
-          .mb-2 {
-            margin-bottom: 2mm;
-          }
-          
-          .mt-1 {
-            margin-top: 1mm;
-          }
-          
-          .mt-2 {
-            margin-top: 2mm;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="page-container">
-          <!-- ENCABEZADO -->
-          <div class="header-compact">
-            <div class="hospital-name-compact">HOSPITAL GENERAL</div>
-            <div class="document-title-compact">INFORME MÉDICO</div>
-            <div class="document-subtitle-compact">Registro de Atención Clínica</div>
-          </div>
-          
-          <!-- INFORMACIÓN DEL REGISTRO -->
-          <div class="record-info-compact">
-            <div>
-              <div class="record-id-compact">Registro: ${record.id.split('_').pop()}</div>
-              <div class="record-meta-compact">
-                <span class="badge-compact ${record.status === 'finalized' ? 'badge-success-compact' : 'badge-warning-compact'}">
-                  ${record.status === 'finalized' ? 'Finalizado' : 'Borrador'}
-                </span>
-                <span> • ${getTypeText(record.type)}</span>
-              </div>
-            </div>
-            <div class="record-date-compact">
-              <div>${formatDateShort(date)}</div>
-              <div class="record-meta-compact">${date.toLocaleDateString('es-ES', { weekday: 'short' })}</div>
-            </div>
-          </div>
-          
-          <!-- DATOS DE PACIENTE Y MÉDICO -->
-          <div class="data-grid-compact mb-2">
-            <!-- PACIENTE -->
-            <div class="data-card-compact data-card-patient">
-              <div class="data-card-header">
-                <div class="data-card-icon">👤</div>
-                <div>
-                  <div class="data-card-title">PACIENTE</div>
-                  <div class="data-card-name">${patient?.name || 'Nombre del Paciente'}</div>
-                </div>
-              </div>
-              <div class="data-details-grid">
-                <div>
-                  <div class="data-detail-label">DNI</div>
-                  <div class="data-detail-value">${patient?.dni || 'N/A'}</div>
-                </div>
-                <div>
-                  <div class="data-detail-label">EDAD</div>
-                  <div class="data-detail-value">${patient?.birthDate ? calculateAge(patient.birthDate) + ' años' : 'N/A'}</div>
-                </div>
-                <div>
-                  <div class="data-detail-label">TELÉFONO</div>
-                  <div class="data-detail-value">${patient?.phone || 'N/A'}</div>
-                </div>
-                <div>
-                  <div class="data-detail-label">EMAIL</div>
-                  <div class="data-detail-value text-xsmall">${patient?.email || 'N/A'}</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- MÉDICO -->
-            <div class="data-card-compact data-card-doctor">
-              <div class="data-card-header">
-                <div class="data-card-icon">🩺</div>
-                <div>
-                  <div class="data-card-title">MÉDICO</div>
-                  <div class="data-card-name">${doctor?.name || 'Nombre del Médico'}</div>
-                </div>
-              </div>
-              <div class="data-details-grid">
-                <div>
-                  <div class="data-detail-label">ESPECIALIDAD</div>
-                  <div class="data-detail-value">${doctor?.specialty || 'Medicina General'}</div>
-                </div>
-                <div>
-                  <div class="data-detail-label">MATRÍCULA</div>
-                  <div class="data-detail-value">${doctor?.license || 'N/A'}</div>
-                </div>
-                <div>
-                  <div class="data-detail-label">CITA</div>
-                  <div class="data-detail-value">${record.appointmentId ? '#' + record.appointmentId.split('_').pop() : 'Directa'}</div>
-                </div>
-                <div>
-                  <div class="data-detail-label">REGISTRO</div>
-                  <div class="data-detail-value">${formatDateShort(new Date(record.createdAt || Date.now()))}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- SIGNOS VITALES -->
-          <div class="vitals-compact mb-2">
-            <div class="section-header-compact">SIGNOS VITALES</div>
-            <div class="vitals-grid-compact">
-              <div class="vital-item-compact">
-                <div class="vital-label-compact">P. ARTERIAL</div>
-                <div class="vital-value-compact">${vitals.bloodPressure || '-'}</div>
-                <div class="vital-unit-compact">mmHg</div>
-              </div>
-              <div class="vital-item-compact">
-                <div class="vital-label-compact">F. CARDÍACA</div>
-                <div class="vital-value-compact">${vitals.heartRate || '-'}</div>
-                <div class="vital-unit-compact">lpm</div>
-              </div>
-              <div class="vital-item-compact">
-                <div class="vital-label-compact">TEMPERATURA</div>
-                <div class="vital-value-compact">${vitals.temperature || '-'}</div>
-                <div class="vital-unit-compact">°C</div>
-              </div>
-              <div class="vital-item-compact">
-                <div class="vital-label-compact">SAT. O₂</div>
-                <div class="vital-value-compact">${vitals.spo2 || '-'}</div>
-                <div class="vital-unit-compact">%</div>
-              </div>
-              <div class="vital-item-compact">
-                <div class="vital-label-compact">PESO</div>
-                <div class="vital-value-compact">${vitals.weight || '-'}</div>
-                <div class="vital-unit-compact">kg</div>
-              </div>
-              <div class="vital-item-compact">
-                <div class="vital-label-compact">ALTURA</div>
-                <div class="vital-value-compact">${vitals.height || '-'}</div>
-                <div class="vital-unit-compact">cm</div>
-              </div>
-            </div>
-            ${vitals.weight && vitals.height ? `
-              <div style="text-align: center; margin-top: 1mm; font-size: 8pt; color: #4a5568;">
-                <strong>IMC:</strong> ${calculateBMI()}
-              </div>
-            ` : ''}
-          </div>
-          
-          <!-- MOTIVO Y DIAGNÓSTICO EN UNA FILA -->
-          <div class="diagnosis-row mb-2">
-            <!-- MOTIVO -->
-            <div class="content-section-compact">
-              <div class="section-header-gold-compact">MOTIVO DE CONSULTA</div>
-              <div class="section-content-compact">
-                <div class="text-small">${record.reason || ''} ${record.symptoms || 'No se reportaron síntomas'}</div>
-              </div>
-            </div>
-            
-            <!-- DIAGNÓSTICO -->
-            <div class="content-section-compact">
-              <div class="section-header-olive-compact">DIAGNÓSTICO</div>
-              <div class="section-content-compact" style="font-weight: 700;">
-                ${record.diagnosis || 'No se estableció diagnóstico'}
-              </div>
-            </div>
-          </div>
-          
-          <!-- TRATAMIENTO -->
-          <div class="treatment-compact mb-2">
-            <div class="section-header-olive-compact">PLAN DE TRATAMIENTO</div>
-            <div class="section-content-compact">
-              <div class="text-small">${record.treatment || 'No se prescribió tratamiento específico'}</div>
-            </div>
-          </div>
-          
-          <!-- RECETAS -->
-          <div class="content-section-compact mb-2">
-            <div class="section-header-forest-compact">RECETAS MÉDICAS</div>
-            <div class="section-content-compact">
-              ${record.prescriptions && Array.isArray(record.prescriptions) && record.prescriptions.length > 0 ? `
-                <table class="prescriptions-table-compact">
-                  <thead>
-                    <tr>
-                      <th style="width: 35%;">MEDICAMENTO</th>
-                      <th style="width: 20%;">DOSIS</th>
-                      <th style="width: 25%;">FRECUENCIA</th>
-                      <th style="width: 20%;">DURACIÓN</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${record.prescriptions.map(pres => `
-                      <tr>
-                        <td><strong>${pres.medication || 'N/A'}</strong></td>
-                        <td>${pres.dosage || 'N/A'}</td>
-                        <td>${pres.frequency || 'N/A'}</td>
-                        <td>${pres.duration || 'N/A'}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              ` : `
-                <div class="text-small">No se prescribieron medicamentos.</div>
-              `}
-            </div>
-          </div>
-          
-          <!-- SEGUIMIENTO -->
-          <div class="content-section-compact mb-2">
-            <div class="section-header-forest-compact">SEGUIMIENTO</div>
-            <div class="section-content-compact">
-              <div class="followup-compact">
-                <div class="notes-compact">
-                  <div style="font-weight: 700; color: #4a5568; margin-bottom: 1mm;">NOTAS Y RECOMENDACIONES</div>
-                  <div class="text-small">
-                    ${record.notes ? `<div class="mb-1">${record.notes}</div>` : ''}
-                    ${record.recommendations ? `<div><strong>Recomendaciones:</strong> ${record.recommendations}</div>` : ''}
-                  </div>
-                </div>
-                
-                <div class="next-control-compact">
-                  <div class="next-control-label">PRÓXIMO CONTROL</div>
-                  <div class="next-control-date">
-                    ${record.followUp ? formatDateShort(new Date(record.followUp)) : 'No programado'}
-                  </div>
-                  ${record.followUp ? `
-                    <div class="text-xsmall" style="color: #38a169;">
-                      ${calculateDaysUntil(record.followUp)}
-                    </div>
-                  ` : ''}
-                  <div class="text-xsmall mt-1" style="color: #718096;">
-                    Consultar ante síntomas de alarma
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- PIE DE PÁGINA -->
-          <div class="footer-compact">
-            <div class="footer-section-compact">
-              <div class="footer-label-compact">CREADO POR</div>
-              <div>${user.name}</div>
-              <div class="text-xsmall">${new Date(record.createdAt || Date.now()).toLocaleDateString('es-ES')}</div>
-            </div>
-            
-            <div class="footer-section-compact">
-              <div class="footer-label-compact">ACTUALIZACIÓN</div>
-              <div>${record.updatedAt ? new Date(record.updatedAt).toLocaleDateString('es-ES') : 'Sin cambios'}</div>
-            </div>
-            
-            <div class="footer-section-compact">
-              <div class="footer-label-compact">DOCUMENTO</div>
-              <div>Historia Clínica Electrónica</div>
-              <div class="text-xsmall">Válido sin firma manuscrita</div>
-            </div>
-          </div>
-          
-          <!-- FIRMA -->
-          <div class="signature-compact">
-            <div class="signature-box-compact">
-              <div class="signature-line-compact"></div>
-              <div class="doctor-name-compact">${doctor?.name || 'Médico Tratante'}</div>
-              <div class="doctor-info-compact">
-                ${doctor?.specialty || 'Especialidad'} • Mat. ${doctor?.license || 'N/A'}
-              </div>
-              <div class="doctor-info-compact mt-1">
-                ${formatDateShort(new Date())}
-              </div>
-            </div>
-          </div>
-          
-          <!-- BOTÓN DE IMPRESIÓN -->
-          <div class="no-print" style="position: fixed; top: 5mm; right: 5mm; z-index: 1000;">
-            <button onclick="window.print()" style="
-              padding: 3mm 4mm;
-              background: #2c5282;
-              color: white;
-              border: none;
-              border-radius: 2px;
-              font-size: 9pt;
-              font-weight: 600;
-              cursor: pointer;
-              box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            ">
-              📄 IMPRIMIR
-            </button>
-          </div>
-        </div>
-        
-        <script>
-          // Auto-impresión después de cargar
-          window.onload = function() {
-            setTimeout(() => {
-              window.print();
-              setTimeout(() => {
-                window.close();
-              }, 1000);
-            }, 300);
-          };
-        </script>
-      </body>
-      </html>
-    `);
-
-    printWindow.document.close();
   }
 
   // Función para calcular edad
@@ -2401,24 +1816,37 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
   // Configurar event listeners del modal de detalles
   function setupDetailModalListeners(modalContainer, record, patient, doctor, appointment) {
-    // Función para cerrar el modal
-    const closeModal = () => {
+    // Función de limpieza
+    function cleanup() {
+      document.removeEventListener('keydown', escHandler);
+    }
+
+    // Función para cerrar el modal extendida
+    function enhancedCloseModal() {
+      cleanup();
       if (modalContainer && modalContainer.parentNode) {
         modalContainer.parentNode.removeChild(modalContainer);
       }
-    };
-
-    // Botón de cerrar
-    const closeBtn = modalContainer.querySelector('#close-modal-btn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeModal);
     }
+
+    // Cerrar con ESC
+    function escHandler(e) {
+      if (e.key === 'Escape') enhancedCloseModal();
+    }
+
+    document.addEventListener('keydown', escHandler);
+
+    // Botones de cerrar
+    const closeBtnHeader = modalContainer.querySelector('#close-record-modal');
+    const closeBtnFooter = modalContainer.querySelector('#close-modal-btn');
+    if (closeBtnHeader) closeBtnHeader.addEventListener('click', enhancedCloseModal);
+    if (closeBtnFooter) closeBtnFooter.addEventListener('click', enhancedCloseModal);
 
     // Botón de editar - SOLO si tiene permisos
     const editBtn = modalContainer.querySelector('#edit-record-btn');
     if (editBtn && hasPermissionToEdit(record)) {
       editBtn.addEventListener('click', () => {
-        closeModal();
+        enhancedCloseModal();
         openModal(record);
       });
     }
@@ -2432,50 +1860,6 @@ export default function mountClinical(root, { bus, store, user, role }) {
     }
 
     // Cerrar al hacer clic fuera del contenido
-    modalContainer.addEventListener('click', (e) => {
-      if (e.target === modalContainer) {
-        closeModal();
-      }
-    });
-
-    // Cerrar con ESC
-    const escHandler = (e) => {
-      if (e.key === 'Escape') {
-        closeModal();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-
-    document.addEventListener('keydown', escHandler);
-
-    // Limpiar event listener cuando se cierra el modal
-    const cleanup = () => {
-      document.removeEventListener('keydown', escHandler);
-      if (closeBtn) closeBtn.removeEventListener('click', closeModal);
-      if (editBtn) editBtn.removeEventListener('click', () => {});
-      if (printBtn) printBtn.removeEventListener('click', () => {});
-      modalContainer.removeEventListener('click', (e) => {
-        if (e.target === modalContainer) closeModal();
-      });
-    };
-
-    // Agregar cleanup cuando se cierra el modal
-    const originalCloseModal = closeModal;
-    const enhancedCloseModal = () => {
-      cleanup();
-      originalCloseModal();
-    };
-
-    // Reasignar event listeners para usar la función mejorada
-    if (closeBtn) {
-      closeBtn.removeEventListener('click', closeModal);
-      closeBtn.addEventListener('click', enhancedCloseModal);
-    }
-
-    modalContainer.removeEventListener('click', (e) => {
-      if (e.target === modalContainer) closeModal();
-    });
-
     modalContainer.addEventListener('click', (e) => {
       if (e.target === modalContainer) enhancedCloseModal();
     });

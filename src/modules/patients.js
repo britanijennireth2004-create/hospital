@@ -22,7 +22,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
     currentPage: 1,
     itemsPerPage: 10,
     selectedPatient: null,
-    showClinicalHistory: false
+    showClinicalHistory: false,
+    filteredPatients: [],
+    paginatedPatients: [],
+    totalPages: 0
   };
 
   // Elementos DOM
@@ -33,21 +36,21 @@ export default function mountPatients(root, { bus, store, user, role }) {
     render();
     setupEventListeners();
     loadData();
-    
+
     // Suscribirse a cambios
     const unsubscribe = store.subscribe('patients', () => {
       loadData();
     });
-    
+
     return unsubscribe;
   }
 
   // Cargar datos
   function loadData() {
-    state.patients = store.get('patients');
-    state.clinicalRecords = store.get('clinicalRecords');
-    state.appointments = store.get('appointments');
-    
+    state.patients = store.get('patients') || [];
+    state.clinicalRecords = store.get('clinicalRecords') || [];
+    state.appointments = store.get('appointments') || [];
+
     applyFilters();
     renderContent();
     renderStats();
@@ -56,38 +59,38 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Aplicar filtros
   function applyFilters() {
     let filteredPatients = state.patients;
-    
+
     // Búsqueda por texto
     if (state.filters.search) {
       const searchTerm = state.filters.search.toLowerCase();
-      filteredPatients = filteredPatients.filter(patient => 
+      filteredPatients = filteredPatients.filter(patient =>
         patient.name.toLowerCase().includes(searchTerm) ||
         patient.dni?.toLowerCase().includes(searchTerm) ||
         patient.email?.toLowerCase().includes(searchTerm) ||
         patient.phone?.includes(searchTerm)
       );
     }
-    
+
     // Filtro por género
     if (state.filters.gender) {
-      filteredPatients = filteredPatients.filter(patient => 
+      filteredPatients = filteredPatients.filter(patient =>
         patient.gender === state.filters.gender
       );
     }
-    
+
     // Filtro por estado
     if (state.filters.status === 'active') {
       filteredPatients = filteredPatients.filter(patient => patient.isActive);
     } else if (state.filters.status === 'inactive') {
       filteredPatients = filteredPatients.filter(patient => !patient.isActive);
     }
-    
+
     // Filtro por rango de edad
     if (state.filters.ageRange) {
       filteredPatients = filteredPatients.filter(patient => {
         if (!patient.birthDate) return true;
         const age = calculateAge(patient.birthDate);
-        
+
         switch (state.filters.ageRange) {
           case 'child': return age < 12;
           case 'teen': return age >= 12 && age < 20;
@@ -97,25 +100,25 @@ export default function mountPatients(root, { bus, store, user, role }) {
         }
       });
     }
-    
+
     // Filtro por alergias
     if (state.filters.hasAllergies === 'yes') {
-      filteredPatients = filteredPatients.filter(patient => 
+      filteredPatients = filteredPatients.filter(patient =>
         patient.allergies && patient.allergies.length > 0
       );
     } else if (state.filters.hasAllergies === 'no') {
-      filteredPatients = filteredPatients.filter(patient => 
+      filteredPatients = filteredPatients.filter(patient =>
         !patient.allergies || patient.allergies.length === 0
       );
     }
-    
+
     // Filtro por tipo de sangre
     if (state.filters.bloodType) {
-      filteredPatients = filteredPatients.filter(patient => 
+      filteredPatients = filteredPatients.filter(patient =>
         patient.bloodType === state.filters.bloodType
       );
     }
-    
+
     // Ordenar
     filteredPatients.sort((a, b) => {
       switch (state.sortBy) {
@@ -125,7 +128,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         default: return 0;
       }
     });
-    
+
     state.filteredPatients = filteredPatients;
     updatePagination();
   }
@@ -147,7 +150,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
   function updatePagination() {
     const totalPages = Math.ceil(state.filteredPatients.length / state.itemsPerPage);
     state.totalPages = totalPages;
-    
+
     const start = (state.currentPage - 1) * state.itemsPerPage;
     const end = start + state.itemsPerPage;
     state.paginatedPatients = state.filteredPatients.slice(start, end);
@@ -155,8 +158,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Renderizar componente principal
   function render() {
-    const canEdit = role === 'admin' || role === 'doctor';
-    
+    const canEdit = ['admin', 'doctor', 'receptionist'].includes(role);
+
     root.innerHTML = `
       <div class="module-patients">
         <!-- Header -->
@@ -311,47 +314,50 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
         <!-- Modal para nuevo/editar paciente -->
         <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="patient-modal">
-          <div class="modal-content" style="max-width: 700px; max-height: 90vh;">
-            <div class="modal-header">
-              <h3 style="margin: 0;">${state.editingId ? 'Editar Paciente' : 'Nuevo Paciente'}</h3>
-              <button class="btn btn-outline btn-sm" id="btn-close-modal">×</button>
+          <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+              <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
+                ${state.editingId ? 'EDICIÓN DE FICHA DE PACIENTE' : 'REGISTRO DE NUEVO PACIENTE'}
+              </div>
+              <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
             </div>
             
-            <div class="modal-body">
+            <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
               <form id="patient-form">
-                <!-- Pestañas -->
-                <div class="flex border-b mb-4">
-                  <button type="button" class="tab-btn active" data-tab="basic">Datos Básicos</button>
-                  <button type="button" class="tab-btn" data-tab="medical">Historial Médico</button>
-                  <button type="button" class="tab-btn" data-tab="contact">Contacto</button>
+                <!-- Pestañas Estilo Clínico -->
+                <div class="flex border-b mb-6" style="gap: 1rem; justify-content: center;">
+                  <button type="button" class="tab-btn active" data-tab="basic" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">Datos Básicos</button>
+                  <button type="button" class="tab-btn" data-tab="medical" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">Historial Médico</button>
+                  <button type="button" class="tab-btn" data-tab="contact" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">Contacto</button>
                 </div>
                 
                 <!-- Contenido de pestañas -->
                 <div id="tab-content">
                   <!-- Pestaña 1: Datos Básicos -->
                   <div class="tab-pane active" data-tab="basic">
-                    <div class="grid grid-2">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                       <div class="form-group">
-                        <label class="form-label">Nombre completo *</label>
-                        <input type="text" class="input" id="form-name" required>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
+                        <input type="text" class="input" id="form-name" required style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                       
                       <div class="form-group">
-                        <label class="form-label">DNI/NIE *</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DNI/NIE *</label>
                         <input type="text" class="input" id="form-dni" required 
-                               pattern="[0-9]{8}[A-Za-z]|[XYZ][0-9]{7}[A-Za-z]">
+                               pattern="[0-9]{8}[A-Za-z]|[XYZ][0-9]{7}[A-Za-z]" style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                     </div>
                     
-                    <div class="grid grid-3">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                       <div class="form-group">
-                        <label class="form-label">Fecha de nacimiento *</label>
-                        <input type="date" class="input" id="form-birthdate" required>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO *</label>
+                        <input type="date" class="input" id="form-birthdate" required style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                       
                       <div class="form-group">
-                        <label class="form-label">Género *</label>
-                        <select class="input" id="form-gender" required>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO *</label>
+                        <select class="input" id="form-gender" required style="border-color: var(--modal-border); background: var(--modal-bg);">
                           <option value="">Seleccionar</option>
                           <option value="M">Masculino</option>
                           <option value="F">Femenino</option>
@@ -360,8 +366,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       </div>
                       
                       <div class="form-group">
-                        <label class="form-label">Tipo de sangre</label>
-                        <select class="input" id="form-blood-type">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GRUPO SANGUÍNEO</label>
+                        <select class="input" id="form-blood-type" style="border-color: var(--modal-border); background: var(--modal-bg);">
                           <option value="">Desconocido</option>
                           <option value="O+">O+</option>
                           <option value="O-">O-</option>
@@ -379,95 +385,115 @@ export default function mountPatients(root, { bus, store, user, role }) {
                   <!-- Pestaña 2: Historial Médico -->
                   <div class="tab-pane" data-tab="medical">
                     <div class="form-group">
-                      <label class="form-label">Alergias conocidas</label>
-                      <div id="allergies-container">
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ALERGIAS CONOCIDAS</label>
+                      <div id="allergies-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
                         <!-- Alergias se agregarán dinámicamente -->
                       </div>
-                      <button type="button" class="btn btn-outline btn-sm mt-2" id="btn-add-allergy">
+                      <button type="button" class="btn" id="btn-add-allergy" style="background: var(--modal-section-gold); color: white; border: none; padding: 0.4rem 1rem; font-size: 0.8rem; border-radius: 4px; cursor: pointer;">
                         + Agregar alergia
                       </button>
                     </div>
                     
-                    <div class="form-group">
-                      <label class="form-label">Enfermedades crónicas</label>
-                      <textarea class="input" id="form-chronic-diseases" rows="3" 
-                                placeholder="Ej: Hipertensión, Diabetes, Asma..."></textarea>
+                    <div class="form-group" style="margin-top: 1rem;">
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ENFERMEDADES CRÓNICAS</label>
+                      <textarea class="input" id="form-chronic-diseases" rows="2" 
+                                placeholder="Ej: Hipertensión, Diabetes, Asma..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
                     
-                    <div class="form-group">
-                      <label class="form-label">Medicación habitual</label>
+                    <div class="form-group" style="margin-top: 1rem;">
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MEDICACIÓN HABITUAL</label>
                       <textarea class="input" id="form-regular-meds" rows="2" 
-                                placeholder="Medicamentos que toma regularmente..."></textarea>
+                                placeholder="Medicamentos que toma regularmente..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Cirugías previas</label>
+
+                    <!-- AÑADIDO: Campos faltantes -->
+                    <div class="form-group" style="margin-top: 1rem;">
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CIRUGÍAS PREVIAS</label>
                       <textarea class="input" id="form-surgeries" rows="2" 
-                                placeholder="Cirugías realizadas, fechas..."></textarea>
+                                placeholder="Cirugías o intervenciones quirúrgicas previas..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
                     
-                    <div class="form-group">
-                      <label class="form-label">Observaciones médicas</label>
+                    <div class="form-group" style="margin-top: 1rem;">
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOTAS MÉDICAS</label>
                       <textarea class="input" id="form-medical-notes" rows="3" 
-                                placeholder="Otras observaciones importantes..."></textarea>
+                                placeholder="Observaciones médicas adicionales..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
                   </div>
                   
                   <!-- Pestaña 3: Contacto -->
                   <div class="tab-pane" data-tab="contact">
-                    <div class="grid grid-2">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                       <div class="form-group">
-                        <label class="form-label">Teléfono *</label>
-                        <input type="tel" class="input" id="form-phone" required>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO *</label>
+                        <input type="tel" class="input" id="form-phone" required style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                       
                       <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="input" id="form-email">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL</label>
+                        <input type="email" class="input" id="form-email" style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                     </div>
                     
-                    <div class="form-group">
-                      <label class="form-label">Dirección</label>
-                      <textarea class="input" id="form-address" rows="2"></textarea>
+                    <div class="form-group" style="margin-top: 1rem;">
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DIRECCIÓN</label>
+                      <textarea class="input" id="form-address" rows="2" style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
                     
-                    <div class="grid grid-2">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                       <div class="form-group">
-                        <label class="form-label">Ciudad</label>
-                        <input type="text" class="input" id="form-city">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CIUDAD</label>
+                        <input type="text" class="input" id="form-city" style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                       
                       <div class="form-group">
-                        <label class="form-label">Código postal</label>
-                        <input type="text" class="input" id="form-zip">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÓDIGO POSTAL</label>
+                        <input type="text" class="input" id="form-zip" style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                     </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Contacto de emergencia</label>
-                      <div class="grid grid-2">
-                        <input type="text" class="input" id="form-emergency-name" placeholder="Nombre">
-                        <input type="tel" class="input" id="form-emergency-phone" placeholder="Teléfono">
+
+                    <!-- AÑADIDO: Campos de contacto de emergencia -->
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #e2e8f0;">
+                      <div style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem; margin-bottom: 0.75rem;">CONTACTO DE EMERGENCIA</div>
+                      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Nombre</label>
+                          <input type="text" class="input" id="form-emergency-name" style="border-color: var(--modal-border);">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Teléfono</label>
+                          <input type="tel" class="input" id="form-emergency-phone" style="border-color: var(--modal-border);">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Parentesco</label>
+                          <input type="text" class="input" id="form-emergency-relation" placeholder="Ej: Esposa, Hijo..." style="border-color: var(--modal-border);">
+                        </div>
                       </div>
-                      <textarea class="input mt-2" id="form-emergency-relation" rows="1" 
-                                placeholder="Parentesco/Relación"></textarea>
                     </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Seguro médico</label>
-                      <div class="grid grid-2">
-                        <input type="text" class="input" id="form-insurance-company" placeholder="Compañía">
-                        <input type="text" class="input" id="form-insurance-number" placeholder="Número de póliza">
+
+                    <!-- AÑADIDO: Campos de seguro médico -->
+                    <div style="background: #f0fff4; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #c6f6d5;">
+                      <div style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.85rem; margin-bottom: 0.75rem;">SEGURO MÉDICO</div>
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Compañía</label>
+                          <input type="text" class="input" id="form-insurance-company" placeholder="Ej: Sanitas, Adeslas..." style="border-color: var(--modal-border);">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Número de póliza</label>
+                          <input type="text" class="input" id="form-insurance-number" style="border-color: var(--modal-border);">
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 
                 ${state.editingId ? `
-                  <div class="form-group mt-4">
-                    <label class="form-label">Estado</label>
-                    <select class="input" id="form-status">
+                  <div class="form-group mt-6" style="background: var(--modal-bg); padding: 1rem; border-radius: 4px;">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO DE LA FICHA</label>
+                    <select class="input" id="form-status" style="border-color: var(--modal-border); background: white;">
                       <option value="active">Activo</option>
                       <option value="inactive">Inactivo</option>
                     </select>
@@ -476,10 +502,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </form>
             </div>
             
-            <div class="modal-footer">
-              <button class="btn btn-outline" id="btn-cancel">Cancelar</button>
-              <button class="btn btn-primary" id="btn-save">
-                ${state.editingId ? 'Actualizar' : 'Guardar'}
+            <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+              <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;">CANCELAR</button>
+              <button class="btn" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;">
+                ${state.editingId ? 'ACTUALIZAR FICHA' : 'REGISTRAR PACIENTE'}
               </button>
             </div>
           </div>
@@ -487,22 +513,27 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
         <!-- Modal para historial clínico -->
         <div class="modal-overlay ${state.showClinicalHistory ? '' : 'hidden'}" id="clinical-history-modal">
-          <div class="modal-content" style="max-width: 900px; max-height: 90vh;">
-            <div class="modal-header">
-              <h3 style="margin: 0;">
-                <span id="patient-history-name"></span> - Historial Clínico
-              </h3>
-              <button class="btn btn-outline btn-sm" id="btn-close-history">×</button>
+          <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+              <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
+                HISTORIAL CLÍNICO: <span id="patient-history-name"></span>
+              </div>
+              <button class="btn-close-modal" id="btn-close-history" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
             </div>
             
-            <div class="modal-body" id="clinical-history-content">
+            <div class="modal-body" id="clinical-history-content" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
               <!-- Se llenará dinámicamente -->
+            </div>
+            
+            <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; border: none;">
+               <button class="btn" id="btn-close-history-footer" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.6rem 1.5rem; font-weight: 600;">CERRAR</button>
             </div>
           </div>
         </div>
       </div>
     `;
-    
+
     // Guardar referencias
     elements = {
       // Contenedores
@@ -512,7 +543,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       pageInfo: root.querySelector('#page-info'),
       paginationControls: root.querySelector('#pagination-controls'),
       filterCount: root.querySelector('#filter-count'),
-      
+
       // Filtros
       filterSearch: root.querySelector('#filter-search'),
       filterGender: root.querySelector('#filter-gender'),
@@ -521,7 +552,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       btnSearch: root.querySelector('#btn-search'),
       btnResetFilters: root.querySelector('#btn-reset-filters'),
       btnToggleView: root.querySelector('#btn-toggle-view'),
-      
+
       // Filtros avanzados
       advancedFilters: root.querySelector('#advanced-filters'),
       filterAge: root.querySelector('#filter-age'),
@@ -529,10 +560,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
       filterBlood: root.querySelector('#filter-blood'),
       btnToggleAdvanced: root.querySelector('#btn-toggle-advanced'),
       advancedIcon: root.querySelector('#advanced-icon'),
-      
+
       // Paginación
       itemsPerPage: root.querySelector('#items-per-page'),
-      
+
       // Modal paciente
       modal: root.querySelector('#patient-modal'),
       form: root.querySelector('#patient-form'),
@@ -562,36 +593,40 @@ export default function mountPatients(root, { bus, store, user, role }) {
       btnCancel: root.querySelector('#btn-cancel'),
       btnSave: root.querySelector('#btn-save'),
       btnNewPatient: root.querySelector('#btn-new-patient'),
-      
+
       // Tabs
       tabBtns: root.querySelectorAll('.tab-btn'),
       tabPanes: root.querySelectorAll('.tab-pane'),
-      
+
       // Historial clínico modal
       clinicalHistoryModal: root.querySelector('#clinical-history-modal'),
       clinicalHistoryContent: root.querySelector('#clinical-history-content'),
       patientHistoryName: root.querySelector('#patient-history-name'),
-      btnCloseHistory: root.querySelector('#btn-close-history')
+      btnCloseHistory: root.querySelector('#btn-close-history'),
+      btnCloseHistoryFooter: root.querySelector('#btn-close-history-footer')
     };
-    
-    loadData();
+
+    // Inicializar alergias por defecto
+    if (elements.allergiesContainer && elements.allergiesContainer.children.length === 0) {
+      addAllergyField();
+    }
   }
 
   // Renderizar contenido según modo de vista
   function renderContent() {
     if (!elements.contentContainer) return;
-    
+
     if (state.filteredPatients.length === 0) {
       renderEmptyState();
       return;
     }
-    
+
     if (state.viewMode === 'list') {
       renderListView();
     } else {
       renderCardsView();
     }
-    
+
     renderPagination();
   }
 
@@ -620,12 +655,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </div>
       </div>
     `;
-    
-    // Configurar event listeners
-    const list = elements.contentContainer.querySelector('#patients-list');
-    if (list) {
-      list.addEventListener('click', handleListAction);
-    }
+
+    // Las acciones se manejan por delegación en elements.contentContainer (handleContentAction)
   }
 
   // Renderizar fila de paciente
@@ -634,10 +665,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const lastVisit = getLastVisit(patient.id);
     const clinicalCount = state.clinicalRecords.filter(cr => cr.patientId === patient.id).length;
     const appointmentCount = state.appointments.filter(apt => apt.patientId === patient.id).length;
-    
+
     return `
       <tr>
-        <td>
+        <td data-label="Paciente">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
               ${patient.name.charAt(0)}
@@ -650,20 +681,20 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
           </div>
         </td>
-        <td>${patient.dni || '-'}</td>
-        <td>${age || '?'} años</td>
-        <td>
+        <td data-label="DNI">${patient.dni || '-'}</td>
+        <td data-label="Edad">${age || '?'} años</td>
+        <td data-label="Género">
           <span class="badge ${patient.gender === 'M' ? 'badge-info' : patient.gender === 'F' ? 'badge-warning' : 'badge-secondary'}">
             ${patient.gender === 'M' ? '♂ Masculino' : patient.gender === 'F' ? '♀ Femenino' : 'Otro'}
           </span>
         </td>
-        <td>
+        <td data-label="Contacto">
           <div style="font-size: 0.875rem;">
             <div>${patient.phone || '-'}</div>
             <div class="text-muted text-xs">${patient.email || ''}</div>
           </div>
         </td>
-        <td>
+        <td data-label="Última visita">
           ${lastVisit ? `
             <div style="font-size: 0.875rem;">
               <div>${lastVisit.toLocaleDateString('es-ES')}</div>
@@ -671,12 +702,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
           ` : 'Sin visitas'}
         </td>
-        <td>
+        <td data-label="Estado">
           <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}">
             ${patient.isActive ? 'Activo' : 'Inactivo'}
           </span>
         </td>
-        <td>
+        <td data-label="Acciones">
           <div class="flex gap-2">
             <button class="btn btn-outline btn-sm" data-action="view" data-id="${patient.id}">
               Ver
@@ -702,7 +733,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         ${state.paginatedPatients.map(patient => renderPatientCard(patient)).join('')}
       </div>
     `;
-    
+
     // Configurar event listeners
     state.paginatedPatients.forEach(patient => {
       const card = elements.contentContainer.querySelector(`.patient-card[data-id="${patient.id}"]`);
@@ -722,11 +753,11 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const clinicalCount = state.clinicalRecords.filter(cr => cr.patientId === patient.id).length;
     const appointmentCount = state.appointments.filter(apt => apt.patientId === patient.id).length;
     const lastVisit = getLastVisit(patient.id);
-    
+
     // Color por género
-    const genderColor = patient.gender === 'M' ? 'var(--info)' : 
-                       patient.gender === 'F' ? 'var(--warning)' : 'var(--muted)';
-    
+    const genderColor = patient.gender === 'M' ? 'var(--info)' :
+      patient.gender === 'F' ? 'var(--warning)' : 'var(--muted)';
+
     return `
       <div class="card patient-card" data-id="${patient.id}" style="cursor: pointer;">
         <div class="card-header" style="padding: 0; margin-bottom: 1rem;">
@@ -821,9 +852,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
           <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">👤</div>
           <h3>No hay pacientes</h3>
           <p class="text-muted" style="margin-bottom: 1.5rem;">
-            ${state.filters.search || state.filters.gender || state.filters.ageRange ? 
-              'No se encontraron pacientes con los filtros aplicados' : 
-              'No hay pacientes registrados en el sistema'}
+            ${state.filters.search || state.filters.gender || state.filters.ageRange ?
+        'No se encontraron pacientes con los filtros aplicados' :
+        'No hay pacientes registrados en el sistema'}
           </p>
           ${role === 'admin' || role === 'doctor' ? `
             <button class="btn btn-primary" id="btn-create-first-patient">
@@ -833,12 +864,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </div>
       </div>
     `;
-    
+
     const btn = elements.contentContainer.querySelector('#btn-create-first-patient');
     if (btn) {
       btn.addEventListener('click', () => openModal());
     }
-    
+
     elements.paginationContainer.classList.add('hidden');
     if (elements.filterCount) {
       elements.filterCount.textContent = `Mostrando 0 de 0 pacientes`;
@@ -851,25 +882,25 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.paginationContainer.classList.add('hidden');
       return;
     }
-    
+
     elements.paginationContainer.classList.remove('hidden');
-    
+
     // Información de página
     const start = (state.currentPage - 1) * state.itemsPerPage + 1;
     const end = Math.min(state.currentPage * state.itemsPerPage, state.filteredPatients.length);
     const total = state.filteredPatients.length;
-    
+
     if (elements.pageInfo) {
       elements.pageInfo.textContent = `Página ${state.currentPage} de ${state.totalPages}`;
     }
-    
+
     if (elements.filterCount) {
       elements.filterCount.textContent = `Mostrando ${start}-${end} de ${total} pacientes`;
     }
-    
+
     // Controles de paginación
     let paginationHTML = '';
-    
+
     // Botón anterior
     paginationHTML += `
       <button class="btn btn-outline btn-sm ${state.currentPage === 1 ? 'disabled' : ''}" 
@@ -877,16 +908,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
         ←
       </button>
     `;
-    
+
     // Números de página
     const maxPagesToShow = 5;
     let startPage = Math.max(1, state.currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(state.totalPages, startPage + maxPagesToShow - 1);
-    
+
     if (endPage - startPage + 1 < maxPagesToShow) {
       startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       paginationHTML += `
         <button class="btn btn-outline btn-sm ${state.currentPage === i ? 'active' : ''}" 
@@ -895,7 +926,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </button>
       `;
     }
-    
+
     // Botón siguiente
     paginationHTML += `
       <button class="btn btn-outline btn-sm ${state.currentPage === state.totalPages ? 'disabled' : ''}" 
@@ -903,7 +934,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         →
       </button>
     `;
-    
+
     if (elements.paginationControls) {
       elements.paginationControls.innerHTML = paginationHTML;
     }
@@ -912,23 +943,23 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Renderizar estadísticas
   function renderStats() {
     if (!elements.statsContainer) return;
-    
+
     const totalPatients = state.patients.length;
     const activePatients = state.patients.filter(p => p.isActive).length;
-    const patientsWithAppointments = state.patients.filter(p => 
+    const patientsWithAppointments = state.patients.filter(p =>
       state.appointments.some(apt => apt.patientId === p.id)
     ).length;
-    const patientsWithRecords = state.patients.filter(p => 
+    const patientsWithRecords = state.patients.filter(p =>
       state.clinicalRecords.some(cr => cr.patientId === p.id)
     ).length;
-    
+
     // Distribución por género
     const genderCount = {
       M: state.patients.filter(p => p.gender === 'M').length,
       F: state.patients.filter(p => p.gender === 'F').length,
       O: state.patients.filter(p => p.gender === 'O').length
     };
-    
+
     elements.statsContainer.innerHTML = `
       <div class="card">
         <div class="text-muted text-sm">Total de pacientes</div>
@@ -975,9 +1006,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const ages = state.patients
       .map(p => calculateAge(p.birthDate))
       .filter(age => age > 0);
-    
+
     if (ages.length === 0) return 0;
-    
+
     const average = ages.reduce((sum, age) => sum + age, 0) / ages.length;
     return Math.round(average);
   }
@@ -987,9 +1018,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const patientAppointments = state.appointments
       .filter(apt => apt.patientId === patientId && apt.status === 'completed')
       .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
-    
+
     if (patientAppointments.length === 0) return null;
-    
+
     return new Date(patientAppointments[0].dateTime);
   }
 
@@ -1003,19 +1034,19 @@ export default function mountPatients(root, { bus, store, user, role }) {
         }
       });
     }
-    
+
     if (elements.btnSearch) {
       elements.btnSearch.addEventListener('click', applyFilterChanges);
     }
-    
+
     if (elements.filterGender) {
       elements.filterGender.addEventListener('change', applyFilterChanges);
     }
-    
+
     if (elements.filterStatus) {
       elements.filterStatus.addEventListener('change', applyFilterChanges);
     }
-    
+
     if (elements.sortBy) {
       elements.sortBy.addEventListener('change', () => {
         state.sortBy = elements.sortBy.value;
@@ -1023,32 +1054,32 @@ export default function mountPatients(root, { bus, store, user, role }) {
         renderContent();
       });
     }
-    
+
     if (elements.btnResetFilters) {
       elements.btnResetFilters.addEventListener('click', resetFilters);
     }
-    
+
     if (elements.btnToggleView) {
       elements.btnToggleView.addEventListener('click', toggleViewMode);
     }
-    
+
     // Filtros avanzados
     if (elements.btnToggleAdvanced) {
       elements.btnToggleAdvanced.addEventListener('click', toggleAdvancedFilters);
     }
-    
+
     if (elements.filterAge) {
       elements.filterAge.addEventListener('change', applyFilterChanges);
     }
-    
+
     if (elements.filterAllergies) {
       elements.filterAllergies.addEventListener('change', applyFilterChanges);
     }
-    
+
     if (elements.filterBlood) {
       elements.filterBlood.addEventListener('change', applyFilterChanges);
     }
-    
+
     // Paginación
     if (elements.itemsPerPage) {
       elements.itemsPerPage.addEventListener('change', () => {
@@ -1058,13 +1089,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
         renderContent();
       });
     }
-    
+
     // Delegación de eventos para paginación
     if (elements.paginationContainer) {
       elements.paginationContainer.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (!btn) return;
-        
+
         if (btn.id === 'btn-prev') {
           state.currentPage--;
           updatePagination();
@@ -1080,24 +1111,24 @@ export default function mountPatients(root, { bus, store, user, role }) {
         }
       });
     }
-    
+
     // Modal paciente
     if (elements.btnNewPatient) {
       elements.btnNewPatient.addEventListener('click', () => openModal());
     }
-    
+
     if (elements.btnCloseModal) {
       elements.btnCloseModal.addEventListener('click', closeModal);
     }
-    
+
     if (elements.btnCancel) {
       elements.btnCancel.addEventListener('click', closeModal);
     }
-    
+
     if (elements.btnSave) {
       elements.btnSave.addEventListener('click', savePatient);
     }
-    
+
     // Tabs del modal
     if (elements.tabBtns) {
       elements.tabBtns.forEach(btn => {
@@ -1107,12 +1138,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
         });
       });
     }
-    
+
     // Agregar alergia
     if (elements.btnAddAllergy) {
       elements.btnAddAllergy.addEventListener('click', addAllergyField);
     }
-    
+
     // Historial clínico modal
     if (elements.btnCloseHistory) {
       elements.btnCloseHistory.addEventListener('click', () => {
@@ -1122,7 +1153,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
         }
       });
     }
-    
+
+    if (elements.btnCloseHistoryFooter) {
+      elements.btnCloseHistoryFooter.addEventListener('click', () => {
+        state.showClinicalHistory = false;
+        if (elements.clinicalHistoryModal) {
+          elements.clinicalHistoryModal.classList.add('hidden');
+        }
+      });
+    }
+
     // Acciones en el contenido
     if (elements.contentContainer) {
       elements.contentContainer.addEventListener('click', handleContentAction);
@@ -1133,35 +1173,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
   function handleContentAction(event) {
     const button = event.target.closest('button[data-action]');
     if (!button) return;
-    
-    event.stopPropagation();
-    
-    const action = button.dataset.action;
-    const patientId = button.dataset.id;
-    const patient = store.find('patients', patientId);
-    
-    switch (action) {
-      case 'edit':
-        editPatient(patient);
-        break;
-      case 'view':
-        viewPatientDetails(patient);
-        break;
-      case 'history':
-        viewClinicalHistory(patient);
-        break;
-    }
-  }
 
-  // Manejar acciones en la lista
-  function handleListAction(event) {
-    const button = event.target.closest('button[data-action]');
-    if (!button) return;
-    
+    event.stopPropagation();
+
     const action = button.dataset.action;
     const patientId = button.dataset.id;
     const patient = store.find('patients', patientId);
-    
+
     switch (action) {
       case 'edit':
         editPatient(patient);
@@ -1185,7 +1203,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       hasAllergies: elements.filterAllergies?.value || '',
       bloodType: elements.filterBlood?.value || ''
     };
-    
+
     state.currentPage = 1;
     applyFilters();
     renderContent();
@@ -1201,10 +1219,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
       hasAllergies: '',
       bloodType: ''
     };
-    
+
     state.sortBy = 'name';
     state.currentPage = 1;
-    
+
     if (elements.filterSearch) elements.filterSearch.value = '';
     if (elements.filterGender) elements.filterGender.value = '';
     if (elements.filterStatus) elements.filterStatus.value = 'active';
@@ -1212,7 +1230,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.filterAllergies) elements.filterAllergies.value = '';
     if (elements.filterBlood) elements.filterBlood.value = '';
     if (elements.sortBy) elements.sortBy.value = 'name';
-    
+
     applyFilters();
     renderContent();
   }
@@ -1229,10 +1247,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Mostrar/ocultar filtros avanzados
   function toggleAdvancedFilters() {
     if (!elements.advancedFilters) return;
-    
+
     const isHidden = elements.advancedFilters.style.display === 'none';
     elements.advancedFilters.style.display = isHidden ? 'grid' : 'none';
-    
+
     if (elements.advancedIcon) {
       elements.advancedIcon.textContent = isHidden ? '▲' : '▼';
     }
@@ -1244,7 +1262,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     elements.tabBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
-    
+
     // Actualizar contenido de pestañas
     elements.tabPanes.forEach(pane => {
       pane.classList.toggle('active', pane.dataset.tab === tabName);
@@ -1254,10 +1272,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Agregar campo de alergia
   function addAllergyField(value = '', index = null) {
     if (!elements.allergiesContainer) return;
-    
+
     const allergyIndex = index !== null ? index : elements.allergiesContainer.children.length;
     const allergyId = `allergy-${allergyIndex}`;
-    
+
     const allergyDiv = document.createElement('div');
     allergyDiv.className = 'flex items-center gap-2 mb-2';
     allergyDiv.innerHTML = `
@@ -1275,9 +1293,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
         ×
       </button>
     `;
-    
+
     elements.allergiesContainer.appendChild(allergyDiv);
-    
+
     // Configurar evento para eliminar
     const removeBtn = allergyDiv.querySelector('.remove-allergy');
     if (removeBtn) {
@@ -1291,17 +1309,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
   function openModal(patient = null) {
     state.editingId = patient?.id || null;
     state.showModal = true;
-    
+
     if (elements.modal) {
       elements.modal.classList.remove('hidden');
     }
-    
+
     if (patient) {
       populateForm(patient);
     } else {
       clearForm();
     }
-    
+
     // Mostrar primera pestaña
     switchTab('basic');
   }
@@ -1310,11 +1328,11 @@ export default function mountPatients(root, { bus, store, user, role }) {
   function closeModal() {
     state.showModal = false;
     state.editingId = null;
-    
+
     if (elements.modal) {
       elements.modal.classList.add('hidden');
     }
-    
+
     clearForm();
   }
 
@@ -1326,7 +1344,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.formBirthdate) elements.formBirthdate.value = patient.birthDate || '';
     if (elements.formGender) elements.formGender.value = patient.gender || '';
     if (elements.formBloodType) elements.formBloodType.value = patient.bloodType || '';
-    
+
     // Historial médico
     if (elements.allergiesContainer && patient.allergies) {
       elements.allergiesContainer.innerHTML = '';
@@ -1338,12 +1356,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
         }
       });
     }
-    
+
     if (elements.formChronicDiseases) elements.formChronicDiseases.value = patient.chronicDiseases || '';
     if (elements.formRegularMeds) elements.formRegularMeds.value = patient.regularMeds || '';
     if (elements.formSurgeries) elements.formSurgeries.value = patient.surgeries || '';
     if (elements.formMedicalNotes) elements.formMedicalNotes.value = patient.medicalNotes || '';
-    
+
     // Contacto
     if (elements.formPhone) elements.formPhone.value = patient.phone || '';
     if (elements.formEmail) elements.formEmail.value = patient.email || '';
@@ -1355,7 +1373,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.formEmergencyRelation) elements.formEmergencyRelation.value = patient.emergencyContact?.relation || '';
     if (elements.formInsuranceCompany) elements.formInsuranceCompany.value = patient.insurance?.company || '';
     if (elements.formInsuranceNumber) elements.formInsuranceNumber.value = patient.insurance?.policyNumber || '';
-    
+
     // Estado
     if (elements.formStatus) elements.formStatus.value = patient.isActive ? 'active' : 'inactive';
   }
@@ -1375,9 +1393,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
       alert('Por favor, complete los campos requeridos correctamente.');
       return;
     }
-    
+
     const formData = getFormData();
-    
+
     try {
       if (state.editingId) {
         await store.update('patients', state.editingId, formData);
@@ -1386,10 +1404,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
         await store.add('patients', formData);
         showNotification('Paciente creado correctamente', 'success');
       }
-      
+
       closeModal();
       loadData();
-      
+
     } catch (error) {
       console.error('Error guardando paciente:', error);
       showNotification('Error al guardar el paciente', 'error');
@@ -1399,7 +1417,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Validar formulario
   function validateForm() {
     let isValid = true;
-    
+
     const requiredFields = [
       elements.formName,
       elements.formDni,
@@ -1407,7 +1425,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.formGender,
       elements.formPhone
     ];
-    
+
     requiredFields.forEach(field => {
       if (field && !field.value.trim()) {
         field.classList.add('error');
@@ -1416,13 +1434,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
         field.classList.remove('error');
       }
     });
-    
+
     // Validar DNI/NIE
     if (elements.formDni && !validateDNI(elements.formDni.value)) {
       elements.formDni.classList.add('error');
       isValid = false;
     }
-    
+
     // Validar fecha de nacimiento (no puede ser en el futuro)
     if (elements.formBirthdate) {
       const birthDate = new Date(elements.formBirthdate.value);
@@ -1433,21 +1451,21 @@ export default function mountPatients(root, { bus, store, user, role }) {
         isValid = false;
       }
     }
-    
+
     return isValid;
   }
 
   // Validar DNI/NIE
   function validateDNI(dni) {
     if (!dni) return false;
-    
+
     const dniRegex = /^[0-9]{8}[A-Za-z]$/;
     const nieRegex = /^[XYZ][0-9]{7}[A-Za-z]$/;
-    
+
     return dniRegex.test(dni) || nieRegex.test(dni);
   }
 
-  // Obtener datos del formulario
+  // Obtener datos del formulario - CORREGIDO
   function getFormData() {
     // Obtener alergias
     const allergies = [];
@@ -1459,33 +1477,36 @@ export default function mountPatients(root, { bus, store, user, role }) {
         }
       });
     }
-    
+
+    // Usar operadores seguros (?.) para evitar errores con elementos nulos
     return {
-      name: elements.formName.value,
-      dni: elements.formDni.value.toUpperCase(),
-      birthDate: elements.formBirthdate.value,
-      gender: elements.formGender.value,
-      bloodType: elements.formBloodType.value || null,
+      name: elements.formName?.value || '',
+      dni: elements.formDni?.value.toUpperCase() || '',
+      birthDate: elements.formBirthdate?.value || '',
+      gender: elements.formGender?.value || '',
+      bloodType: elements.formBloodType?.value || null,
       allergies: allergies,
-      chronicDiseases: elements.formChronicDiseases.value || '',
-      regularMeds: elements.formRegularMeds.value || '',
-      surgeries: elements.formSurgeries.value || '',
-      medicalNotes: elements.formMedicalNotes.value || '',
-      phone: elements.formPhone.value,
-      email: elements.formEmail.value || '',
-      address: elements.formAddress.value || '',
-      city: elements.formCity.value || '',
-      zipCode: elements.formZip.value || '',
+      chronicDiseases: elements.formChronicDiseases?.value || '',
+      regularMeds: elements.formRegularMeds?.value || '',
+      surgeries: elements.formSurgeries?.value || '',
+      medicalNotes: elements.formMedicalNotes?.value || '',
+      phone: elements.formPhone?.value || '',
+      email: elements.formEmail?.value || '',
+      address: elements.formAddress?.value || '',
+      city: elements.formCity?.value || '',
+      zipCode: elements.formZip?.value || '',
       emergencyContact: {
-        name: elements.formEmergencyName.value || '',
-        phone: elements.formEmergencyPhone.value || '',
-        relation: elements.formEmergencyRelation.value || ''
+        name: elements.formEmergencyName?.value || '',
+        phone: elements.formEmergencyPhone?.value || '',
+        relation: elements.formEmergencyRelation?.value || ''
       },
       insurance: {
-        company: elements.formInsuranceCompany.value || '',
-        policyNumber: elements.formInsuranceNumber.value || ''
+        company: elements.formInsuranceCompany?.value || '',
+        policyNumber: elements.formInsuranceNumber?.value || ''
       },
-      isActive: elements.formStatus ? elements.formStatus.value === 'active' : true
+      isActive: elements.formStatus ? elements.formStatus.value === 'active' : true,
+      createdAt: state.editingId ? undefined : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
   }
 
@@ -1499,7 +1520,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const clinicalRecords = state.clinicalRecords.filter(cr => cr.patientId === patient.id);
     const appointments = state.appointments.filter(apt => apt.patientId === patient.id);
     const age = calculateAge(patient.birthDate);
-    
+
     // Crear modal de detalles
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-patient-modal';
@@ -1516,181 +1537,121 @@ export default function mountPatients(root, { bus, store, user, role }) {
       z-index: 1000;
       padding: 1rem;
     `;
-    
+
     modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 800px; background: var(--card); border-radius: var(--radius); width: 100%; max-height: 90vh; overflow-y: auto;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border);">
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold;">
+      <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">EXPEDIENTE DIGITAL DEL PACIENTE</div>
+          <button class="btn-close-modal" id="close-view-patient-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+        </div>
+        
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow: hidden; display: flex; flex-direction: column;">
+          <!-- Cabecera de Identidad -->
+          <div style="padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 1.5rem; background: #f8fafc;">
+            <div style="width: 70px; height: 70px; background: var(--card-patient); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--modal-header); font-size: 2rem; font-weight: 800; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
               ${patient.name.charAt(0)}
             </div>
             <div>
-              <h3 style="margin: 0;">${patient.name}</h3>
-              <div style="color: var(--muted);">${patient.dni || 'Sin DNI'} • ${age} años</div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: #666; letter-spacing: 0.05em;">PACIENTE REGISTRADO</div>
+              <h3 style="margin: 0; color: var(--modal-header); font-size: 1.75rem; font-weight: 800;">${patient.name}</h3>
+              <div style="font-size: 0.9rem; color: #555; margin-top: 0.25rem;">
+                <span style="font-weight: 700;">DNI:</span> ${patient.dni || 'Sin especificar'} • 
+                <span style="font-weight: 700;">HC:</span> ${patient.id.split('_').pop()}
+              </div>
             </div>
           </div>
-          <button class="btn btn-outline btn-sm" id="close-view-patient-btn">×</button>
-        </div>
-        
-        <div class="modal-body" style="padding: 1.5rem;">
-          <!-- Pestañas -->
-          <div class="flex border-b mb-4">
-            <button type="button" class="tab-btn active" data-tab="info">Información</button>
-            <button type="button" class="tab-btn" data-tab="medical">Historial Médico</button>
-            <button type="button" class="tab-btn" data-tab="appointments">Citas</button>
-            <button type="button" class="tab-btn" data-tab="records">Registros</button>
+
+          <!-- Navegación de Pestañas -->
+          <div style="display: flex; background: #edeff2; padding: 0 1.5rem;">
+            <button type="button" class="tab-btn active" data-tab="info" style="padding: 1rem 1.5rem; border: none; background: white; font-weight: 700; color: var(--modal-header); cursor: pointer; border-bottom: 3px solid var(--modal-header);">INFORMACIÓN</button>
+            <button type="button" class="tab-btn" data-tab="medical" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">MÉDICO</button>
+            <button type="button" class="tab-btn" data-tab="appointments" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">CITAS</button>
+            <button type="button" class="tab-btn" data-tab="records" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">REGISTROS</button>
           </div>
           
           <!-- Contenido de pestañas -->
-          <div id="view-tab-content">
+          <div id="view-tab-content" style="padding: 1.5rem; overflow-y: auto; flex: 1;">
             <!-- Pestaña 1: Información -->
             <div class="tab-pane active" data-tab="info">
-              <div class="grid grid-2" style="margin-bottom: 1.5rem;">
-                <div>
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.25rem;">Fecha de nacimiento</div>
-                  <div>${patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-ES') : 'No especificada'}</div>
+              <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
+                <div style="background: var(--card-patient); border-radius: 8px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.05);">
+                  <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">📌 DATOS PERSONALES</div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">NACIMIENTO</div>
+                      <div style="font-weight: 600;">${patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-ES') : 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">GÉNERO</div>
+                      <div style="font-weight: 600;">${patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Femenino' : 'Otro'}</div>
+                    </div>
+                    <div>
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">SANGRE</div>
+                      <div style="font-weight: 600;">${patient.bloodType || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">ESTADO</div>
+                      <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}" style="width: fit-content; font-size: 0.7rem;">${patient.isActive ? 'ACTIVO' : 'INACTIVO'}</span>
+                    </div>
+                  </div>
+                  
+                  <div style="margin-top: 1.5rem;">
+                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">CORREO ELECTRÓNICO</div>
+                    <div style="font-weight: 600;">${patient.email || 'No registrado'}</div>
+                  </div>
+                  <div style="margin-top: 1rem;">
+                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">DIRECCIÓN</div>
+                    <div style="font-weight: 600;">${patient.address || 'No registrada'}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.25rem;">Género</div>
-                  <div>
-                    <span class="badge ${patient.gender === 'M' ? 'badge-info' : patient.gender === 'F' ? 'badge-warning' : 'badge-secondary'}">
-                      ${patient.gender === 'M' ? '♂ Masculino' : patient.gender === 'F' ? '♀ Femenino' : 'Otro'}
-                    </span>
+
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                  <div style="background: #f1f5f9; border-radius: 8px; padding: 1.25rem; border-left: 4px solid var(--modal-header);">
+                    <div style="font-weight: 700; color: #475569; font-size: 0.75rem; margin-bottom: 0.75rem;">🚑 CONTACTO DE EMERGENCIA</div>
+                    <div style="font-weight: 700; font-size: 1rem;">${patient.emergencyContact?.name || 'No definido'}</div>
+                    <div style="font-size: 0.85rem; margin-top: 0.25rem; color: #64748b;">${patient.emergencyContact?.relation || ''} • ${patient.emergencyContact?.phone || ''}</div>
+                  </div>
+                  
+                  <div style="background: var(--modal-section-gold-light); border-radius: 8px; padding: 1.25rem; border: 1px solid var(--modal-section-gold);">
+                    <div style="font-weight: 700; color: var(--modal-highlight); font-size: 0.75rem; margin-bottom: 0.75rem;">🛡️ SEGURO MÉDICO</div>
+                    ${patient.insurance?.company ? `
+                      <div style="font-weight: 700; font-size: 1rem; color: var(--modal-highlight);">${patient.insurance.company}</div>
+                      <div style="font-size: 0.85rem; margin-top: 0.25rem; color: #b8860b;">Póliza: ${patient.insurance.policyNumber}</div>
+                    ` : '<div style="color: #b8860b; font-style: italic; font-size: 0.85rem;">Particular / Sin seguro</div>'}
                   </div>
                 </div>
               </div>
-              
-              <div class="grid grid-2" style="margin-bottom: 1.5rem;">
-                <div>
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.25rem;">Tipo de sangre</div>
-                  <div>${patient.bloodType || 'Desconocido'}</div>
-                </div>
-                <div>
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.25rem;">Estado</div>
-                  <div>
-                    <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}">
-                      ${patient.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div style="margin-bottom: 1.5rem;">
-                <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Contacto</div>
-                <div class="grid grid-2">
-                  <div>
-                    <div style="font-weight: 500; font-size: 0.875rem;">Teléfono</div>
-                    <div>${patient.phone || 'No especificado'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: 500; font-size: 0.875rem;">Email</div>
-                    <div>${patient.email || 'No especificado'}</div>
-                  </div>
-                </div>
-                ${patient.address ? `
-                  <div style="margin-top: 0.5rem;">
-                    <div style="font-weight: 500; font-size: 0.875rem;">Dirección</div>
-                    <div>${patient.address}</div>
-                    ${patient.city || patient.zipCode ? `
-                      <div class="text-muted text-sm">
-                        ${patient.city || ''} ${patient.zipCode || ''}
-                      </div>
-                    ` : ''}
-                  </div>
-                ` : ''}
-              </div>
-              
-              ${patient.emergencyContact?.name ? `
-                <div style="margin-bottom: 1.5rem;">
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Contacto de emergencia</div>
-                  <div class="grid grid-2">
-                    <div>
-                      <div style="font-weight: 500; font-size: 0.875rem;">Nombre</div>
-                      <div>${patient.emergencyContact.name}</div>
-                    </div>
-                    <div>
-                      <div style="font-weight: 500; font-size: 0.875rem;">Teléfono</div>
-                      <div>${patient.emergencyContact.phone}</div>
-                    </div>
-                  </div>
-                  ${patient.emergencyContact.relation ? `
-                    <div style="margin-top: 0.25rem;">
-                      <div style="font-weight: 500; font-size: 0.875rem;">Parentesco</div>
-                      <div>${patient.emergencyContact.relation}</div>
-                    </div>
-                  ` : ''}
-                </div>
-              ` : ''}
-              
-              ${patient.insurance?.company ? `
-                <div>
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Seguro médico</div>
-                  <div class="grid grid-2">
-                    <div>
-                      <div style="font-weight: 500; font-size: 0.875rem;">Compañía</div>
-                      <div>${patient.insurance.company}</div>
-                    </div>
-                    <div>
-                      <div style="font-weight: 500; font-size: 0.875rem;">Número de póliza</div>
-                      <div>${patient.insurance.policyNumber}</div>
-                    </div>
-                  </div>
-                </div>
-              ` : ''}
             </div>
             
             <!-- Pestaña 2: Historial Médico -->
             <div class="tab-pane" data-tab="medical">
-              ${patient.allergies && patient.allergies.length > 0 ? `
-                <div style="margin-bottom: 1.5rem;">
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Alergias</div>
-                  <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                    ${patient.allergies.map(allergy => `
-                      <span class="badge badge-danger">${allergy}</span>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-              
-              ${patient.chronicDiseases ? `
-                <div style="margin-bottom: 1.5rem;">
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Enfermedades crónicas</div>
-                  <div class="card" style="background: var(--bg-light); padding: 1rem;">
-                    ${patient.chronicDiseases}
-                  </div>
-                </div>
-              ` : ''}
-              
-              ${patient.regularMeds ? `
-                <div style="margin-bottom: 1.5rem;">
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Medicación habitual</div>
-                  <div class="card" style="background: var(--bg-light); padding: 1rem;">
-                    ${patient.regularMeds}
-                  </div>
-                </div>
-              ` : ''}
-              
-              ${patient.surgeries ? `
-                <div style="margin-bottom: 1.5rem;">
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Cirugías previas</div>
-                  <div class="card" style="background: var(--bg-light); padding: 1rem;">
-                    ${patient.surgeries}
-                  </div>
-                </div>
-              ` : ''}
-              
-              ${patient.medicalNotes ? `
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div>
-                  <div style="font-weight: 500; color: var(--muted); margin-bottom: 0.5rem;">Observaciones médicas</div>
-                  <div class="card" style="background: var(--bg-light); padding: 1rem;">
-                    ${patient.medicalNotes}
-                  </div>
+                   <div style="font-size: 0.85rem; font-weight: 700; color: #c53030; margin-bottom: 1rem;">🚫 ALERGIAS Y CONTRAINDICACIONES</div>
+                   <div style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 1rem; min-height: 100px;">
+                      ${patient.allergies && patient.allergies.length > 0 ? `
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                          ${patient.allergies.map(allergy => `<span class="badge badge-danger" style="font-size: 0.75rem;">${allergy}</span>`).join('')}
+                        </div>
+                      ` : '<div style="color: #c53030; font-style: italic; font-size: 0.85rem;">Sin alergias conocidas</div>'}
+                   </div>
                 </div>
-              ` : `
-                <div class="text-center" style="padding: 2rem; color: var(--muted);">
-                  No hay información médica registrada
+                
+                <div>
+                   <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem;">💊 MEDICACIÓN HABITUAL</div>
+                   <div style="background: var(--modal-section-forest-light); border: 1px solid var(--modal-section-forest); border-radius: 8px; padding: 1rem; min-height: 100px;">
+                      <div style="font-size: 0.9rem; color: #2d3748;">${patient.regularMeds || 'No registra medicación'}</div>
+                   </div>
                 </div>
-              `}
+              </div>
+              
+              <div style="margin-top: 1.5rem;">
+                 <div style="font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 1rem;">🗒️ OBSERVACIONES MÉDICAS Y ANTECEDENTES</div>
+                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
+                    <div style="font-size: 0.95rem; line-height: 1.6; color: #334155;">${patient.medicalNotes || 'Sin notas adicionales en el registro'}</div>
+                 </div>
+              </div>
             </div>
             
             <!-- Pestaña 3: Citas -->
@@ -1709,49 +1670,33 @@ export default function mountPatients(root, { bus, store, user, role }) {
                     </thead>
                     <tbody>
                       ${appointments.slice(0, 10).map(appointment => {
-                        const doctor = store.find('doctors', appointment.doctorId);
-                        const area = store.find('areas', appointment.areaId);
-                        const date = new Date(appointment.dateTime);
-                        
-                        return `
+      const doctor = store.find('doctors', appointment.doctorId);
+      const area = store.find('areas', appointment.areaId);
+      const date = new Date(appointment.dateTime);
+      return `
                           <tr>
                             <td>
-                              <div>${date.toLocaleDateString('es-ES')}</div>
-                              <div class="text-xs text-muted">${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                              <div style="font-weight: 600;">${date.toLocaleDateString('es-ES')}</div>
+                              <div style="font-size: 0.75rem; color: #666;">${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
                             </td>
                             <td>${doctor?.name || 'N/A'}</td>
                             <td>${area?.name || 'N/A'}</td>
-                            <td>${appointment.reason || ''}</td>
+                            <td>${appointment.reason || '-'}</td>
                             <td>
-                              <span class="badge ${appointment.status === 'completed' ? 'badge-success' : 
-                                                   appointment.status === 'scheduled' ? 'badge-info' : 
-                                                   appointment.status === 'confirmed' ? 'badge-warning' : 'badge-danger'}">
-                                ${appointment.status === 'scheduled' ? 'Programada' :
-                                  appointment.status === 'confirmed' ? 'Confirmada' :
-                                  appointment.status === 'completed' ? 'Completada' : 'Cancelada'}
+                              <span class="badge ${appointment.status === 'completed' ? 'badge-success' : appointment.status === 'scheduled' ? 'badge-info' : appointment.status === 'confirmed' ? 'badge-warning' : 'badge-danger'}">
+                                ${appointment.status.toUpperCase()}
                               </span>
                             </td>
                           </tr>
                         `;
-                      }).join('')}
+    }).join('')}
                     </tbody>
                   </table>
                 </div>
-                ${appointments.length > 10 ? `
-                  <div class="text-center mt-3">
-                    <span class="text-muted text-sm">
-                      ${appointments.length - 10} citas más...
-                    </span>
-                  </div>
-                ` : ''}
-              ` : `
-                <div class="text-center" style="padding: 2rem; color: var(--muted);">
-                  No hay citas registradas para este paciente
-                </div>
-              `}
+              ` : '<div style="text-align: center; padding: 2rem; color: #666;">No hay citas registradas</div>'}
             </div>
             
-            <!-- Pestaña 4: Registros clínicos -->
+            <!-- Pestaña 4: Registros -->
             <div class="tab-pane" data-tab="records">
               ${clinicalRecords.length > 0 ? `
                 <div class="table-responsive">
@@ -1762,104 +1707,76 @@ export default function mountPatients(root, { bus, store, user, role }) {
                         <th>Tipo</th>
                         <th>Diagnóstico</th>
                         <th>Médico</th>
-                        <th>Acciones</th>
+                        <th>Acción</th>
                       </tr>
                     </thead>
                     <tbody>
                       ${clinicalRecords.slice(0, 10).map(record => {
-                        const doctor = store.find('doctors', record.doctorId);
-                        const date = new Date(record.date);
-                        
-                        return `
+      const doctor = store.find('doctors', record.doctorId);
+      return `
                           <tr>
-                            <td>${date.toLocaleDateString('es-ES')}</td>
-                            <td>
-                              <span class="badge ${record.type === 'consultation' ? 'badge-info' : 
-                                                   record.type === 'emergency' ? 'badge-danger' : 
-                                                   record.type === 'followup' ? 'badge-success' : 'badge-warning'}">
-                                ${record.type === 'consultation' ? 'Consulta' :
-                                  record.type === 'emergency' ? 'Urgencia' :
-                                  record.type === 'followup' ? 'Control' :
-                                  record.type === 'lab' ? 'Laboratorio' : 'Prescripción'}
-                              </span>
-                            </td>
-                            <td>${record.diagnosis?.substring(0, 50) || 'Sin diagnóstico'}...</td>
+                            <td>${new Date(record.date).toLocaleDateString('es-ES')}</td>
+                            <td><span class="badge badge-info">${record.type.toUpperCase()}</span></td>
+                            <td>${record.diagnosis?.substring(0, 40) || 'Sin diagnóstico'}...</td>
                             <td>${doctor?.name || 'N/A'}</td>
                             <td>
-                              <button class="btn btn-outline btn-sm" data-action="view-record" data-id="${record.id}">
-                                Ver
-                              </button>
+                              <button class="btn btn-sm btn-outline" data-action="view-record" data-id="${record.id}">Ver</button>
                             </td>
                           </tr>
                         `;
-                      }).join('')}
+    }).join('')}
                     </tbody>
                   </table>
                 </div>
-                ${clinicalRecords.length > 10 ? `
-                  <div class="text-center mt-3">
-                    <span class="text-muted text-sm">
-                      ${clinicalRecords.length - 10} registros más...
-                    </span>
-                  </div>
-                ` : ''}
-              ` : `
-                <div class="text-center" style="padding: 2rem; color: var(--muted);">
-                  No hay registros clínicos para este paciente
-                </div>
-              `}
+              ` : '<div style="text-align: center; padding: 2rem; color: #666;">No hay registros clínicos</div>'}
             </div>
           </div>
         </div>
         
-        <div class="modal-footer" style="padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between;">
-          <div style="font-size: 0.75rem; color: var(--muted);">
-            Registrado el ${new Date(patient.createdAt).toLocaleDateString('es-ES')}
+        <div class="modal-footer" style="background: #f1f5f9; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
+          <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">
+            REGISTRADO EL ${new Date(patient.createdAt).toLocaleDateString('es-ES')}
           </div>
-          <div class="flex gap-2">
+          <div style="display: flex; gap: 0.75rem;">
             ${role === 'admin' || role === 'doctor' ? `
-              <button class="btn btn-primary" id="btn-edit-patient" data-id="${patient.id}">
-                Editar paciente
-              </button>
-              <button class="btn btn-outline" id="btn-new-appointment-for-patient" data-id="${patient.id}">
-                Nueva cita
-              </button>
+              <button class="btn" id="btn-edit-patient" data-id="${patient.id}" style="background: var(--modal-header); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">EDITAR FICHA</button>
+              <button class="btn" id="btn-new-appointment-for-patient" data-id="${patient.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">NUEVA CITA</button>
             ` : ''}
-            <button class="btn btn-outline" id="close-view-patient-btn-2">Cerrar</button>
+            <button class="btn" id="close-view-patient-btn-2" style="background: white; color: #4a5568; border: 1px solid #cbd5e1; padding: 0.6rem 1.25rem; font-weight: 700;">CERRAR</button>
           </div>
         </div>
       </div>
     `;
-    
+
     // Agregar al DOM
     document.body.appendChild(modalContainer);
-    
+
     // Configurar event listeners
     const closeModal = () => modalContainer.remove();
-    
+
     const closeBtn1 = modalContainer.querySelector('#close-view-patient-btn');
     const closeBtn2 = modalContainer.querySelector('#close-view-patient-btn-2');
     const editBtn = modalContainer.querySelector('#btn-edit-patient');
     const newAppointmentBtn = modalContainer.querySelector('#btn-new-appointment-for-patient');
     const viewRecordBtns = modalContainer.querySelectorAll('[data-action="view-record"]');
-    
+
     if (closeBtn1) closeBtn1.addEventListener('click', closeModal);
     if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
-    
+
     if (editBtn) {
       editBtn.addEventListener('click', () => {
         closeModal();
         editPatient(patient);
       });
     }
-    
+
     if (newAppointmentBtn) {
       newAppointmentBtn.addEventListener('click', () => {
         closeModal();
         createAppointmentForPatient(patient);
       });
     }
-    
+
     if (viewRecordBtns) {
       viewRecordBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1868,19 +1785,19 @@ export default function mountPatients(root, { bus, store, user, role }) {
         });
       });
     }
-    
+
     // Tabs dentro del modal
     const tabBtns = modalContainer.querySelectorAll('.tab-btn');
     const tabPanes = modalContainer.querySelectorAll('.tab-pane');
-    
+
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
-        
+
         // Actualizar botones
         tabBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        
+
         // Actualizar contenido
         tabPanes.forEach(pane => {
           pane.classList.remove('active');
@@ -1890,12 +1807,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
         });
       });
     });
-    
+
     // Cerrar al hacer clic fuera o con ESC
     modalContainer.addEventListener('click', (e) => {
       if (e.target === modalContainer) closeModal();
     });
-    
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
@@ -1905,26 +1822,26 @@ export default function mountPatients(root, { bus, store, user, role }) {
   function viewClinicalHistory(patient) {
     state.selectedPatient = patient;
     state.showClinicalHistory = true;
-    
+
     if (elements.clinicalHistoryModal) {
       elements.clinicalHistoryModal.classList.remove('hidden');
     }
-    
+
     if (elements.patientHistoryName) {
       elements.patientHistoryName.textContent = patient.name;
     }
-    
+
     renderClinicalHistory();
   }
 
   // Renderizar historial clínico
   function renderClinicalHistory() {
     if (!elements.clinicalHistoryContent || !state.selectedPatient) return;
-    
+
     const patientRecords = state.clinicalRecords
       .filter(cr => cr.patientId === state.selectedPatient.id)
       .sort((a, b) => new Date(b.date) - new Date(a.date));
-    
+
     if (patientRecords.length === 0) {
       elements.clinicalHistoryContent.innerHTML = `
         <div class="text-center" style="padding: 3rem;">
@@ -1935,14 +1852,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
       `;
       return;
     }
-    
+
     elements.clinicalHistoryContent.innerHTML = `
       <div class="timeline">
         ${patientRecords.map(record => {
-          const doctor = store.find('doctors', record.doctorId);
-          const date = new Date(record.date);
-          
-          return `
+      const doctor = store.find('doctors', record.doctorId);
+      const date = new Date(record.date);
+
+      return `
             <div class="timeline-item">
               <div class="timeline-date">
                 ${date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -1953,21 +1870,21 @@ export default function mountPatients(root, { bus, store, user, role }) {
                   <div>
                     <h4 style="margin: 0;">
                       ${record.type === 'consultation' ? 'Consulta médica' :
-                        record.type === 'emergency' ? 'Urgencia' :
-                        record.type === 'followup' ? 'Control de seguimiento' :
-                        record.type === 'lab' ? 'Resultados de laboratorio' : 'Prescripción médica'}
+          record.type === 'emergency' ? 'Urgencia' :
+            record.type === 'followup' ? 'Control de seguimiento' :
+              record.type === 'lab' ? 'Resultados de laboratorio' : 'Prescripción médica'}
                     </h4>
                     <div style="font-size: 0.875rem; color: var(--muted);">
                       ${doctor?.name || 'Médico no especificado'}
                     </div>
                   </div>
-                  <span class="badge ${record.type === 'consultation' ? 'badge-info' : 
-                                       record.type === 'emergency' ? 'badge-danger' : 
-                                       record.type === 'followup' ? 'badge-success' : 'badge-warning'}">
+                  <span class="badge ${record.type === 'consultation' ? 'badge-info' :
+          record.type === 'emergency' ? 'badge-danger' :
+            record.type === 'followup' ? 'badge-success' : 'badge-warning'}">
                     ${record.type === 'consultation' ? 'Consulta' :
-                      record.type === 'emergency' ? 'Urgencia' :
-                      record.type === 'followup' ? 'Control' :
-                      record.type === 'lab' ? 'Laboratorio' : 'Prescripción'}
+          record.type === 'emergency' ? 'Urgencia' :
+            record.type === 'followup' ? 'Control' :
+              record.type === 'lab' ? 'Laboratorio' : 'Prescripción'}
                   </span>
                 </div>
                 
@@ -2047,7 +1964,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </div>
             </div>
           `;
-        }).join('')}
+    }).join('')}
       </div>
     `;
   }
@@ -2057,16 +1974,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
     // Navegar al módulo de historia clínica
     if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
       window.APP_STATE.appShell.navigateTo('clinical');
-      
+
       // Guardar el ID del registro para mostrar detalles
       localStorage.setItem('clinical_view_record', recordId);
-      
+
       // Cerrar modales abiertos
       state.showClinicalHistory = false;
       if (elements.clinicalHistoryModal) {
         elements.clinicalHistoryModal.classList.add('hidden');
       }
-      
+
       // Mostrar notificación
       setTimeout(() => {
         showNotification('Cargando registro clínico...', 'info');
@@ -2079,16 +1996,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
     // Navegar al módulo de citas
     if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
       window.APP_STATE.appShell.navigateTo('appointments');
-      
+
       // Guardar datos para prellenar el formulario
       const appointmentData = {
         patientId: patient.id,
         patientName: patient.name,
         source: 'patients'
       };
-      
+
       localStorage.setItem('appointment_form_data', JSON.stringify(appointmentData));
-      
+
       // Mostrar notificación
       setTimeout(() => {
         showNotification(`Creando cita para ${patient.name}...`, 'info');
@@ -2104,19 +2021,19 @@ export default function mountPatients(root, { bus, store, user, role }) {
       top: 20px;
       right: 20px;
       padding: 1rem 1.5rem;
-      background: ${type === 'success' ? 'var(--success)' : 
-                   type === 'error' ? 'var(--danger)' : 
-                   type === 'warning' ? 'var(--warning)' : 'var(--info)'};
+      background: ${type === 'success' ? 'var(--success)' :
+        type === 'error' ? 'var(--danger)' :
+          type === 'warning' ? 'var(--warning)' : 'var(--info)'};
       color: white;
       border-radius: var(--radius);
       box-shadow: var(--shadow-lg);
       z-index: 10000;
       animation: slideIn 0.3s ease;
     `;
-    
+
     notification.textContent = message;
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
       notification.style.animation = 'slideOut 0.3s ease';
       setTimeout(() => notification.remove(), 300);
@@ -2125,13 +2042,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Inicializar módulo
   const unsubscribe = init();
-  
+
   // Función global para ver registro completo
   window.viewFullRecord = viewClinicalRecord;
-  
+
   return {
     refresh: loadData,
-    
+
     destroy() {
       if (unsubscribe) unsubscribe();
       delete window.viewFullRecord;

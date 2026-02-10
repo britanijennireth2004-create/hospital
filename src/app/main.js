@@ -2,6 +2,7 @@
 
 import { createBus } from '../core/bus.js';
 import { createStore } from '../core/store.js';
+import { ICONS } from './icons.js';
 
 // Estado global
 const APP_STATE = {
@@ -17,49 +18,49 @@ const APP_STATE = {
 const ROUTES = {
   dashboard: {
     label: 'Dashboard',
-    icon: '🏠',
+    icon: ICONS.dashboard,
     module: () => import('../modules/dashboard.js'),
     permission: () => true
   },
   appointments: {
     label: 'Citas',
-    icon: '📅',
+    icon: ICONS.calendar,
     module: () => import('../modules/appointments.js'),
-    permission: (role) => ['admin', 'doctor', 'patient'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'patient', 'receptionist', 'nurse'].includes(role)
   },
   patients: {
     label: 'Pacientes',
-    icon: '👤',
+    icon: ICONS.users,
     module: () => import('../modules/patients.js'),
-    permission: (role) => ['admin', 'doctor'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'receptionist'].includes(role)
   },
   doctors: {
     label: 'Médicos',
-    icon: '👨‍⚕️',
+    icon: ICONS.doctor,
     module: () => import('../modules/doctors.js'),
-    permission: (role) => ['admin', 'doctor', 'patient'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'patient', 'receptionist'].includes(role)
   },
   areas: {
     label: 'Áreas',
-    icon: '🏥',
+    icon: ICONS.building,
     module: () => import('../modules/areas.js'),
-    permission: (role) => ['admin', 'doctor', 'patient'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'patient', 'receptionist'].includes(role)
   },
   clinical: {
     label: 'Historia Clínica',
-    icon: '📋',
+    icon: ICONS.clipboard,
     module: () => import('../modules/clinical.js'),
-    permission: (role) => ['admin', 'doctor', 'patient'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'patient', 'nurse'].includes(role)
   },
   triage: {
     label: 'Triage',
-    icon: '🚨',
+    icon: ICONS.triage,
     module: () => import('../modules/triage.js'),
-    permission: (role) => ['admin', 'doctor', 'nurse'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'nurse', 'receptionist'].includes(role)
   },
   security: {
     label: 'Seguridad',
-    icon: '🔐',
+    icon: ICONS.lock,
     module: () => import('../modules/security.js'),
     permission: (role) => ['admin'].includes(role)
   }
@@ -105,14 +106,14 @@ function mountLogin(root, { onSuccess }) {
     <div class="login-page">
       <div class="login-card">
         <div style="text-align: center; margin-bottom: 2rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">🏥</div>
+          <div style="margin-bottom: 1rem; color: var(--primary);">${ICONS.logo}</div>
           <h1>Hospital Central</h1>
           <p style="color: var(--muted);">Sistema de Gestión de Citas</p>
         </div>
         
         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
           <button class="btn btn-primary login-btn" data-role="admin" style="text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div style="font-size: 1.5rem;">👑</div>
+            <div>${ICONS.roleAdmin}</div>
             <div>
               <div style="font-weight: bold;">Administrador</div>
               <div style="font-size: 0.9rem; opacity: 0.9;">Acceso completo al sistema</div>
@@ -120,7 +121,7 @@ function mountLogin(root, { onSuccess }) {
           </button>
           
           <button class="btn login-btn" data-role="doctor" style="background: var(--accent-2); color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div style="font-size: 1.5rem;">👨‍⚕️</div>
+            <div>${ICONS.roleDoctor}</div>
             <div>
               <div style="font-weight: bold;">Médico</div>
               <div style="font-size: 0.9rem; opacity: 0.9;">Gestión de citas y pacientes</div>
@@ -128,10 +129,26 @@ function mountLogin(root, { onSuccess }) {
           </button>
           
           <button class="btn login-btn" data-role="patient" style="background: #3b82f6; color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div style="font-size: 1.5rem;">👤</div>
+            <div>${ICONS.rolePatient}</div>
             <div>
               <div style="font-weight: bold;">Paciente</div>
               <div style="font-size: 0.9rem; opacity: 0.9;">Ver mis citas e historial</div>
+            </div>
+          </button>
+
+          <button class="btn login-btn" data-role="nurse" style="background: #10b981; color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
+            <div>${ICONS.roleNurse}</div>
+            <div>
+              <div style="font-weight: bold;">Enfermera</div>
+              <div style="font-size: 0.9rem; opacity: 0.9;">Triage y atención clínica</div>
+            </div>
+          </button>
+
+          <button class="btn login-btn" data-role="receptionist" style="background: #8b5cf6; color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
+            <div>${ICONS.roleReceptionist}</div>
+            <div>
+              <div style="font-weight: bold;">Recepcionista</div>
+              <div style="font-size: 0.9rem; opacity: 0.9;">Gestión de citas y pacientes</div>
             </div>
           </button>
         </div>
@@ -153,7 +170,9 @@ function mountLogin(root, { onSuccess }) {
         id: `${role}_1`,
         username: role,
         name: role === 'admin' ? 'Administrador' :
-          role === 'doctor' ? 'Dra. Ana Ruiz' : 'María Gómez',
+          role === 'doctor' ? 'Dra. Ana Ruiz' :
+            role === 'nurse' ? 'Enf. Elena Soler' :
+              role === 'receptionist' ? 'Recepcionista Carla' : 'María Gómez',
         role: role,
         email: `${role}@hospital.com`,
         patientId: role === 'patient' ? 'p_1' : null,
@@ -166,10 +185,11 @@ function mountLogin(root, { onSuccess }) {
 }
 
 // ===== APP SHELL MEJORADO =====
+// ===== APP SHELL MEJORADO =====
 async function mountAppShell(root, { user, bus, store }) {
   const state = {
     currentRoute: 'dashboard',
-    sidebarOpen: window.innerWidth >= 768
+    sidebarOpen: window.innerWidth >= 1024 // Cerrado por defecto en tablets y móviles
   };
 
   // Renderizar shell
@@ -181,37 +201,43 @@ async function mountAppShell(root, { user, bus, store }) {
     root.innerHTML = `
       <div class="app-shell">
         <!-- Header -->
-        <header style="position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--card); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; z-index: 1000;">
+        <header class="app-header">
           <div style="display: flex; align-items: center; gap: 1rem;">
             <button class="btn btn-outline btn-sm" id="menu-toggle" style="display: none;">
-              ☰
+              ${ICONS.menu}
             </button>
-            <div style="font-size: 1.5rem;">🏥</div>
-            <div style="font-weight: bold;">Hospital Central</div>
+            <div style="color: var(--primary);">${ICONS.logo}</div>
+            <div style="font-weight: bold;" class="hide-mobile">Hospital Central</div>
           </div>
+          
           <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="text-align: right;">
-              <div style="font-weight: 500;">${user.name}</div>
-              <div style="font-size: 0.875rem; color: var(--muted);">${user.role}</div>
+            <div class="user-info" style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="text-align: right;" class="user-info-text">
+                <div style="font-weight: 500;">${user.name}</div>
+                <div style="font-size: 0.875rem; color: var(--muted);">${user.role.toUpperCase()}</div>
+              </div>
+              <div style="width: 36px; height: 36px; background: var(--accent-light); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                ${user.name.charAt(0)}
+              </div>
             </div>
-            <button class="btn btn-danger btn-sm" id="btn-logout">
-              Salir
+            <button class="btn btn-danger btn-sm" id="btn-logout" title="Cerrar Sesión">
+              <span class="hide-mobile">Salir</span>
+              <span style="display: none;" class="show-mobile">✕</span>
             </button>
           </div>
         </header>
 
         <!-- Main content -->
-        <main style="display: flex; margin-top: var(--header-height); min-height: calc(100vh - var(--header-height));">
+        <main class="app-main">
           <!-- Sidebar -->
-          <nav style="width: ${state.sidebarOpen ? 'var(--sidebar-width)' : '0'}; background: var(--card); border-right: 1px solid var(--border); transition: width 0.3s; overflow: hidden;">
-            <div style="padding: 1rem;">
-              <div style="font-weight: bold; margin-bottom: 1rem; color: var(--muted); padding: 0 0.5rem;">MENÚ</div>
-              <div style="display: flex; flex-direction: column; gap: 0.25rem;" id="nav-menu">
+          <nav class="app-sidebar ${state.sidebarOpen ? 'open' : ''}">
+            <div class="nav-menu">
+              <div style="font-weight: bold; font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--muted); padding: 0 0.75rem; letter-spacing: 0.05em;">MENÚ PRINCIPAL</div>
+              <div id="nav-links">
                 ${routes.map(([routeId, route]) => `
                   <button 
                     class="nav-btn ${state.currentRoute === routeId ? 'active' : ''}" 
-                    data-route="${routeId}"
-                    style="padding: 0.75rem; border: none; background: ${state.currentRoute === routeId ? 'var(--accent-light)' : 'transparent'}; color: ${state.currentRoute === routeId ? 'var(--accent)' : 'var(--text)'}; border-radius: var(--radius); cursor: pointer; text-align: left; display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+                    data-route="${routeId}">
                     <span>${route.icon}</span>
                     <span>${route.label}</span>
                   </button>
@@ -221,21 +247,36 @@ async function mountAppShell(root, { user, bus, store }) {
           </nav>
 
           <!-- Content area -->
-          <div style="flex: 1; padding: 1.5rem; background: var(--bg); overflow-y: auto;">
+          <div class="app-content">
             <div id="module-container"></div>
           </div>
         </main>
+        
+        <!-- Overlay para móvil -->
+        <div id="sidebar-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 850;"></div>
       </div>
     `;
 
-    // Configurar responsive sidebar
+    // Elementos del DOM
     const menuToggle = root.querySelector('#menu-toggle');
-    if (window.innerWidth < 768) {
-      menuToggle.style.display = 'block';
-      menuToggle.addEventListener('click', () => {
-        state.sidebarOpen = !state.sidebarOpen;
-        render();
-      });
+    const sidebar = root.querySelector('.app-sidebar');
+    const overlay = root.querySelector('#sidebar-overlay');
+
+    // Manejo de Sidebar
+    const toggleSidebar = () => {
+      state.sidebarOpen = !state.sidebarOpen;
+      sidebar.classList.toggle('open', state.sidebarOpen);
+      if (window.innerWidth < 768) {
+        overlay.style.display = state.sidebarOpen ? 'block' : 'none';
+      }
+    };
+
+    if (menuToggle) {
+      menuToggle.addEventListener('click', toggleSidebar);
+    }
+
+    if (overlay) {
+      overlay.addEventListener('click', toggleSidebar);
     }
 
     // Configurar navegación
@@ -243,6 +284,11 @@ async function mountAppShell(root, { user, bus, store }) {
       btn.addEventListener('click', () => {
         const route = btn.dataset.route;
         navigateTo(route);
+
+        // Autocerrar sidebar en móvil al navegar
+        if (window.innerWidth < 768 && state.sidebarOpen) {
+          toggleSidebar();
+        }
       });
     });
 
