@@ -107,7 +107,7 @@ function mountLogin(root, { onSuccess }) {
       <div class="login-card">
         <div style="text-align: center; margin-bottom: 2rem;">
           <div style="margin-bottom: 1rem; color: var(--primary);">${ICONS.logo}</div>
-          <h1>Hospital Central</h1>
+          <h1>Hospital Universitario Manuel Nuñez Tovar</h1>
           <p style="color: var(--muted);">Sistema de Gestión de Citas</p>
         </div>
         

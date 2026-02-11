@@ -2,6 +2,21 @@
  * Módulo Dashboard - Vista principal mejorada
  */
 
+// SVG ICONS DEFINITIONS (puedes usar una función helper para obtenerlos)
+const icons = {
+  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="#888" stroke-width="1.5"/><path stroke="#888" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/><path stroke="#888" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/></svg>`,
+  clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="4.25" y="3.75" width="11.5" height="14" rx="2.25" stroke="#888" stroke-width="1.5"/><rect x="6.75" y="2" width="6.5" height="3.5" rx="1.25" stroke="#888" stroke-width="1.5"/></svg>`,
+  user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#888" stroke-width="1.5"/><path stroke="#888" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
+  settings: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="3.5" stroke="#888" stroke-width="1.5"/><path stroke="#888" stroke-width="1.5" d="M10 1.75v2.5M10 15.75v2.5M3.64 3.64l1.77 1.77M14.59 14.59l1.77 1.77M1.75 10h2.5M15.75 10h2.5M3.64 16.36l1.77-1.77M14.59 5.41l1.77-1.77"/></svg>`,
+  doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="6" r="4" stroke="#249" stroke-width="1.5"/><path stroke="#249" stroke-width="1.5" d="M3.5 18c0-3.037 2.486-5.5 6.5-5.5s6.5 2.463 6.5 5.5"/></svg>`,
+  patient: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#38a169" stroke-width="1.5"/><path stroke="#38a169" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
+  area: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" fill="none" viewBox="0 0 20 20"><rect x="2.25" y="4.25" width="15.5" height="10.5" rx="1.75" stroke="#d69e2e" stroke-width="1.5"/><path stroke="#d69e2e" stroke-width="1.5" d="M6.5 15.75V17a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5v-1.25"/></svg>`,
+  successCheck: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="#38a169" stroke-width="2"/><path stroke="#38a169" stroke-width="2" d="M6 10.5l2.5 2 5-5"/></svg>`,
+  warning: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><path stroke="#d69e2e" stroke-width="1.5" d="M10 3v8"/><circle cx="10" cy="15" r="1" fill="#d69e2e"/><circle cx="10" cy="10" r="9" stroke="#d69e2e" stroke-width="1.5"/></svg>`,
+  info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="#249" stroke-width="2"/><path stroke="#249" stroke-width="2" d="M10 7v5"/><circle cx="10" cy="14" r="1" fill="#249"/></svg>`,
+  // ... agrega otros iconos si es necesario
+};
+
 export default function mountDashboard(root, { bus, store, user, role }) {
   const state = {
     stats: {},
@@ -152,25 +167,25 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       <div class="card">
         <div class="text-muted text-sm">Citas totales</div>
         <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
-        <div class="text-xs text-muted mt-1">${stats.todayAppointments} hoy</div>
+        <div class="text-xs text-muted mt-1">${icons.calendar} ${stats.todayAppointments} hoy</div>
       </div>
       
       <div class="card">
         <div class="text-muted text-sm">Pacientes</div>
         <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.totalPatients}</div>
-        <div class="text-xs text-muted mt-1">Registrados</div>
+        <div class="text-xs text-muted mt-1">${icons.user} Registrados</div>
       </div>
       
       <div class="card">
         <div class="text-muted text-sm">Médicos</div>
         <div class="text-2xl font-bold" style="color: var(--info);">${stats.totalDoctors}</div>
-        <div class="text-xs text-muted mt-1">Activos</div>
+        <div class="text-xs text-muted mt-1">${icons.doctor} Activos</div>
       </div>
       
       <div class="card">
         <div class="text-muted text-sm">Próximas citas</div>
         <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments}</div>
-        <div class="text-xs text-muted mt-1">7 días</div>
+        <div class="text-xs text-muted mt-1">${icons.warning} 7 días</div>
       </div>
     `;
   }
@@ -183,7 +198,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     if (state.recentAppointments.length === 0) {
       container.innerHTML = `
         <div class="text-center" style="padding: 3rem 1rem; color: var(--muted);">
-          <div style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;">📅</div>
+          <div style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;">${icons.calendar}</div>
           <p>No hay citas recientes</p>
         </div>
       `;
@@ -206,10 +221,27 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         cancelled: 'var(--danger)'
       };
       
+      // Icon for status (use check/alert/info)
+      let statusIcon = '';
+      switch (appointment.status) {
+        case 'completed':
+          statusIcon = icons.successCheck;
+          break;
+        case 'scheduled':
+          statusIcon = icons.info;
+          break;
+        case 'confirmed':
+          statusIcon = icons.warning;
+          break;
+        case 'cancelled':
+          statusIcon = '';
+          break;
+      }
+      
       return `
         <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border);">
           <div style="width: 40px; height: 40px; background: ${statusColor[appointment.status] || 'var(--muted)'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem;">
-            ${timeStr}
+            ${statusIcon || timeStr}
           </div>
           <div style="flex: 1;">
             <div style="font-weight: 500;">${patient?.name || 'Paciente'}</div>
@@ -232,7 +264,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     if (role === 'admin' || role === 'doctor' || role === 'patient') {
       actions.push({
         label: 'Nueva cita',
-        icon: '📅',
+        icon: icons.calendar,
         href: '#appointments',
         color: 'var(--accent)'
       });
@@ -241,7 +273,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     if (role === 'admin' || role === 'doctor') {
       actions.push({
         label: 'Registrar paciente',
-        icon: '👤',
+        icon: icons.patient,
         href: '#patients',
         color: 'var(--accent-2)'
       });
@@ -250,14 +282,14 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     if (role === 'admin') {
       actions.push({
         label: 'Gestionar médicos',
-        icon: '👨‍⚕️',
+        icon: icons.doctor,
         href: '#doctors',
         color: 'var(--info)'
       });
       
       actions.push({
         label: 'Gestionar áreas',
-        icon: '🏥',
+        icon: icons.area,
         href: '#areas',
         color: 'var(--warning)'
       });
@@ -266,7 +298,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     if (role === 'patient') {
       actions.push({
         label: 'Mi historial',
-        icon: '📋',
+        icon: icons.clipboard,
         href: '#clinical',
         color: 'var(--success)'
       });
@@ -275,7 +307,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     if (role === 'admin' || role === 'doctor') {
       actions.push({
         label: 'Historia Clínica',
-        icon: '📋',
+        icon: icons.clipboard,
         href: '#clinical',
         color: 'var(--info)'
       });
@@ -283,7 +315,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     
     actions.push({
       label: 'Configuración',
-      icon: '⚙️',
+      icon: icons.settings,
       href: '#settings',
       color: 'var(--muted)'
     });
@@ -292,7 +324,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       <div class="grid grid-2" style="gap: 0.5rem;">
         ${actions.map(action => `
           <a href="${action.href}" class="btn btn-outline" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; text-align: left;">
-            <span style="font-size: 1.25rem;">${action.icon}</span>
+            <span style="font-size: 1.25rem; display:inline-block;vertical-align:middle">${action.icon}</span>
             <span>${action.label}</span>
           </a>
         `).join('')}

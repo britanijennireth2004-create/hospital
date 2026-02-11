@@ -2,6 +2,47 @@
  * Módulo de Gestión de Pacientes - CRUD Completo
  */
 
+// SVG iconos ejecutivos con currentColor para heredar color del texto
+const icons = {
+  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/></svg>`,
+  clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="4.25" y="3.75" width="11.5" height="14" rx="2.25" stroke="currentColor" stroke-width="1.5"/><rect x="6.75" y="2" width="6.5" height="3.5" rx="1.25" stroke="currentColor" stroke-width="1.5"/></svg>`,
+  user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
+  doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.5 18c0-3.037 2.486-5.5 6.5-5.5s6.5 2.463 6.5 5.5"/></svg>`,
+  patient: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
+  area: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" fill="none" viewBox="0 0 20 20"><rect x="2.25" y="4.25" width="15.5" height="10.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 15.75V17a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5v-1.25"/></svg>`,
+  successCheck: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" d="M6 10.5l2.5 2 5-5"/></svg>`,
+  warning: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M10 3v8"/><circle cx="10" cy="15" r="1" fill="currentColor"/><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/></svg>`,
+  info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" d="M10 7v5"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg>`,
+  edit: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z"/></svg>`,
+  cancel: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M7 7l6 6M13 7l-6 6"/></svg>`,
+  view: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M2 10s2.5-6 8-6 8 6 8 6-2.5 6-8 6-8-6-8-6z"/></svg>`,
+  clock: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 4v6l3 3"/></svg>`,
+  plus: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M4 10h12M10 4v12"/></svg>`,
+  close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M5 5l10 10M15 5L5 15"/></svg>`,
+  conflict: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 6v5"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>`,
+  clinical: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3.25" y="2.75" width="13.5" height="14.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 6h7M6.5 10h7M6.5 14h4"/></svg>`,
+  male: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M16 4l-4 4M16 4h-3M16 4v3"/></svg>`,
+  female: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 11v7M7 15h6"/></svg>`,
+  allergy: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="6" cy="6" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="6" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="14" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="14" r="2" stroke="currentColor" stroke-width="1.5"/></svg>`,
+  medication: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="5" y="3" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M8 9h4M8 13h2"/></svg>`,
+  surgery: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M3 17L17 3M5 7l8 8M7 5l8 8M3 13l4-4M13 3l4 4"/></svg>`,
+  address: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M10 2.5L3 7v9a1.5 1.5 0 001.5 1.5h11A1.5 1.5 0 0017 16V7l-7-4.5z"/><circle cx="10" cy="11" r="2" stroke="currentColor" stroke-width="1.5"/></svg>`,
+  phone: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="5" y="2" width="10" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="15" r="1" fill="currentColor"/></svg>`,
+  email: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3 5l7 6 7-6"/></svg>`,
+  emergency: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><polygon points="10,2 2,16 18,16" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="12" r="1" fill="currentColor"/><path stroke="currentColor" stroke-width="1.5" d="M10 7v3"/></svg>`,
+  insurance: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6 8h8M6 11h8M6 14h5"/></svg>`,
+  search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M13 13l4 4"/></svg>`,
+  filter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="2" rx="1" fill="currentColor"/><rect x="5" y="9" width="10" height="2" rx="1" fill="currentColor"/><rect x="7" y="14" width="6" height="2" rx="1" fill="currentColor"/></svg>`,
+  sort: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M6 7l4-4 4 4M14 13l-4 4-4-4"/></svg>`,
+  arrowLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M12 4L6 10l6 6"/></svg>`,
+  arrowRight: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M8 4l6 6-6 6"/></svg>`,
+  cardView: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>`,
+  listView: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="14" width="14" height="2" rx="1" fill="currentColor"/></svg>`,
+  vitalSigns: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M2 13l4-4 3 3 5-6 4 5"/></svg>`,
+  diagnosis: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M7 10h6M10 7v6"/></svg>`,
+  treatment: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M16 4l-2 2-2-2-2 2-2-2-2 2-2-2-2 2v8a2 2 0 002 2h10a2 2 0 002-2V4z"/></svg>`
+};
+
 export default function mountPatients(root, { bus, store, user, role }) {
   const state = {
     patients: [],
@@ -9,7 +50,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     appointments: [],
     editingId: null,
     showModal: false,
-    viewMode: 'list', // 'list' o 'cards'
+    viewMode: 'list',
     filters: {
       search: '',
       gender: '',
@@ -37,7 +78,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
     setupEventListeners();
     loadData();
 
-    // Suscribirse a cambios
     const unsubscribe = store.subscribe('patients', () => {
       loadData();
     });
@@ -60,7 +100,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
   function applyFilters() {
     let filteredPatients = state.patients;
 
-    // Búsqueda por texto
     if (state.filters.search) {
       const searchTerm = state.filters.search.toLowerCase();
       filteredPatients = filteredPatients.filter(patient =>
@@ -71,21 +110,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
       );
     }
 
-    // Filtro por género
     if (state.filters.gender) {
       filteredPatients = filteredPatients.filter(patient =>
         patient.gender === state.filters.gender
       );
     }
 
-    // Filtro por estado
     if (state.filters.status === 'active') {
       filteredPatients = filteredPatients.filter(patient => patient.isActive);
     } else if (state.filters.status === 'inactive') {
       filteredPatients = filteredPatients.filter(patient => !patient.isActive);
     }
 
-    // Filtro por rango de edad
     if (state.filters.ageRange) {
       filteredPatients = filteredPatients.filter(patient => {
         if (!patient.birthDate) return true;
@@ -101,7 +137,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    // Filtro por alergias
     if (state.filters.hasAllergies === 'yes') {
       filteredPatients = filteredPatients.filter(patient =>
         patient.allergies && patient.allergies.length > 0
@@ -112,14 +147,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
       );
     }
 
-    // Filtro por tipo de sangre
     if (state.filters.bloodType) {
       filteredPatients = filteredPatients.filter(patient =>
         patient.bloodType === state.filters.bloodType
       );
     }
 
-    // Ordenar
     filteredPatients.sort((a, b) => {
       switch (state.sortBy) {
         case 'name': return a.name.localeCompare(b.name);
@@ -171,27 +204,25 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
             ${canEdit ? `
               <button class="btn btn-primary" id="btn-new-patient">
-                <span>+</span> Nuevo Paciente
+                ${icons.plus} Nuevo Paciente
               </button>
             ` : ''}
           </div>
         </div>
 
         <!-- Estadísticas -->
-        <div class="grid grid-4" id="stats-container">
-          <!-- Se llenará dinámicamente -->
-        </div>
+        <div class="grid grid-4" id="stats-container"></div>
 
         <!-- Filtros -->
         <div class="card">
           <div class="flex justify-between items-center mb-3">
-            <h3 style="margin: 0;">Filtros</h3>
+            <h3 style="margin: 0;">${icons.filter} Filtros</h3>
             <div class="flex gap-2">
               <button class="btn btn-outline btn-sm" id="btn-reset-filters">
                 Limpiar filtros
               </button>
               <button class="btn btn-outline btn-sm" id="btn-toggle-view">
-                ${state.viewMode === 'list' ? '📊 Vista Tarjetas' : '📋 Vista Lista'}
+                ${state.viewMode === 'list' ? `${icons.cardView} Vista Tarjetas` : `${icons.listView} Vista Lista`}
               </button>
             </div>
           </div>
@@ -204,7 +235,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 <input type="text" class="input" id="filter-search" 
                        placeholder="Nombre, DNI, teléfono..." 
                        value="${state.filters.search}">
-                <button class="btn btn-outline" id="btn-search">🔍</button>
+                <button class="btn btn-outline" id="btn-search">${icons.search}</button>
               </div>
             </div>
             
@@ -229,7 +260,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
             
             <div class="form-group">
-              <label class="form-label">Ordenar por</label>
+              <label class="form-label">${icons.sort} Ordenar por</label>
               <select class="input" id="sort-by">
                 <option value="name" ${state.sortBy === 'name' ? 'selected' : ''}>Nombre</option>
                 <option value="age" ${state.sortBy === 'age' ? 'selected' : ''}>Edad</option>
@@ -287,9 +318,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </div>
 
         <!-- Contenido principal -->
-        <div id="content-container">
-          <!-- Se llenará dinámicamente -->
-        </div>
+        <div id="content-container"></div>
 
         <!-- Paginación -->
         <div class="card hidden" id="pagination-container">
@@ -297,9 +326,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
             <div class="text-sm text-muted" id="page-info">
               Página 1 de 1
             </div>
-            <div class="flex gap-1" id="pagination-controls">
-              <!-- Se llenará dinámicamente -->
-            </div>
+            <div class="flex gap-1" id="pagination-controls"></div>
             <div class="flex items-center gap-2">
               <span class="text-sm text-muted">Mostrar:</span>
               <select class="input input-sm" id="items-per-page" style="width: 80px;">
@@ -320,16 +347,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
                 ${state.editingId ? 'EDICIÓN DE FICHA DE PACIENTE' : 'REGISTRO DE NUEVO PACIENTE'}
               </div>
-              <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+              <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                ${icons.close}
+              </button>
             </div>
             
             <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
               <form id="patient-form">
                 <!-- Pestañas Estilo Clínico -->
                 <div class="flex border-b mb-6" style="gap: 1rem; justify-content: center;">
-                  <button type="button" class="tab-btn active" data-tab="basic" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">Datos Básicos</button>
-                  <button type="button" class="tab-btn" data-tab="medical" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">Historial Médico</button>
-                  <button type="button" class="tab-btn" data-tab="contact" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">Contacto</button>
+                  <button type="button" class="tab-btn active" data-tab="basic" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">${icons.user} Datos Básicos</button>
+                  <button type="button" class="tab-btn" data-tab="medical" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">${icons.clinical} Historial Médico</button>
+                  <button type="button" class="tab-btn" data-tab="contact" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer; transition: all 0.3s;">${icons.address} Contacto</button>
                 </div>
                 
                 <!-- Contenido de pestañas -->
@@ -385,36 +414,33 @@ export default function mountPatients(root, { bus, store, user, role }) {
                   <!-- Pestaña 2: Historial Médico -->
                   <div class="tab-pane" data-tab="medical">
                     <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ALERGIAS CONOCIDAS</label>
-                      <div id="allergies-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <!-- Alergias se agregarán dinámicamente -->
-                      </div>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.allergy} ALERGIAS CONOCIDAS</label>
+                      <div id="allergies-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;"></div>
                       <button type="button" class="btn" id="btn-add-allergy" style="background: var(--modal-section-gold); color: white; border: none; padding: 0.4rem 1rem; font-size: 0.8rem; border-radius: 4px; cursor: pointer;">
-                        + Agregar alergia
+                        ${icons.plus} Agregar alergia
                       </button>
                     </div>
                     
                     <div class="form-group" style="margin-top: 1rem;">
-                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ENFERMEDADES CRÓNICAS</label>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.diagnosis} ENFERMEDADES CRÓNICAS</label>
                       <textarea class="input" id="form-chronic-diseases" rows="2" 
                                 placeholder="Ej: Hipertensión, Diabetes, Asma..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
                     
                     <div class="form-group" style="margin-top: 1rem;">
-                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MEDICACIÓN HABITUAL</label>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.medication} MEDICACIÓN HABITUAL</label>
                       <textarea class="input" id="form-regular-meds" rows="2" 
                                 placeholder="Medicamentos que toma regularmente..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
 
-                    <!-- AÑADIDO: Campos faltantes -->
                     <div class="form-group" style="margin-top: 1rem;">
-                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CIRUGÍAS PREVIAS</label>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.surgery} CIRUGÍAS PREVIAS</label>
                       <textarea class="input" id="form-surgeries" rows="2" 
                                 placeholder="Cirugías o intervenciones quirúrgicas previas..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
                     
                     <div class="form-group" style="margin-top: 1rem;">
-                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOTAS MÉDICAS</label>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.clinical} NOTAS MÉDICAS</label>
                       <textarea class="input" id="form-medical-notes" rows="3" 
                                 placeholder="Observaciones médicas adicionales..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
@@ -424,18 +450,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
                   <div class="tab-pane" data-tab="contact">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                       <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO *</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.phone} TELÉFONO *</label>
                         <input type="tel" class="input" id="form-phone" required style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                       
                       <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL</label>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.email} EMAIL</label>
                         <input type="email" class="input" id="form-email" style="border-color: var(--modal-border); background: var(--modal-bg);">
                       </div>
                     </div>
                     
                     <div class="form-group" style="margin-top: 1rem;">
-                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DIRECCIÓN</label>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">${icons.address} DIRECCIÓN</label>
                       <textarea class="input" id="form-address" rows="2" style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
                     </div>
                     
@@ -451,9 +477,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       </div>
                     </div>
 
-                    <!-- AÑADIDO: Campos de contacto de emergencia -->
                     <div style="background: #f8fafc; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #e2e8f0;">
-                      <div style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem; margin-bottom: 0.75rem;">CONTACTO DE EMERGENCIA</div>
+                      <div style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem; margin-bottom: 0.75rem;">${icons.emergency} CONTACTO DE EMERGENCIA</div>
                       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Nombre</label>
@@ -472,9 +497,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       </div>
                     </div>
 
-                    <!-- AÑADIDO: Campos de seguro médico -->
                     <div style="background: #f0fff4; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #c6f6d5;">
-                      <div style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.85rem; margin-bottom: 0.75rem;">SEGURO MÉDICO</div>
+                      <div style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.85rem; margin-bottom: 0.75rem;">${icons.insurance} SEGURO MÉDICO</div>
                       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Compañía</label>
@@ -503,9 +527,11 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
             
             <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-              <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;">CANCELAR</button>
+              <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;">
+                ${icons.close} CANCELAR
+              </button>
               <button class="btn" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;">
-                ${state.editingId ? 'ACTUALIZAR FICHA' : 'REGISTRAR PACIENTE'}
+                ${icons.successCheck} ${state.editingId ? 'ACTUALIZAR FICHA' : 'REGISTRAR PACIENTE'}
               </button>
             </div>
           </div>
@@ -517,17 +543,19 @@ export default function mountPatients(root, { bus, store, user, role }) {
             <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
               <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-                HISTORIAL CLÍNICO: <span id="patient-history-name"></span>
+                ${icons.clinical} HISTORIAL CLÍNICO: <span id="patient-history-name"></span>
               </div>
-              <button class="btn-close-modal" id="btn-close-history" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+              <button class="btn-close-modal" id="btn-close-history" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                ${icons.close}
+              </button>
             </div>
             
-            <div class="modal-body" id="clinical-history-content" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
-              <!-- Se llenará dinámicamente -->
-            </div>
+            <div class="modal-body" id="clinical-history-content" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;"></div>
             
             <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; border: none;">
-               <button class="btn" id="btn-close-history-footer" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.6rem 1.5rem; font-weight: 600;">CERRAR</button>
+              <button class="btn" id="btn-close-history-footer" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.6rem 1.5rem; font-weight: 600;">
+                ${icons.close} CERRAR
+              </button>
             </div>
           </div>
         </div>
@@ -536,15 +564,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
     // Guardar referencias
     elements = {
-      // Contenedores
       statsContainer: root.querySelector('#stats-container'),
       contentContainer: root.querySelector('#content-container'),
       paginationContainer: root.querySelector('#pagination-container'),
       pageInfo: root.querySelector('#page-info'),
       paginationControls: root.querySelector('#pagination-controls'),
       filterCount: root.querySelector('#filter-count'),
-
-      // Filtros
       filterSearch: root.querySelector('#filter-search'),
       filterGender: root.querySelector('#filter-gender'),
       filterStatus: root.querySelector('#filter-status'),
@@ -552,19 +577,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
       btnSearch: root.querySelector('#btn-search'),
       btnResetFilters: root.querySelector('#btn-reset-filters'),
       btnToggleView: root.querySelector('#btn-toggle-view'),
-
-      // Filtros avanzados
       advancedFilters: root.querySelector('#advanced-filters'),
       filterAge: root.querySelector('#filter-age'),
       filterAllergies: root.querySelector('#filter-allergies'),
       filterBlood: root.querySelector('#filter-blood'),
       btnToggleAdvanced: root.querySelector('#btn-toggle-advanced'),
       advancedIcon: root.querySelector('#advanced-icon'),
-
-      // Paginación
       itemsPerPage: root.querySelector('#items-per-page'),
-
-      // Modal paciente
       modal: root.querySelector('#patient-modal'),
       form: root.querySelector('#patient-form'),
       formName: root.querySelector('#form-name'),
@@ -593,12 +612,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
       btnCancel: root.querySelector('#btn-cancel'),
       btnSave: root.querySelector('#btn-save'),
       btnNewPatient: root.querySelector('#btn-new-patient'),
-
-      // Tabs
       tabBtns: root.querySelectorAll('.tab-btn'),
       tabPanes: root.querySelectorAll('.tab-pane'),
-
-      // Historial clínico modal
       clinicalHistoryModal: root.querySelector('#clinical-history-modal'),
       clinicalHistoryContent: root.querySelector('#clinical-history-content'),
       patientHistoryName: root.querySelector('#patient-history-name'),
@@ -606,7 +621,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       btnCloseHistoryFooter: root.querySelector('#btn-close-history-footer')
     };
 
-    // Inicializar alergias por defecto
     if (elements.allergiesContainer && elements.allergiesContainer.children.length === 0) {
       addAllergyField();
     }
@@ -655,11 +669,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </div>
       </div>
     `;
-
-    // Las acciones se manejan por delegación en elements.contentContainer (handleContentAction)
   }
 
-  // Renderizar fila de paciente
+  // Renderizar fila de paciente - SIN BOTÓN DE HISTORIAL
   function renderPatientRow(patient) {
     const age = calculateAge(patient.birthDate);
     const lastVisit = getLastVisit(patient.id);
@@ -670,13 +682,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
       <tr>
         <td data-label="Paciente">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
-              ${patient.name.charAt(0)}
+            <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+              ${icons.user}
             </div>
             <div>
               <div style="font-weight: 500;">${patient.name}</div>
               <div style="font-size: 0.75rem; color: var(--muted);">
-                ${clinicalCount} registros • ${appointmentCount} citas
+                ${icons.clinical} ${clinicalCount} registros • ${icons.calendar} ${appointmentCount} citas
               </div>
             </div>
           </div>
@@ -685,39 +697,36 @@ export default function mountPatients(root, { bus, store, user, role }) {
         <td data-label="Edad">${age || '?'} años</td>
         <td data-label="Género">
           <span class="badge ${patient.gender === 'M' ? 'badge-info' : patient.gender === 'F' ? 'badge-warning' : 'badge-secondary'}">
-            ${patient.gender === 'M' ? '♂ Masculino' : patient.gender === 'F' ? '♀ Femenino' : 'Otro'}
+            ${patient.gender === 'M' ? `${icons.male} Masculino` : patient.gender === 'F' ? `${icons.female} Femenino` : 'Otro'}
           </span>
         </td>
         <td data-label="Contacto">
           <div style="font-size: 0.875rem;">
-            <div>${patient.phone || '-'}</div>
-            <div class="text-muted text-xs">${patient.email || ''}</div>
+            <div>${icons.phone} ${patient.phone || '-'}</div>
+            <div class="text-muted text-xs">${icons.email} ${patient.email || ''}</div>
           </div>
         </td>
         <td data-label="Última visita">
           ${lastVisit ? `
             <div style="font-size: 0.875rem;">
-              <div>${lastVisit.toLocaleDateString('es-ES')}</div>
-              <div class="text-muted text-xs">${lastVisit.toLocaleDateString('es-ES', { weekday: 'short' })}</div>
+              <div>${icons.calendar} ${lastVisit.toLocaleDateString('es-ES')}</div>
+              <div class="text-muted text-xs">${icons.clock} ${lastVisit.toLocaleDateString('es-ES', { weekday: 'short' })}</div>
             </div>
           ` : 'Sin visitas'}
         </td>
         <td data-label="Estado">
           <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}">
-            ${patient.isActive ? 'Activo' : 'Inactivo'}
+            ${patient.isActive ? icons.successCheck : icons.cancel} ${patient.isActive ? 'Activo' : 'Inactivo'}
           </span>
         </td>
         <td data-label="Acciones">
           <div class="flex gap-2">
             <button class="btn btn-outline btn-sm" data-action="view" data-id="${patient.id}">
-              Ver
+              ${icons.view} Ver
             </button>
             ${role === 'admin' || role === 'doctor' ? `
               <button class="btn btn-outline btn-sm" data-action="edit" data-id="${patient.id}">
-                Editar
-              </button>
-              <button class="btn btn-outline btn-sm" data-action="history" data-id="${patient.id}">
-                Historial
+                ${icons.edit} Editar
               </button>
             ` : ''}
           </div>
@@ -726,7 +735,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     `;
   }
 
-  // Renderizar vista de tarjetas
+  // Renderizar vista de tarjetas - SIN BOTÓN DE HISTORIAL
   function renderCardsView() {
     elements.contentContainer.innerHTML = `
       <div class="grid grid-3">
@@ -734,7 +743,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       </div>
     `;
 
-    // Configurar event listeners
     state.paginatedPatients.forEach(patient => {
       const card = elements.contentContainer.querySelector(`.patient-card[data-id="${patient.id}"]`);
       if (card) {
@@ -747,14 +755,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
     });
   }
 
-  // Renderizar tarjeta de paciente
+  // Renderizar tarjeta de paciente - SIN BOTÓN DE HISTORIAL
   function renderPatientCard(patient) {
     const age = calculateAge(patient.birthDate);
     const clinicalCount = state.clinicalRecords.filter(cr => cr.patientId === patient.id).length;
     const appointmentCount = state.appointments.filter(apt => apt.patientId === patient.id).length;
     const lastVisit = getLastVisit(patient.id);
 
-    // Color por género
     const genderColor = patient.gender === 'M' ? 'var(--info)' :
       patient.gender === 'F' ? 'var(--warning)' : 'var(--muted)';
 
@@ -762,8 +769,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
       <div class="card patient-card" data-id="${patient.id}" style="cursor: pointer;">
         <div class="card-header" style="padding: 0; margin-bottom: 1rem;">
           <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold;">
-              ${patient.name.charAt(0)}
+            <div style="width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              ${icons.patient}
             </div>
             <div style="flex: 1;">
               <div style="font-weight: 600; font-size: 1.125rem;">${patient.name}</div>
@@ -771,7 +778,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 <span>${patient.dni || 'Sin DNI'}</span>
                 •
                 <span style="color: ${genderColor};">
-                  ${patient.gender === 'M' ? '♂' : patient.gender === 'F' ? '♀' : '⚧'} 
+                  ${patient.gender === 'M' ? icons.male : patient.gender === 'F' ? icons.female : '⚧'} 
                   ${age || '?'} años
                 </span>
               </div>
@@ -781,7 +788,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         
         <div style="margin-bottom: 1rem;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span style="color: var(--muted); font-size: 0.875rem;">Contacto:</span>
+            <span style="color: var(--muted); font-size: 0.875rem;">${icons.phone} Contacto:</span>
             <span style="font-weight: 500; font-size: 0.875rem;">${patient.phone || 'No especificado'}</span>
           </div>
           
@@ -792,7 +799,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           
           ${patient.allergies && patient.allergies.length > 0 ? `
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-              <span style="color: var(--muted); font-size: 0.875rem;">Alergias:</span>
+              <span style="color: var(--muted); font-size: 0.875rem;">${icons.allergy} Alergias:</span>
               <span style="font-weight: 500; font-size: 0.875rem; color: var(--danger);">
                 ${patient.allergies.length}
               </span>
@@ -801,7 +808,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           
           ${lastVisit ? `
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: var(--muted); font-size: 0.875rem;">Última visita:</span>
+              <span style="color: var(--muted); font-size: 0.875rem;">${icons.calendar} Última visita:</span>
               <span style="font-weight: 500; font-size: 0.875rem;">
                 ${lastVisit.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
               </span>
@@ -812,18 +819,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
         <div style="border-top: 1px solid var(--border); padding-top: 1rem;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
             <div style="text-align: center;">
-              <div style="font-size: 0.75rem; color: var(--muted);">Registros</div>
+              <div style="font-size: 0.75rem; color: var(--muted);">${icons.clinical} Registros</div>
               <div style="font-weight: 600; font-size: 1.25rem;">${clinicalCount}</div>
             </div>
             <div style="text-align: center;">
-              <div style="font-size: 0.75rem; color: var(--muted);">Citas</div>
+              <div style="font-size: 0.75rem; color: var(--muted);">${icons.calendar} Citas</div>
               <div style="font-weight: 600; font-size: 1.25rem;">${appointmentCount}</div>
             </div>
             <div style="text-align: center;">
               <div style="font-size: 0.75rem; color: var(--muted);">Estado</div>
               <div>
                 <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}">
-                  ${patient.isActive ? 'Activo' : 'Inactivo'}
+                  ${patient.isActive ? icons.successCheck : icons.cancel} ${patient.isActive ? 'Activo' : 'Inactivo'}
                 </span>
               </div>
             </div>
@@ -831,11 +838,11 @@ export default function mountPatients(root, { bus, store, user, role }) {
           
           <div class="card-actions flex gap-2">
             <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="view" data-id="${patient.id}">
-              Ver
+              ${icons.view} Ver
             </button>
             ${role === 'admin' || role === 'doctor' ? `
-              <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="history" data-id="${patient.id}">
-                Historial
+              <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="edit" data-id="${patient.id}">
+                ${icons.edit} Editar
               </button>
             ` : ''}
           </div>
@@ -849,16 +856,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
     elements.contentContainer.innerHTML = `
       <div class="card">
         <div class="text-center" style="padding: 3rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">👤</div>
+          <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">${icons.user}</div>
           <h3>No hay pacientes</h3>
           <p class="text-muted" style="margin-bottom: 1.5rem;">
             ${state.filters.search || state.filters.gender || state.filters.ageRange ?
-        'No se encontraron pacientes con los filtros aplicados' :
-        'No hay pacientes registrados en el sistema'}
+      'No se encontraron pacientes con los filtros aplicados' :
+      'No hay pacientes registrados en el sistema'}
           </p>
           ${role === 'admin' || role === 'doctor' ? `
             <button class="btn btn-primary" id="btn-create-first-patient">
-              Registrar primer paciente
+              ${icons.plus} Registrar primer paciente
             </button>
           ` : ''}
         </div>
@@ -885,7 +892,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
     elements.paginationContainer.classList.remove('hidden');
 
-    // Información de página
     const start = (state.currentPage - 1) * state.itemsPerPage + 1;
     const end = Math.min(state.currentPage * state.itemsPerPage, state.filteredPatients.length);
     const total = state.filteredPatients.length;
@@ -898,18 +904,15 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.filterCount.textContent = `Mostrando ${start}-${end} de ${total} pacientes`;
     }
 
-    // Controles de paginación
     let paginationHTML = '';
 
-    // Botón anterior
     paginationHTML += `
       <button class="btn btn-outline btn-sm ${state.currentPage === 1 ? 'disabled' : ''}" 
               id="btn-prev" ${state.currentPage === 1 ? 'disabled' : ''}>
-        ←
+        ${icons.arrowLeft}
       </button>
     `;
 
-    // Números de página
     const maxPagesToShow = 5;
     let startPage = Math.max(1, state.currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(state.totalPages, startPage + maxPagesToShow - 1);
@@ -927,11 +930,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
       `;
     }
 
-    // Botón siguiente
     paginationHTML += `
       <button class="btn btn-outline btn-sm ${state.currentPage === state.totalPages ? 'disabled' : ''}" 
               id="btn-next" ${state.currentPage === state.totalPages ? 'disabled' : ''}>
-        →
+        ${icons.arrowRight}
       </button>
     `;
 
@@ -953,7 +955,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       state.clinicalRecords.some(cr => cr.patientId === p.id)
     ).length;
 
-    // Distribución por género
     const genderCount = {
       M: state.patients.filter(p => p.gender === 'M').length,
       F: state.patients.filter(p => p.gender === 'F').length,
@@ -964,29 +965,29 @@ export default function mountPatients(root, { bus, store, user, role }) {
       <div class="card">
         <div class="text-muted text-sm">Total de pacientes</div>
         <div class="text-2xl font-bold" style="color: var(--accent);">${totalPatients}</div>
-        <div class="text-xs text-muted mt-1">${activePatients} activos</div>
+        <div class="text-xs text-muted mt-1">${icons.user} ${activePatients} activos</div>
       </div>
       
       <div class="card">
         <div class="text-muted text-sm">Con citas</div>
         <div class="text-2xl font-bold" style="color: var(--accent-2);">${patientsWithAppointments}</div>
-        <div class="text-xs text-muted mt-1">${patientsWithRecords} con historial</div>
+        <div class="text-xs text-muted mt-1">${icons.calendar} ${patientsWithRecords} con historial</div>
       </div>
       
       <div class="card">
         <div class="text-muted text-sm">Distribución por género</div>
         <div class="flex items-center justify-between mt-2">
           <div style="text-align: center;">
-            <div style="font-size: 1.25rem; color: var(--info);">${genderCount.M}</div>
-            <div style="font-size: 0.75rem; color: var(--muted);">♂</div>
+            <div style="font-size: 1.25rem; color: var(--info);">${icons.male}</div>
+            <div style="font-size: 0.75rem; color: var(--muted);">${genderCount.M}</div>
           </div>
           <div style="text-align: center;">
-            <div style="font-size: 1.25rem; color: var(--warning);">${genderCount.F}</div>
-            <div style="font-size: 0.75rem; color: var(--muted);">♀</div>
+            <div style="font-size: 1.25rem; color: var(--warning);">${icons.female}</div>
+            <div style="font-size: 0.75rem; color: var(--muted);">${genderCount.F}</div>
           </div>
           <div style="text-align: center;">
-            <div style="font-size: 1.25rem; color: var(--muted);">${genderCount.O}</div>
-            <div style="font-size: 0.75rem; color: var(--muted);">⚧</div>
+            <div style="font-size: 1.25rem; color: var(--muted);">${icons.user}</div>
+            <div style="font-size: 0.75rem; color: var(--muted);">${genderCount.O}</div>
           </div>
         </div>
       </div>
@@ -996,7 +997,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         <div class="text-2xl font-bold" style="color: var(--info);">
           ${calculateAverageAge()} años
         </div>
-        <div class="text-xs text-muted mt-1">Entre todos los pacientes</div>
+        <div class="text-xs text-muted mt-1">${icons.clipboard} Entre todos los pacientes</div>
       </div>
     `;
   }
@@ -1026,12 +1027,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Configurar event listeners
   function setupEventListeners() {
-    // Filtros
     if (elements.filterSearch) {
       elements.filterSearch.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          applyFilterChanges();
-        }
+        if (e.key === 'Enter') applyFilterChanges();
       });
     }
 
@@ -1063,7 +1061,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.btnToggleView.addEventListener('click', toggleViewMode);
     }
 
-    // Filtros avanzados
     if (elements.btnToggleAdvanced) {
       elements.btnToggleAdvanced.addEventListener('click', toggleAdvancedFilters);
     }
@@ -1080,7 +1077,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.filterBlood.addEventListener('change', applyFilterChanges);
     }
 
-    // Paginación
     if (elements.itemsPerPage) {
       elements.itemsPerPage.addEventListener('change', () => {
         state.itemsPerPage = parseInt(elements.itemsPerPage.value);
@@ -1090,7 +1086,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    // Delegación de eventos para paginación
     if (elements.paginationContainer) {
       elements.paginationContainer.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
@@ -1112,7 +1107,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    // Modal paciente
     if (elements.btnNewPatient) {
       elements.btnNewPatient.addEventListener('click', () => openModal());
     }
@@ -1129,7 +1123,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.btnSave.addEventListener('click', savePatient);
     }
 
-    // Tabs del modal
     if (elements.tabBtns) {
       elements.tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1139,12 +1132,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    // Agregar alergia
     if (elements.btnAddAllergy) {
       elements.btnAddAllergy.addEventListener('click', addAllergyField);
     }
 
-    // Historial clínico modal
     if (elements.btnCloseHistory) {
       elements.btnCloseHistory.addEventListener('click', () => {
         state.showClinicalHistory = false;
@@ -1163,7 +1154,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    // Acciones en el contenido
     if (elements.contentContainer) {
       elements.contentContainer.addEventListener('click', handleContentAction);
     }
@@ -1187,9 +1177,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       case 'view':
         viewPatientDetails(patient);
         break;
-      case 'history':
-        viewClinicalHistory(patient);
-        break;
+      // El action 'history' ha sido eliminado
     }
   }
 
@@ -1230,6 +1218,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.filterAllergies) elements.filterAllergies.value = '';
     if (elements.filterBlood) elements.filterBlood.value = '';
     if (elements.sortBy) elements.sortBy.value = 'name';
+    
+    if (elements.btnToggleView) {
+      elements.btnToggleView.innerHTML = `${icons.cardView} Vista Tarjetas`;
+    }
 
     applyFilters();
     renderContent();
@@ -1238,9 +1230,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Cambiar modo de vista
   function toggleViewMode() {
     state.viewMode = state.viewMode === 'list' ? 'cards' : 'list';
+    
     if (elements.btnToggleView) {
-      elements.btnToggleView.textContent = state.viewMode === 'list' ? '📊 Vista Tarjetas' : '📋 Vista Lista';
+      elements.btnToggleView.innerHTML = state.viewMode === 'list' 
+        ? `${icons.cardView} Vista Tarjetas` 
+        : `${icons.listView} Vista Lista`;
     }
+    
     renderContent();
   }
 
@@ -1258,12 +1254,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Cambiar pestaña en el modal
   function switchTab(tabName) {
-    // Actualizar botones de pestaña
     elements.tabBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
-    // Actualizar contenido de pestañas
     elements.tabPanes.forEach(pane => {
       pane.classList.toggle('active', pane.dataset.tab === tabName);
     });
@@ -1290,13 +1284,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
       </select>
       <button type="button" class="btn btn-outline btn-sm remove-allergy" 
               style="color: var(--danger);" data-index="${allergyIndex}">
-        ×
+        ${icons.close}
       </button>
     `;
 
     elements.allergiesContainer.appendChild(allergyDiv);
 
-    // Configurar evento para eliminar
     const removeBtn = allergyDiv.querySelector('.remove-allergy');
     if (removeBtn) {
       removeBtn.addEventListener('click', () => {
@@ -1320,7 +1313,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       clearForm();
     }
 
-    // Mostrar primera pestaña
     switchTab('basic');
   }
 
@@ -1338,14 +1330,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Rellenar formulario
   function populateForm(patient) {
-    // Datos básicos
     if (elements.formName) elements.formName.value = patient.name || '';
     if (elements.formDni) elements.formDni.value = patient.dni || '';
     if (elements.formBirthdate) elements.formBirthdate.value = patient.birthDate || '';
     if (elements.formGender) elements.formGender.value = patient.gender || '';
     if (elements.formBloodType) elements.formBloodType.value = patient.bloodType || '';
 
-    // Historial médico
     if (elements.allergiesContainer && patient.allergies) {
       elements.allergiesContainer.innerHTML = '';
       patient.allergies.forEach((allergy, index) => {
@@ -1362,7 +1352,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.formSurgeries) elements.formSurgeries.value = patient.surgeries || '';
     if (elements.formMedicalNotes) elements.formMedicalNotes.value = patient.medicalNotes || '';
 
-    // Contacto
     if (elements.formPhone) elements.formPhone.value = patient.phone || '';
     if (elements.formEmail) elements.formEmail.value = patient.email || '';
     if (elements.formAddress) elements.formAddress.value = patient.address || '';
@@ -1374,7 +1363,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.formInsuranceCompany) elements.formInsuranceCompany.value = patient.insurance?.company || '';
     if (elements.formInsuranceNumber) elements.formInsuranceNumber.value = patient.insurance?.policyNumber || '';
 
-    // Estado
     if (elements.formStatus) elements.formStatus.value = patient.isActive ? 'active' : 'inactive';
   }
 
@@ -1383,14 +1371,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.form) elements.form.reset();
     if (elements.allergiesContainer) {
       elements.allergiesContainer.innerHTML = '';
-      addAllergyField(); // Una alergia por defecto
+      addAllergyField();
     }
   }
 
   // Guardar paciente
   async function savePatient() {
     if (!validateForm()) {
-      alert('Por favor, complete los campos requeridos correctamente.');
+      showNotification('Por favor, complete los campos requeridos correctamente.', 'warning');
       return;
     }
 
@@ -1435,19 +1423,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
       }
     });
 
-    // Validar DNI/NIE
     if (elements.formDni && !validateDNI(elements.formDni.value)) {
       elements.formDni.classList.add('error');
       isValid = false;
     }
 
-    // Validar fecha de nacimiento (no puede ser en el futuro)
     if (elements.formBirthdate) {
       const birthDate = new Date(elements.formBirthdate.value);
       const today = new Date();
       if (birthDate > today) {
         elements.formBirthdate.classList.add('error');
-        alert('La fecha de nacimiento no puede ser en el futuro.');
+        showNotification('La fecha de nacimiento no puede ser en el futuro.', 'warning');
         isValid = false;
       }
     }
@@ -1465,9 +1451,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
     return dniRegex.test(dni) || nieRegex.test(dni);
   }
 
-  // Obtener datos del formulario - CORREGIDO
+  // Obtener datos del formulario
   function getFormData() {
-    // Obtener alergias
     const allergies = [];
     if (elements.allergiesContainer) {
       const allergyInputs = elements.allergiesContainer.querySelectorAll('input[type="text"]');
@@ -1478,7 +1463,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    // Usar operadores seguros (?.) para evitar errores con elementos nulos
     return {
       name: elements.formName?.value || '',
       dni: elements.formDni?.value.toUpperCase() || '',
@@ -1521,7 +1505,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const appointments = state.appointments.filter(apt => apt.patientId === patient.id);
     const age = calculateAge(patient.birthDate);
 
-    // Crear modal de detalles
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-patient-modal';
     modalContainer.style.cssText = `
@@ -1542,15 +1525,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
       <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
           <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">EXPEDIENTE DIGITAL DEL PACIENTE</div>
-          <button class="btn-close-modal" id="close-view-patient-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">${icons.clinical} EXPEDIENTE DIGITAL DEL PACIENTE</div>
+          <button class="btn-close-modal" id="close-view-patient-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            ${icons.close}
+          </button>
         </div>
         
         <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow: hidden; display: flex; flex-direction: column;">
           <!-- Cabecera de Identidad -->
           <div style="padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 1.5rem; background: #f8fafc;">
             <div style="width: 70px; height: 70px; background: var(--card-patient); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--modal-header); font-size: 2rem; font-weight: 800; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-              ${patient.name.charAt(0)}
+              ${icons.patient}
             </div>
             <div>
               <div style="font-size: 0.75rem; font-weight: 700; color: #666; letter-spacing: 0.05em;">PACIENTE REGISTRADO</div>
@@ -1564,10 +1549,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
           <!-- Navegación de Pestañas -->
           <div style="display: flex; background: #edeff2; padding: 0 1.5rem;">
-            <button type="button" class="tab-btn active" data-tab="info" style="padding: 1rem 1.5rem; border: none; background: white; font-weight: 700; color: var(--modal-header); cursor: pointer; border-bottom: 3px solid var(--modal-header);">INFORMACIÓN</button>
-            <button type="button" class="tab-btn" data-tab="medical" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">MÉDICO</button>
-            <button type="button" class="tab-btn" data-tab="appointments" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">CITAS</button>
-            <button type="button" class="tab-btn" data-tab="records" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">REGISTROS</button>
+            <button type="button" class="tab-btn active" data-tab="info" style="padding: 1rem 1.5rem; border: none; background: white; font-weight: 700; color: var(--modal-header); cursor: pointer; border-bottom: 3px solid var(--modal-header);">
+              ${icons.user} INFORMACIÓN
+            </button>
+            <button type="button" class="tab-btn" data-tab="medical" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">
+              ${icons.diagnosis} MÉDICO
+            </button>
+            <button type="button" class="tab-btn" data-tab="appointments" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">
+              ${icons.calendar} CITAS
+            </button>
+            <button type="button" class="tab-btn" data-tab="records" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">
+              ${icons.clinical} REGISTROS
+            </button>
           </div>
           
           <!-- Contenido de pestañas -->
@@ -1576,7 +1569,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
             <div class="tab-pane active" data-tab="info">
               <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
                 <div style="background: var(--card-patient); border-radius: 8px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.05);">
-                  <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">📌 DATOS PERSONALES</div>
+                  <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">
+                    ${icons.user} DATOS PERSONALES
+                  </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
                       <div style="font-weight: 700; color: #666; font-size: 0.7rem;">NACIMIENTO</div>
@@ -1592,29 +1587,31 @@ export default function mountPatients(root, { bus, store, user, role }) {
                     </div>
                     <div>
                       <div style="font-weight: 700; color: #666; font-size: 0.7rem;">ESTADO</div>
-                      <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}" style="width: fit-content; font-size: 0.7rem;">${patient.isActive ? 'ACTIVO' : 'INACTIVO'}</span>
+                      <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}" style="width: fit-content; font-size: 0.7rem;">
+                        ${patient.isActive ? icons.successCheck : icons.cancel} ${patient.isActive ? 'ACTIVO' : 'INACTIVO'}
+                      </span>
                     </div>
                   </div>
                   
                   <div style="margin-top: 1.5rem;">
-                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">CORREO ELECTRÓNICO</div>
+                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">${icons.email} CORREO ELECTRÓNICO</div>
                     <div style="font-weight: 600;">${patient.email || 'No registrado'}</div>
                   </div>
                   <div style="margin-top: 1rem;">
-                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">DIRECCIÓN</div>
+                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">${icons.address} DIRECCIÓN</div>
                     <div style="font-weight: 600;">${patient.address || 'No registrada'}</div>
                   </div>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                   <div style="background: #f1f5f9; border-radius: 8px; padding: 1.25rem; border-left: 4px solid var(--modal-header);">
-                    <div style="font-weight: 700; color: #475569; font-size: 0.75rem; margin-bottom: 0.75rem;">🚑 CONTACTO DE EMERGENCIA</div>
+                    <div style="font-weight: 700; color: #475569; font-size: 0.75rem; margin-bottom: 0.75rem;">${icons.emergency} CONTACTO DE EMERGENCIA</div>
                     <div style="font-weight: 700; font-size: 1rem;">${patient.emergencyContact?.name || 'No definido'}</div>
-                    <div style="font-size: 0.85rem; margin-top: 0.25rem; color: #64748b;">${patient.emergencyContact?.relation || ''} • ${patient.emergencyContact?.phone || ''}</div>
+                    <div style="font-size: 0.85rem; margin-top: 0.25rem; color: #64748b;">${patient.emergencyContact?.relation || ''} • ${icons.phone} ${patient.emergencyContact?.phone || ''}</div>
                   </div>
                   
                   <div style="background: var(--modal-section-gold-light); border-radius: 8px; padding: 1.25rem; border: 1px solid var(--modal-section-gold);">
-                    <div style="font-weight: 700; color: var(--modal-highlight); font-size: 0.75rem; margin-bottom: 0.75rem;">🛡️ SEGURO MÉDICO</div>
+                    <div style="font-weight: 700; color: var(--modal-highlight); font-size: 0.75rem; margin-bottom: 0.75rem;">${icons.insurance} SEGURO MÉDICO</div>
                     ${patient.insurance?.company ? `
                       <div style="font-weight: 700; font-size: 1rem; color: var(--modal-highlight);">${patient.insurance.company}</div>
                       <div style="font-size: 0.85rem; margin-top: 0.25rem; color: #b8860b;">Póliza: ${patient.insurance.policyNumber}</div>
@@ -1628,7 +1625,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
             <div class="tab-pane" data-tab="medical">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div>
-                   <div style="font-size: 0.85rem; font-weight: 700; color: #c53030; margin-bottom: 1rem;">🚫 ALERGIAS Y CONTRAINDICACIONES</div>
+                   <div style="font-size: 0.85rem; font-weight: 700; color: #c53030; margin-bottom: 1rem;">${icons.allergy} ALERGIAS Y CONTRAINDICACIONES</div>
                    <div style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 1rem; min-height: 100px;">
                       ${patient.allergies && patient.allergies.length > 0 ? `
                         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
@@ -1639,7 +1636,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 </div>
                 
                 <div>
-                   <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem;">💊 MEDICACIÓN HABITUAL</div>
+                   <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem;">${icons.medication} MEDICACIÓN HABITUAL</div>
                    <div style="background: var(--modal-section-forest-light); border: 1px solid var(--modal-section-forest); border-radius: 8px; padding: 1rem; min-height: 100px;">
                       <div style="font-size: 0.9rem; color: #2d3748;">${patient.regularMeds || 'No registra medicación'}</div>
                    </div>
@@ -1647,7 +1644,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </div>
               
               <div style="margin-top: 1.5rem;">
-                 <div style="font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 1rem;">🗒️ OBSERVACIONES MÉDICAS Y ANTECEDENTES</div>
+                 <div style="font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 1rem;">${icons.clinical} OBSERVACIONES MÉDICAS Y ANTECEDENTES</div>
                  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
                     <div style="font-size: 0.95rem; line-height: 1.6; color: #334155;">${patient.medicalNotes || 'Sin notas adicionales en el registro'}</div>
                  </div>
@@ -1676,14 +1673,15 @@ export default function mountPatients(root, { bus, store, user, role }) {
       return `
                           <tr>
                             <td>
-                              <div style="font-weight: 600;">${date.toLocaleDateString('es-ES')}</div>
-                              <div style="font-size: 0.75rem; color: #666;">${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                              <div style="font-weight: 600;">${icons.calendar} ${date.toLocaleDateString('es-ES')}</div>
+                              <div style="font-size: 0.75rem; color: #666;">${icons.clock} ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
                             </td>
-                            <td>${doctor?.name || 'N/A'}</td>
-                            <td>${area?.name || 'N/A'}</td>
+                            <td>${icons.doctor} ${doctor?.name || 'N/A'}</td>
+                            <td>${icons.area} ${area?.name || 'N/A'}</td>
                             <td>${appointment.reason || '-'}</td>
                             <td>
                               <span class="badge ${appointment.status === 'completed' ? 'badge-success' : appointment.status === 'scheduled' ? 'badge-info' : appointment.status === 'confirmed' ? 'badge-warning' : 'badge-danger'}">
+                                ${appointment.status === 'completed' ? icons.successCheck : appointment.status === 'cancelled' ? icons.cancel : ''} 
                                 ${appointment.status.toUpperCase()}
                               </span>
                             </td>
@@ -1715,12 +1713,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
       const doctor = store.find('doctors', record.doctorId);
       return `
                           <tr>
-                            <td>${new Date(record.date).toLocaleDateString('es-ES')}</td>
-                            <td><span class="badge badge-info">${record.type.toUpperCase()}</span></td>
+                            <td>${icons.calendar} ${new Date(record.date).toLocaleDateString('es-ES')}</td>
+                            <td><span class="badge badge-info">${icons.clinical} ${record.type.toUpperCase()}</span></td>
                             <td>${record.diagnosis?.substring(0, 40) || 'Sin diagnóstico'}...</td>
-                            <td>${doctor?.name || 'N/A'}</td>
+                            <td>${icons.doctor} ${doctor?.name || 'N/A'}</td>
                             <td>
-                              <button class="btn btn-sm btn-outline" data-action="view-record" data-id="${record.id}">Ver</button>
+                              <button class="btn btn-sm btn-outline" data-action="view-record" data-id="${record.id}">${icons.view} Ver</button>
                             </td>
                           </tr>
                         `;
@@ -1735,23 +1733,27 @@ export default function mountPatients(root, { bus, store, user, role }) {
         
         <div class="modal-footer" style="background: #f1f5f9; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
           <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">
-            REGISTRADO EL ${new Date(patient.createdAt).toLocaleDateString('es-ES')}
+            ${icons.calendar} REGISTRADO EL ${new Date(patient.createdAt).toLocaleDateString('es-ES')}
           </div>
           <div style="display: flex; gap: 0.75rem;">
             ${role === 'admin' || role === 'doctor' ? `
-              <button class="btn" id="btn-edit-patient" data-id="${patient.id}" style="background: var(--modal-header); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">EDITAR FICHA</button>
-              <button class="btn" id="btn-new-appointment-for-patient" data-id="${patient.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">NUEVA CITA</button>
+              <button class="btn" id="btn-edit-patient" data-id="${patient.id}" style="background: var(--modal-header); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
+                ${icons.edit} EDITAR FICHA
+              </button>
+              <button class="btn" id="btn-new-appointment-for-patient" data-id="${patient.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
+                ${icons.plus} NUEVA CITA
+              </button>
             ` : ''}
-            <button class="btn" id="close-view-patient-btn-2" style="background: white; color: #4a5568; border: 1px solid #cbd5e1; padding: 0.6rem 1.25rem; font-weight: 700;">CERRAR</button>
+            <button class="btn" id="close-view-patient-btn-2" style="background: white; color: #4a5568; border: 1px solid #cbd5e1; padding: 0.6rem 1.25rem; font-weight: 700;">
+              ${icons.close} CERRAR
+            </button>
           </div>
         </div>
       </div>
     `;
 
-    // Agregar al DOM
     document.body.appendChild(modalContainer);
 
-    // Configurar event listeners
     const closeModal = () => modalContainer.remove();
 
     const closeBtn1 = modalContainer.querySelector('#close-view-patient-btn');
@@ -1786,19 +1788,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    // Tabs dentro del modal
     const tabBtns = modalContainer.querySelectorAll('.tab-btn');
     const tabPanes = modalContainer.querySelectorAll('.tab-pane');
 
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
-
-        // Actualizar botones
         tabBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        // Actualizar contenido
         tabPanes.forEach(pane => {
           pane.classList.remove('active');
           if (pane.dataset.tab === tab) {
@@ -1808,7 +1805,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     });
 
-    // Cerrar al hacer clic fuera o con ESC
     modalContainer.addEventListener('click', (e) => {
       if (e.target === modalContainer) closeModal();
     });
@@ -1845,7 +1841,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (patientRecords.length === 0) {
       elements.clinicalHistoryContent.innerHTML = `
         <div class="text-center" style="padding: 3rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">📋</div>
+          <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">${icons.clinical}</div>
           <h3>No hay historial clínico</h3>
           <p class="text-muted">Este paciente no tiene registros clínicos</p>
         </div>
@@ -1862,20 +1858,20 @@ export default function mountPatients(root, { bus, store, user, role }) {
       return `
             <div class="timeline-item">
               <div class="timeline-date">
-                ${date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                <span style="color: var(--muted);"> • ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                ${icons.calendar} ${date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                <span style="color: var(--muted);"> • ${icons.clock} ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
               <div class="timeline-content">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                   <div>
                     <h4 style="margin: 0;">
-                      ${record.type === 'consultation' ? 'Consulta médica' :
-          record.type === 'emergency' ? 'Urgencia' :
-            record.type === 'followup' ? 'Control de seguimiento' :
-              record.type === 'lab' ? 'Resultados de laboratorio' : 'Prescripción médica'}
+                      ${record.type === 'consultation' ? `${icons.doctor} Consulta médica` :
+          record.type === 'emergency' ? `${icons.emergency} Urgencia` :
+            record.type === 'followup' ? `${icons.calendar} Control de seguimiento` :
+              record.type === 'lab' ? `${icons.diagnosis} Resultados de laboratorio` : `${icons.medication} Prescripción médica`}
                     </h4>
                     <div style="font-size: 0.875rem; color: var(--muted);">
-                      ${doctor?.name || 'Médico no especificado'}
+                      ${icons.doctor} ${doctor?.name || 'Médico no especificado'}
                     </div>
                   </div>
                   <span class="badge ${record.type === 'consultation' ? 'badge-info' :
@@ -1890,28 +1886,28 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 
                 ${record.symptoms ? `
                   <div style="margin-bottom: 0.75rem;">
-                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">Síntomas</div>
+                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">${icons.diagnosis} Síntomas</div>
                     <div>${record.symptoms}</div>
                   </div>
                 ` : ''}
                 
                 ${record.diagnosis ? `
                   <div style="margin-bottom: 0.75rem;">
-                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">Diagnóstico</div>
+                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">${icons.diagnosis} Diagnóstico</div>
                     <div>${record.diagnosis}</div>
                   </div>
                 ` : ''}
                 
                 ${record.treatment ? `
                   <div style="margin-bottom: 0.75rem;">
-                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">Tratamiento</div>
+                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">${icons.treatment} Tratamiento</div>
                     <div>${record.treatment}</div>
                   </div>
                 ` : ''}
                 
                 ${record.prescriptions && record.prescriptions.length > 0 ? `
                   <div style="margin-bottom: 0.75rem;">
-                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">Medicamentos recetados</div>
+                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">${icons.medication} Medicamentos recetados</div>
                     <ul style="padding-left: 1.5rem; margin: 0;">
                       ${record.prescriptions.map(p => `
                         <li>${p.medication} - ${p.dosage} (${p.frequency}, ${p.duration})</li>
@@ -1922,14 +1918,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 
                 ${record.notes ? `
                   <div style="margin-bottom: 0.75rem;">
-                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">Notas</div>
+                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">${icons.clinical} Notas</div>
                     <div>${record.notes}</div>
                   </div>
                 ` : ''}
                 
                 ${record.vitalSigns ? `
                   <div>
-                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">Signos vitales</div>
+                    <div style="font-weight: 500; color: var(--muted); font-size: 0.875rem;">${icons.vitalSigns} Signos vitales</div>
                     <div class="grid grid-3" style="font-size: 0.875rem;">
                       ${record.vitalSigns.bloodPressure ? `
                         <div>
@@ -1955,10 +1951,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 
                 <div style="border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
                   <div style="font-size: 0.75rem; color: var(--muted);">
-                    Registrado el ${new Date(record.createdAt).toLocaleDateString('es-ES')}
+                    ${icons.calendar} Registrado el ${new Date(record.createdAt).toLocaleDateString('es-ES')}
                   </div>
-                  <button class="btn btn-outline btn-sm" onclick="viewFullRecord('${record.id}')">
-                    Ver completo
+                  <button class="btn btn-outline btn-sm" onclick="window.viewFullRecord('${record.id}')">
+                    ${icons.view} Ver completo
                   </button>
                 </div>
               </div>
@@ -1971,20 +1967,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Ver registro clínico completo
   function viewClinicalRecord(recordId) {
-    // Navegar al módulo de historia clínica
     if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
       window.APP_STATE.appShell.navigateTo('clinical');
 
-      // Guardar el ID del registro para mostrar detalles
       localStorage.setItem('clinical_view_record', recordId);
 
-      // Cerrar modales abiertos
       state.showClinicalHistory = false;
       if (elements.clinicalHistoryModal) {
         elements.clinicalHistoryModal.classList.add('hidden');
       }
 
-      // Mostrar notificación
       setTimeout(() => {
         showNotification('Cargando registro clínico...', 'info');
       }, 300);
@@ -1993,11 +1985,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Crear cita para paciente
   function createAppointmentForPatient(patient) {
-    // Navegar al módulo de citas
     if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
       window.APP_STATE.appShell.navigateTo('appointments');
 
-      // Guardar datos para prellenar el formulario
       const appointmentData = {
         patientId: patient.id,
         patientName: patient.name,
@@ -2006,7 +1996,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
       localStorage.setItem('appointment_form_data', JSON.stringify(appointmentData));
 
-      // Mostrar notificación
       setTimeout(() => {
         showNotification(`Creando cita para ${patient.name}...`, 'info');
       }, 300);
@@ -2016,39 +2005,69 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Mostrar notificación
   function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
+    let icon = icons.info;
+    let bgColor = 'var(--info)';
+    
+    switch (type) {
+      case 'success': 
+        bgColor = 'var(--success)'; 
+        icon = icons.successCheck;
+        break;
+      case 'error': 
+        bgColor = 'var(--danger)'; 
+        icon = icons.cancel;
+        break;
+      case 'warning': 
+        bgColor = 'var(--warning)'; 
+        icon = icons.warning;
+        break;
+      default: 
+        bgColor = 'var(--info)'; 
+        icon = icons.info;
+    }
+    
     notification.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
       padding: 1rem 1.5rem;
-      background: ${type === 'success' ? 'var(--success)' :
-        type === 'error' ? 'var(--danger)' :
-          type === 'warning' ? 'var(--warning)' : 'var(--info)'};
+      background: ${bgColor};
       color: white;
       border-radius: var(--radius);
       box-shadow: var(--shadow-lg);
       z-index: 10000;
       animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     `;
 
-    notification.textContent = message;
+    notification.innerHTML = `${icon} ${message}`;
     document.body.appendChild(notification);
 
     setTimeout(() => {
       notification.style.animation = 'slideOut 0.3s ease';
       setTimeout(() => notification.remove(), 300);
     }, 3000);
+
+    if (!document.querySelector('#notification-styles')) {
+      const style = document.createElement('style');
+      style.id = 'notification-styles';
+      style.textContent = `
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+      `;
+      document.head.appendChild(style);
+    }
   }
 
   // Inicializar módulo
   const unsubscribe = init();
 
-  // Función global para ver registro completo
   window.viewFullRecord = viewClinicalRecord;
 
   return {
     refresh: loadData,
-
     destroy() {
       if (unsubscribe) unsubscribe();
       delete window.viewFullRecord;

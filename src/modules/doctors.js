@@ -2,6 +2,91 @@
  * Módulo de Médicos - Gestión completa
  */
 
+// SVG ICONOS ejecutivos
+const icons = {
+  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+  <rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/>
+  <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/>
+</svg>`,
+  clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+  <rect x="4.25" y="3.75" width="11.5" height="14" rx="2.25" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="6.75" y="2" width="6.5" height="3.5" rx="1.25" stroke="currentColor" stroke-width="1.5"/>
+</svg>`,
+  user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+  <circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/>
+</svg>`,
+  settings: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+  <circle cx="10" cy="10" r="3.5" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M10 1.75v2.5M10 15.75v2.5M3.64 3.64l1.77 1.77M14.59 14.59l1.77 1.77M1.75 10h2.5M15.75 10h2.5M3.64 16.36l1.77-1.77M14.59 5.41l1.77-1.77"/>
+</svg>`,
+  doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+  <circle cx="10" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M3.5 18c0-3.037 2.486-5.5 6.5-5.5s6.5 2.463 6.5 5.5"/>
+</svg>`,
+  patient: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+  <circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/>
+</svg>`,
+  area: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" fill="none" viewBox="0 0 20 20">
+  <rect x="2.25" y="4.25" width="15.5" height="10.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M6.5 15.75V17a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5v-1.25"/>
+</svg>`,
+  successCheck: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20">
+  <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
+  <path stroke="currentColor" stroke-width="2" d="M6 10.5l2.5 2 5-5"/>
+</svg>`,
+  warning: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20">
+  <path stroke="currentColor" stroke-width="1.5" d="M10 3v8"/>
+  <circle cx="10" cy="15" r="1" fill="currentColor"/>
+  <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+</svg>`,
+  info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20">
+  <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
+  <path stroke="currentColor" stroke-width="2" d="M10 7v5"/>
+  <circle cx="10" cy="14" r="1" fill="currentColor"/>
+</svg>`,
+  edit: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none">
+  <path stroke="currentColor" stroke-width="1.5" d="M2.5 17.5L8 12l-1-1-5.5 5.5v1h1z"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M12.5 2.5L17.5 7.5 14.5 10.5 9.5 5.5 12.5 2.5z"/>
+</svg>`,
+  view: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none">
+  <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M2 10c1.5-4 4.5-6.5 8-6.5s6.5 2.5 8 6.5c-1.5 4-4.5 6.5-8 6.5s-6.5-2.5-8-6.5z"/>
+</svg>`,
+  schedule: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none">
+  <rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/>
+  <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/>
+  <circle cx="10" cy="11.5" r="1.5" fill="currentColor"/>
+  <circle cx="14" cy="11.5" r="1.5" fill="currentColor"/>
+  <circle cx="6" cy="11.5" r="1.5" fill="currentColor"/>
+</svg>`,
+  close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+  <path stroke="currentColor" stroke-width="2" d="M6 6L14 14M14 6L6 14"/>
+</svg>`,
+  gear: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none">
+  <circle cx="10" cy="10" r="3.5" stroke="currentColor" stroke-width="1.5"/>
+  <path stroke="currentColor" stroke-width="1.5" d="M10 1.75v2.5M10 15.75v2.5M3.64 3.64l1.77 1.77M14.59 14.59l1.77 1.77M1.75 10h2.5M15.75 10h2.5M3.64 16.36l1.77-1.77M14.59 5.41l1.77-1.77"/>
+</svg>`,
+  status: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none">
+  <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="10" cy="10" r="2" fill="currentColor"/>
+</svg>`,
+  capacity: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none">
+  <rect x="2" y="8" width="4" height="8" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="8" y="5" width="4" height="11" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="14" y="2" width="4" height="14" stroke="currentColor" stroke-width="1.5"/>
+</svg>`,
+  add: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+  <path stroke="currentColor" stroke-width="2" d="M10 3v14M3 10h14"/>
+</svg>`,
+  filter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+  <path stroke="currentColor" stroke-width="1.5" d="M2 4h16v2l-5 5v5l-2 2v-7L2 6V4z"/>
+</svg>`
+};
+
 export default function mountDoctors(root, { bus, store, user, role }) {
   const state = {
     doctors: [],
@@ -14,9 +99,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     editingId: null,
     isLoading: false,
     showModal: false,
-    showStatusModal: false, // Nuevo: modal para estado
-    showCapacityModal: false, // Nuevo: modal para capacidad
-    currentDoctor: null, // Nuevo: médico actual para modales específicos
+    showStatusModal: false,
+    showCapacityModal: false,
+    currentDoctor: null,
     currentPage: 1,
     itemsPerPage: 10
   };
@@ -29,7 +114,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     setupEventListeners();
     loadDoctors();
 
-    // Suscribirse a cambios en el store
     const unsubscribe = store.subscribe('doctors', () => {
       loadDoctors();
     });
@@ -40,13 +124,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   // Cargar médicos
   function loadDoctors() {
     let doctors = store.get('doctors');
-
-    // Aplicar filtros
     doctors = applyFilters(doctors);
-
-    // Aplicar orden (por defecto: alfabético)
     doctors.sort((a, b) => a.name.localeCompare(b.name));
-
     state.doctors = doctors;
     renderDoctorsList();
     updateStats();
@@ -55,7 +134,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   // Aplicar filtros
   function applyFilters(doctors) {
     return doctors.filter(doctor => {
-      // Filtro de búsqueda
       if (state.filters.search) {
         const searchTerm = state.filters.search.toLowerCase();
         const searchFields = [
@@ -71,17 +149,14 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         }
       }
 
-      // Filtro por especialidad
       if (state.filters.specialty && doctor.specialty !== state.filters.specialty) {
         return false;
       }
 
-      // Filtro por área
       if (state.filters.areaId && doctor.areaId !== state.filters.areaId) {
         return false;
       }
 
-      // Filtro por estado
       if (state.filters.status) {
         if (state.filters.status === 'active' && !doctor.isActive) {
           return false;
@@ -124,7 +199,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (!schedule) return 'No definido';
     if (typeof schedule === 'string') return schedule;
 
-    // Si schedule es un objeto, formatearlo
     try {
       const days = {
         monday: 'Lun',
@@ -163,7 +237,10 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             </div>
             ${canManage ? `
               <button class="btn btn-primary" id="btn-new-doctor">
-                <span>+</span> Nuevo Médico
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                  ${icons.add}
+                  Nuevo Médico
+                </span>
               </button>
             ` : ''}
           </div>
@@ -262,7 +339,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           
           <div id="empty-state" class="hidden">
             <div class="text-center" style="padding: 3rem;">
-              <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">👨‍⚕️</div>
+              <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; color: var(--muted);">
+                ${icons.doctor}
+              </div>
               <h3>No hay médicos</h3>
               <p class="text-muted">No se encontraron médicos con los filtros aplicados</p>
               ${canManage ? `
@@ -283,14 +362,17 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'EDICIÓN DE PERFIL PROFESIONAL' : 'REGISTRO DE PERSONAL MÉDICO'}
             </div>
-            <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+            <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              ${icons.close}
+            </button>
           </div>
           
           <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
             <form id="doctor-form">
               <!-- Información personal -->
-              <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                👤 INFORMACIÓN PERSONAL
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                ${icons.user}
+                INFORMACIÓN PERSONAL
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
@@ -323,8 +405,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               </div>
               
               <!-- Información profesional -->
-              <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
-                🩺 INFORMACIÓN PROFESIONAL
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
+                ${icons.doctor}
+                INFORMACIÓN PROFESIONAL
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
@@ -387,8 +470,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               </div>
               
               <!-- Horario y disponibilidad -->
-              <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
-                📅 HORARIO Y DISPONIBILIDAD
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
+                ${icons.calendar}
+                HORARIO Y DISPONIBILIDAD
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
@@ -470,7 +554,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.currentDoctor ? state.currentDoctor.name : 'Médico'}
             </div>
-            <button class="btn-close-modal" id="btn-close-status-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+            <button class="btn-close-modal" id="btn-close-status-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              ${icons.close}
+            </button>
           </div>
           
           <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -525,7 +611,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.currentDoctor ? state.currentDoctor.name : 'Médico'}
             </div>
-            <button class="btn-close-modal" id="btn-close-capacity-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+            <button class="btn-close-modal" id="btn-close-capacity-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              ${icons.close}
+            </button>
           </div>
           
           <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -533,7 +621,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CAPACIDAD ACTUAL</label>
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
-                  <div style="font-size: 2rem; color: var(--info);">👥</div>
+                  <div style="font-size: 2rem; color: var(--info);">${icons.capacity}</div>
                   <div>
                     <div style="font-size: 1.5rem; font-weight: 800; color: var(--info);">${state.currentDoctor?.dailyCapacity || 20}</div>
                     <div style="font-size: 0.85rem; color: #6c757d;">pacientes por día</div>
@@ -762,7 +850,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               ${stats.todayAppointments}/${dailyCapacity} pacientes
               ${canEditStatus ? `
                 <button class="btn btn-xs btn-outline ml-2" data-action="capacity" data-id="${doctor.id}" title="Ajustar capacidad">
-                  ⚙️
+                  ${icons.capacity}
                 </button>
               ` : ''}
             </div>
@@ -775,24 +863,24 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               </span>
               ${canEditStatus ? `
                 <button class="btn btn-xs btn-outline" data-action="status" data-id="${doctor.id}" title="Cambiar estado">
-                  ✏️
+                  ${icons.status}
                 </button>
               ` : ''}
             </div>
           </td>
           <td data-label="Acciones">
             <div class="flex gap-2">
-              <button class="btn btn-outline btn-sm" data-action="view" data-id="${doctor.id}">
-                Ver
+              <button class="btn btn-outline btn-sm" data-action="view" data-id="${doctor.id}" title="Ver perfil">
+                ${icons.view}
               </button>
               
               ${canEdit ? `
-                <button class="btn btn-outline btn-sm" data-action="edit" data-id="${doctor.id}">
-                  Editar
+                <button class="btn btn-outline btn-sm" data-action="edit" data-id="${doctor.id}" title="Editar">
+                  ${icons.edit}
                 </button>
                 
-                <button class="btn btn-outline btn-sm" data-action="schedule" data-id="${doctor.id}">
-                  Agenda
+                <button class="btn btn-outline btn-sm" data-action="schedule" data-id="${doctor.id}" title="Agenda">
+                  ${icons.schedule}
                 </button>
               ` : ''}
             </div>
@@ -863,7 +951,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const appointments = store.get('appointments');
     const today = new Date().toDateString();
 
-    // Calcular capacidad total
     const totalCapacity = doctors.reduce((sum, doctor) => sum + (doctor.dailyCapacity || 20), 0);
     const usedCapacity = appointments.filter(a => 
       new Date(a.dateTime).toDateString() === today
@@ -906,7 +993,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Configurar event listeners
   function setupEventListeners() {
-    // Filtros
     if (elements.btnApplyFilters) {
       elements.btnApplyFilters.addEventListener('click', applyFiltersHandler);
     }
@@ -915,7 +1001,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.btnClearFilters.addEventListener('click', clearFiltersHandler);
     }
 
-    // Búsqueda en tiempo real
     if (elements.filterSearch) {
       let searchTimeout;
       elements.filterSearch.addEventListener('input', (e) => {
@@ -927,7 +1012,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       });
     }
 
-    // Modal principal
     if (elements.btnNewDoctor) {
       elements.btnNewDoctor.addEventListener('click', () => openModal());
     }
@@ -948,22 +1032,18 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.btnSave.addEventListener('click', saveDoctor);
     }
 
-    // Agregar área adicional
     if (elements.formAddArea) {
       elements.formAddArea.addEventListener('change', addOtherArea);
     }
 
-    // Acciones en la lista
     if (elements.doctorsList) {
       elements.doctorsList.addEventListener('click', handleListAction);
     }
 
-    // Paginación
     if (elements.pagination) {
       elements.pagination.addEventListener('click', handlePagination);
     }
 
-    // Modal de estado
     if (elements.btnCloseStatusModal) {
       elements.btnCloseStatusModal.addEventListener('click', closeStatusModal);
     }
@@ -976,7 +1056,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.btnSaveStatus.addEventListener('click', saveStatus);
     }
 
-    // Modal de capacidad
     if (elements.btnCloseCapacityModal) {
       elements.btnCloseCapacityModal.addEventListener('click', closeCapacityModal);
     }
@@ -989,7 +1068,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.btnSaveCapacity.addEventListener('click', saveCapacity);
     }
 
-    // Sincronizar slider y input de capacidad
     if (elements.capacityFormSlider && elements.capacityFormValue) {
       elements.capacityFormSlider.addEventListener('input', (e) => {
         elements.capacityFormValue.value = e.target.value;
@@ -1005,7 +1083,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         updateCapacityImpact();
       });
 
-      // Botones de cálculo automático
       const calcButtons = document.querySelectorAll('[data-calc]');
       calcButtons.forEach(button => {
         button.addEventListener('click', (e) => {
@@ -1014,16 +1091,16 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           
           switch (calcType) {
             case '8h':
-              capacity = 16; // 8 horas / 0.5 horas por consulta
+              capacity = 16;
               break;
             case '6h':
-              capacity = 12; // 6 horas / 0.5 horas por consulta
+              capacity = 12;
               break;
             case '4h':
-              capacity = 8; // 4 horas / 0.5 horas por consulta
+              capacity = 8;
               break;
             default:
-              return; // Personalizar no hace nada
+              return;
           }
           
           elements.capacityFormSlider.value = capacity;
@@ -1170,7 +1247,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     }
     
     if (elements.statusFormReturnDate) {
-      // Establecer fecha mínima como hoy
       const today = new Date().toISOString().split('T')[0];
       elements.statusFormReturnDate.min = today;
     }
@@ -1223,7 +1299,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     elements.capacityTodayCount.textContent = stats.todayAppointments;
     elements.capacityRemaining.textContent = remaining;
     
-    // Cambiar color según disponibilidad
     if (remaining === 0) {
       elements.capacityRemaining.style.color = 'var(--danger)';
     } else if (remaining < 5) {
@@ -1266,13 +1341,11 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (elements.formStatus) elements.formStatus.value = doctor.status || 'active';
     if (elements.formNotes) elements.formNotes.value = doctor.notes || '';
 
-    // Cargar días de trabajo (con verificación)
     const workDays = doctor.workDays || ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
     document.querySelectorAll('.form-checkbox').forEach(checkbox => {
       checkbox.checked = workDays.includes(checkbox.value);
     });
 
-    // Cargar otras áreas (con verificación de existencia del contenedor)
     if (elements.otherAreasContainer) {
       elements.otherAreasContainer.innerHTML = '';
       const otherAreas = doctor.otherAreas || [];
@@ -1289,23 +1362,19 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   function clearForm() {
     if (elements.form) elements.form.reset();
     
-    // Limpiar contenedor de otras áreas si existe
     if (elements.otherAreasContainer) {
       elements.otherAreasContainer.innerHTML = '';
     }
 
-    // Reset días de trabajo (L-V por defecto)
     document.querySelectorAll('.form-checkbox').forEach((checkbox, index) => {
-      checkbox.checked = index < 5; // Lunes a Viernes
+      checkbox.checked = index < 5;
     });
 
-    // Restaurar valores por defecto
     if (elements.formScheduleStart) elements.formScheduleStart.value = '08:00';
     if (elements.formScheduleEnd) elements.formScheduleEnd.value = '17:00';
     if (elements.formConsultationDuration) elements.formConsultationDuration.value = 30;
     if (elements.formDailyCapacity) elements.formDailyCapacity.value = 20;
     
-    // Reset select de agregar área
     if (elements.formAddArea) elements.formAddArea.value = '';
   }
 
@@ -1319,14 +1388,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const area = store.find('areas', areaId);
     if (!area) return;
 
-    // Verificar que no sea la misma que el área principal
     if (elements.formArea && elements.formArea.value === areaId) {
       showNotification('Esta área ya está seleccionada como principal', 'warning');
       elements.formAddArea.value = '';
       return;
     }
 
-    // Verificar que no esté ya agregada
     const existingBadges = elements.otherAreasContainer.querySelectorAll('.badge');
     const alreadyExists = Array.from(existingBadges).some(badge =>
       badge.dataset.id === areaId
@@ -1357,7 +1424,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
     elements.otherAreasContainer.appendChild(badge);
 
-    // Agregar event listener al botón de eliminar
     badge.querySelector('.badge-remove').addEventListener('click', (e) => {
       e.stopPropagation();
       badge.remove();
@@ -1368,7 +1434,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   function validateForm() {
     let isValid = true;
 
-    // Solo validar campos verdaderamente requeridos
     const requiredFields = [
       elements.formName,
       elements.formLicense,
@@ -1382,24 +1447,20 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.formDailyCapacity
     ];
 
-    // Limpiar clases de error primero
     requiredFields.forEach(field => {
       if (field) field.classList.remove('error');
     });
 
-    // Validar campos requeridos
     requiredFields.forEach(field => {
       if (field && !field.value.trim()) {
         field.classList.add('error');
         isValid = false;
 
-        // Mostrar mensaje específico
         const fieldName = field.id.replace('form-', '').replace(/([A-Z])/g, ' $1').toLowerCase();
         showNotification(`El campo "${fieldName}" es obligatorio`, 'warning');
       }
     });
 
-    // Validar DNI solo si se ha ingresado algo
     if (elements.formDni && elements.formDni.value.trim()) {
       const dniValue = elements.formDni.value.trim().toUpperCase();
       const dniRegex = /^[0-9]{8}[A-Z]$/;
@@ -1411,7 +1472,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       }
     }
 
-    // Validar email
     if (elements.formEmail && elements.formEmail.value.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(elements.formEmail.value.trim())) {
@@ -1421,7 +1481,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       }
     }
 
-    // Validar teléfono (formato básico)
     if (elements.formPhone && elements.formPhone.value.trim()) {
       const phoneRegex = /^[0-9\s\+\-\(\)]{9,15}$/;
       const phoneValue = elements.formPhone.value.trim();
@@ -1433,7 +1492,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       }
     }
 
-    // Validar horario
     if (elements.formScheduleStart && elements.formScheduleEnd) {
       const startTime = new Date(`1970-01-01T${elements.formScheduleStart.value}`);
       const endTime = new Date(`1970-01-01T${elements.formScheduleEnd.value}`);
@@ -1446,7 +1504,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       }
     }
 
-    // Validar licencia (formato básico)
     if (elements.formLicense && elements.formLicense.value.trim()) {
       const licenseValue = elements.formLicense.value.trim();
       if (licenseValue.length < 3) {
@@ -1456,7 +1513,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       }
     }
 
-    // Validar capacidad diaria
     if (elements.formDailyCapacity) {
       const capacity = parseInt(elements.formDailyCapacity.value);
       if (isNaN(capacity) || capacity < 1 || capacity > 50) {
@@ -1471,18 +1527,15 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Obtener datos del formulario principal
   function getFormData() {
-    // Obtener días de trabajo seleccionados
     const workDays = Array.from(document.querySelectorAll('.form-checkbox:checked'))
       .map(checkbox => checkbox.value);
 
-    // Obtener otras áreas (con verificación de existencia)
     let otherAreas = [];
     if (elements.otherAreasContainer) {
       otherAreas = Array.from(elements.otherAreasContainer.querySelectorAll('.badge'))
         .map(badge => badge.dataset.id);
     }
 
-    // Manejar DNI: si está vacío o solo espacios, guardar como null
     const dniValue = elements.formDni ? elements.formDni.value.trim() : '';
 
     return {
@@ -1524,11 +1577,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       const formData = getFormData();
 
       if (state.editingId) {
-        // Actualizar médico existente
         await updateDoctor(state.editingId, formData);
         showNotification('Médico actualizado correctamente', 'success');
       } else {
-        // Crear nuevo médico
         await createDoctor(formData);
         showNotification('Médico registrado correctamente', 'success');
       }
@@ -1574,7 +1625,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       await updateDoctor(state.currentDoctor.id, updateData);
       showNotification('Estado actualizado correctamente', 'success');
       
-      // Notificar si hay citas programadas para un médico que se vuelve inactivo
       if (newStatus !== 'active') {
         const upcomingAppointments = store.get('appointments').filter(a => 
           a.doctorId === state.currentDoctor.id && 
@@ -1611,7 +1661,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       return;
     }
 
-    // Verificar si se reduce la capacidad por debajo de las citas ya programadas para hoy
     const stats = getDoctorStats(state.currentDoctor.id);
     if (newCapacity < stats.todayAppointments) {
       const confirm = window.confirm(
@@ -1661,7 +1710,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
     const canEditStatus = role === 'admin' || role === 'receptionist';
 
-    // Crear modal de vista detallada
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-doctor-modal';
     modalContainer.style.cssText = `
@@ -1683,29 +1731,34 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
           <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">PERFIL DEL PROFESIONAL MÉDICO</div>
-          <button class="btn-close-modal" id="close-view-doctor-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+          <button class="btn-close-modal" id="close-view-doctor-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            ${icons.close}
+          </button>
         </div>
         
         <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
           <!-- Encabezado de Perfil -->
           <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2.5rem; border-bottom: 1px solid #eee; padding-bottom: 2rem;">
-            <div style="width: 100px; height: 100px; background: var(--card-doctor); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative;">
-               <div style="font-size: 3.5rem;">👨‍⚕️</div>
+            <div style="width: 100px; height: 100px; background: var(--card-doctor); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; color: var(--modal-header);">
+              ${icons.doctor}
             </div>
             <div>
               <div style="font-size: 0.8rem; font-weight: 700; color: var(--modal-header); letter-spacing: 0.1em; margin-bottom: 0.5rem;">CUALIFICACIÓN PROFESIONAL</div>
               <h3 style="margin: 0; font-size: 1.75rem; color: #1a202c; font-weight: 800;">${doctor.name}</h3>
               <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
                 <span class="badge" style="background: var(--modal-header); color: white; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 700;">${doctor.specialty}</span>
-                <span style="color: #4a5568; font-size: 0.95rem; font-weight: 600;">📍 ${area?.name || 'Área General'}</span>
+                <span style="color: #4a5568; font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;">
+                  ${icons.area} ${area?.name || 'Área General'}
+                </span>
               </div>
               <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                <span class="badge ${doctor.isActive ? 'badge-success' : 'badge-danger'}" style="font-size: 0.75rem;">
+                <span class="badge ${doctor.isActive ? 'badge-success' : 'badge-danger'}" style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                  ${doctor.isActive ? icons.successCheck : icons.warning}
                   ${doctor.isActive ? 'Activo' : 'Inactivo'}
                   ${doctor.status === 'vacation' ? ' (Vacaciones)' : doctor.status === 'license' ? ' (Licencia)' : ''}
                 </span>
-                <span class="badge badge-info" style="font-size: 0.75rem;">
-                  👥 Capacidad: ${doctor.dailyCapacity || 20}/día
+                <span class="badge badge-info" style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                  ${icons.capacity} Capacidad: ${doctor.dailyCapacity || 20}/día
                 </span>
               </div>
             </div>
@@ -1715,7 +1768,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
             <!-- Ficha Técnica -->
             <div style="background: #f8fafc; border-radius: 8px; padding: 1.5rem; border-left: 4px solid var(--modal-header);">
-              <div style="font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 1rem; letter-spacing: 0.05em;">IDENTIFICACIÓN Y LICENCIA</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 1rem; letter-spacing: 0.05em;">
+                ${icons.clipboard} IDENTIFICACIÓN Y LICENCIA
+              </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div>
                   <div style="font-weight: 700; color: #334155; font-size: 0.75rem;">LICENCIA N°</div>
@@ -1734,14 +1789,20 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
             <!-- Horario y Disponibilidad -->
             <div style="background: var(--modal-section-forest-light); border-radius: 8px; padding: 1.5rem; border-left: 4px solid var(--modal-section-forest);">
-              <div style="font-size: 0.75rem; font-weight: 800; color: var(--modal-section-forest); margin-bottom: 1rem; letter-spacing: 0.05em;">HORARIO Y DISPONIBILIDAD</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 800; color: var(--modal-section-forest); margin-bottom: 1rem; letter-spacing: 0.05em;">
+                ${icons.calendar} HORARIO Y DISPONIBILIDAD
+              </div>
               <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <div style="font-weight: 800; font-size: 1.25rem; color: #1a202c;">${doctor.scheduleStart || '08:00'} - ${doctor.scheduleEnd || '17:00'}</div>
                 <div style="font-size: 0.9rem; color: #2d3748; font-weight: 600;">
                    ${doctor.workDays ? doctor.workDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ') : 'Lunes a Viernes'}
                 </div>
-                <div style="font-size: 0.85rem; color: #4a5568;">⏱️ <span style="font-weight: 700;">${doctor.consultationDuration || 30} min</span> por consulta</div>
-                <div style="font-size: 0.85rem; color: #4a5568;">👥 <span style="font-weight: 700;">${doctor.dailyCapacity || 20} pacientes</span> máximo por día</div>
+                <div style="font-size: 0.85rem; color: #4a5568; display: flex; align-items: center; gap: 0.25rem;">
+                  ${icons.schedule} <span style="font-weight: 700;">${doctor.consultationDuration || 30} min</span> por consulta
+                </div>
+                <div style="font-size: 0.85rem; color: #4a5568; display: flex; align-items: center; gap: 0.25rem;">
+                  ${icons.capacity} <span style="font-weight: 700;">${doctor.dailyCapacity || 20} pacientes</span> máximo por día
+                </div>
               </div>
             </div>
           </div>
@@ -1769,8 +1830,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
           <!-- Próximas citas -->
           <div style="margin-top: 1rem;">
-            <div style="font-size: 0.85rem; font-weight: 800; color: var(--modal-header); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-               <span>📅</span> AGUDA DE LOS PRÓXIMOS DÍAS
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 800; color: var(--modal-header); margin-bottom: 1rem;">
+              ${icons.calendar} AGENDA DE LOS PRÓXIMOS DÍAS
             </div>
             ${appointments.length > 0 ? `
               <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
@@ -1784,19 +1845,24 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                     </tr>
                   </thead>
                   <tbody>
-                    ${appointments.slice(0, 5).map(app => `
+                    ${appointments.slice(0, 5).map(app => {
+                      const patient = store.find('patients', app.patientId);
+                      return `
                       <tr style="border-top: 1px solid #e2e8f0;">
                         <td style="padding: 1rem;">
                            <div style="font-weight: 700;">${new Date(app.dateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
                            <div style="font-size: 0.75rem; color: #666;">${new Date(app.dateTime).toLocaleDateString()}</div>
                         </td>
-                        <td style="padding: 1rem;">${store.find('patients', app.patientId)?.name || 'N/A'}</td>
+                        <td style="padding: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                          ${icons.patient}
+                          ${patient?.name || 'N/A'}
+                        </td>
                         <td style="padding: 1rem; color: #666;">${app.reason || 'Consulta'}</td>
                         <td style="padding: 1rem;">
                           <span class="badge ${app.status === 'confirmed' ? 'badge-warning' : 'badge-info'}" style="font-size: 0.7rem;">${app.status.toUpperCase()}</span>
                         </td>
                       </tr>
-                    `).join('')}
+                    `}).join('')}
                   </tbody>
                 </table>
               </div>
@@ -1807,34 +1873,38 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         <div class="modal-footer" style="background: #f7fafc; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #edf2f7;">
           <button class="btn" id="close-modal-btn" style="background: white; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px;">CERRAR</button>
           ${(role === 'admin' || role === 'doctor') ? `
-            <button class="btn" id="edit-doctor-btn" data-id="${doctor.id}" style="background: white; color: var(--modal-header); border: 1px solid var(--modal-header); padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px;">EDITAR PERFIL</button>
-            <button class="btn" id="view-schedule-btn" data-id="${doctor.id}" style="background: var(--modal-header); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">VER AGENDA COMPLETA</button>
+            <button class="btn" id="edit-doctor-btn" data-id="${doctor.id}" style="background: white; color: var(--modal-header); border: 1px solid var(--modal-header); padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.edit} EDITAR PERFIL
+            </button>
+            <button class="btn" id="view-schedule-btn" data-id="${doctor.id}" style="background: var(--modal-header); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.schedule} VER AGENDA COMPLETA
+            </button>
           ` : ''}
           ${canEditStatus ? `
-            <button class="btn" id="change-status-btn" data-id="${doctor.id}" style="background: var(--warning); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px;">CAMBIAR ESTADO</button>
-            <button class="btn" id="adjust-capacity-btn" data-id="${doctor.id}" style="background: var(--info); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px;">AJUSTAR CAPACIDAD</button>
+            <button class="btn" id="change-status-btn" data-id="${doctor.id}" style="background: var(--warning); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.status} CAMBIAR ESTADO
+            </button>
+            <button class="btn" id="adjust-capacity-btn" data-id="${doctor.id}" style="background: var(--info); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.capacity} AJUSTAR CAPACIDAD
+            </button>
           ` : ''}
         </div>
       </div>
     `;
 
-    // Agregar al DOM
     document.body.appendChild(modalContainer);
 
-    // Configurar event listeners
     const closeModalHandler = () => {
       if (modalContainer.parentNode) {
         modalContainer.parentNode.removeChild(modalContainer);
       }
     };
 
-    // Botones de cerrar
     const closeBtn1 = modalContainer.querySelector('#close-view-doctor-modal');
     const closeBtn2 = modalContainer.querySelector('#close-modal-btn');
     if (closeBtn1) closeBtn1.addEventListener('click', closeModalHandler);
     if (closeBtn2) closeBtn2.addEventListener('click', closeModalHandler);
 
-    // Botón de editar
     const editBtn = modalContainer.querySelector('#edit-doctor-btn');
     if (editBtn) {
       editBtn.addEventListener('click', () => {
@@ -1843,7 +1913,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       });
     }
 
-    // Botón de ver agenda
     const scheduleBtn = modalContainer.querySelector('#view-schedule-btn');
     if (scheduleBtn) {
       scheduleBtn.addEventListener('click', () => {
@@ -1852,7 +1921,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       });
     }
 
-    // Botón de cambiar estado
     const statusBtn = modalContainer.querySelector('#change-status-btn');
     if (statusBtn) {
       statusBtn.addEventListener('click', () => {
@@ -1861,7 +1929,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       });
     }
 
-    // Botón de ajustar capacidad
     const capacityBtn = modalContainer.querySelector('#adjust-capacity-btn');
     if (capacityBtn) {
       capacityBtn.addEventListener('click', () => {
@@ -1870,14 +1937,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       });
     }
 
-    // Cerrar al hacer clic fuera
     modalContainer.addEventListener('click', (e) => {
       if (e.target === modalContainer) {
         closeModalHandler();
       }
     });
 
-    // Cerrar con ESC
     const escHandler = (e) => {
       if (e.key === 'Escape') {
         closeModalHandler();
@@ -1895,10 +1960,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Ver agenda del médico
   function viewSchedule(doctor) {
-    // Guardar el filtro en localStorage ANTES de navegar para que appointments.js lo lea al iniciar
     localStorage.setItem('appointment_doctor_filter', doctor.id);
 
-    // Navegar al módulo de citas con filtro por médico
     if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
       window.APP_STATE.appShell.navigateTo('appointments');
 
@@ -1924,9 +1987,16 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       box-shadow: var(--shadow-lg);
       z-index: 10000;
       animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     `;
 
-    notification.textContent = message;
+    const icon = type === 'success' ? icons.successCheck :
+                 type === 'error' ? icons.warning :
+                 type === 'warning' ? icons.warning : icons.info;
+
+    notification.innerHTML = `${icon} ${message}`;
     document.body.appendChild(notification);
 
     setTimeout(() => {
