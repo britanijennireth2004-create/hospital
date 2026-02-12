@@ -83,7 +83,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         </div>
       </div>
     `;
-    
+
     // Cargar datos
     loadData();
   }
@@ -91,19 +91,19 @@ export default function mountDashboard(root, { bus, store, user, role }) {
   // Cargar datos
   async function loadData() {
     state.isLoading = true;
-    
+
     try {
       // Cargar estadísticas
       await loadStats();
-      
+
       // Cargar citas recientes
       await loadRecentAppointments();
-      
+
       // Renderizar componentes
       renderStats();
       renderRecentAppointments();
       renderQuickActions();
-      
+
     } catch (error) {
       console.error('Error cargando dashboard:', error);
       showError('Error al cargar los datos');
@@ -118,7 +118,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     const patients = store.get('patients');
     const doctors = store.get('doctors');
     const areas = store.get('areas');
-    
+
     // Filtrar por rol si es necesario
     let filteredAppointments = appointments;
     if (role === 'patient' && user.patientId) {
@@ -126,7 +126,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     } else if (role === 'doctor' && user.doctorId) {
       filteredAppointments = appointments.filter(a => a.doctorId === user.doctorId);
     }
-    
+
     state.stats = {
       totalAppointments: filteredAppointments.length,
       todayAppointments: store.getTodayAppointments().length,
@@ -142,14 +142,14 @@ export default function mountDashboard(root, { bus, store, user, role }) {
   // Cargar citas recientes
   async function loadRecentAppointments() {
     let appointments = store.get('appointments');
-    
+
     // Filtrar por rol
     if (role === 'patient' && user.patientId) {
       appointments = appointments.filter(a => a.patientId === user.patientId);
     } else if (role === 'doctor' && user.doctorId) {
       appointments = appointments.filter(a => a.doctorId === user.doctorId);
     }
-    
+
     // Ordenar por fecha y limitar
     state.recentAppointments = appointments
       .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime))
@@ -160,9 +160,9 @@ export default function mountDashboard(root, { bus, store, user, role }) {
   function renderStats() {
     const container = root.querySelector('#stats-container');
     if (!container) return;
-    
+
     const { stats } = state;
-    
+
     container.innerHTML = `
       <div class="card">
         <div class="text-muted text-sm">Citas totales</div>
@@ -194,7 +194,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
   function renderRecentAppointments() {
     const container = root.querySelector('#recent-appointments');
     if (!container) return;
-    
+
     if (state.recentAppointments.length === 0) {
       container.innerHTML = `
         <div class="text-center" style="padding: 3rem 1rem; color: var(--muted);">
@@ -204,15 +204,15 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       `;
       return;
     }
-    
+
     container.innerHTML = state.recentAppointments.map(appointment => {
       const patient = store.find('patients', appointment.patientId);
       const doctor = store.find('doctors', appointment.doctorId);
-      
+
       const date = new Date(appointment.dateTime);
       const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
       const dateStr = date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-      
+
       // Badge de estado
       const statusColor = {
         scheduled: 'var(--info)',
@@ -220,7 +220,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         completed: 'var(--success)',
         cancelled: 'var(--danger)'
       };
-      
+
       // Icon for status (use check/alert/info)
       let statusIcon = '';
       switch (appointment.status) {
@@ -237,7 +237,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
           statusIcon = '';
           break;
       }
-      
+
       return `
         <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border);">
           <div style="width: 40px; height: 40px; background: ${statusColor[appointment.status] || 'var(--muted)'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem;">
@@ -257,9 +257,9 @@ export default function mountDashboard(root, { bus, store, user, role }) {
   function renderQuickActions() {
     const container = root.querySelector('#quick-actions');
     if (!container) return;
-    
+
     const actions = [];
-    
+
     // Acciones según rol
     if (role === 'admin' || role === 'doctor' || role === 'patient') {
       actions.push({
@@ -269,7 +269,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         color: 'var(--accent)'
       });
     }
-    
+
     if (role === 'admin' || role === 'doctor') {
       actions.push({
         label: 'Registrar paciente',
@@ -278,7 +278,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         color: 'var(--accent-2)'
       });
     }
-    
+
     if (role === 'admin') {
       actions.push({
         label: 'Gestionar médicos',
@@ -286,7 +286,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         href: '#doctors',
         color: 'var(--info)'
       });
-      
+
       actions.push({
         label: 'Gestionar áreas',
         icon: icons.area,
@@ -294,7 +294,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         color: 'var(--warning)'
       });
     }
-    
+
     if (role === 'patient') {
       actions.push({
         label: 'Mi historial',
@@ -312,14 +312,14 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         color: 'var(--info)'
       });
     }
-    
+
     actions.push({
-      label: 'Configuración',
+      label: 'Seguridad',
       icon: icons.settings,
-      href: '#settings',
+      href: '#security',
       color: 'var(--muted)'
     });
-    
+
     container.innerHTML = `
       <div class="grid grid-2" style="gap: 0.5rem;">
         ${actions.map(action => `
@@ -338,9 +338,9 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     errorEl.className = 'alert alert-danger';
     errorEl.textContent = message;
     errorEl.style.margin = '1rem 0';
-    
+
     root.appendChild(errorEl);
-    
+
     setTimeout(() => {
       errorEl.remove();
     }, 5000);
@@ -353,11 +353,11 @@ export default function mountDashboard(root, { bus, store, user, role }) {
 
   // Inicializar
   render();
-  
+
   // Retornar API
   return {
     refresh: loadData,
-    
+
     destroy() {
       if (unsubscribe) unsubscribe();
     }

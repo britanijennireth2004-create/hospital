@@ -358,7 +358,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="doctor-modal">
         <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'EDICIÓN DE PERFIL PROFESIONAL' : 'REGISTRO DE PERSONAL MÉDICO'}
             </div>
@@ -952,7 +952,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const today = new Date().toDateString();
 
     const totalCapacity = doctors.reduce((sum, doctor) => sum + (doctor.dailyCapacity || 20), 0);
-    const usedCapacity = appointments.filter(a => 
+    const usedCapacity = appointments.filter(a =>
       new Date(a.dateTime).toDateString() === today
     ).length;
     const availableCapacity = totalCapacity - usedCapacity;
@@ -1088,7 +1088,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         button.addEventListener('click', (e) => {
           const calcType = e.target.dataset.calc;
           let capacity;
-          
+
           switch (calcType) {
             case '8h':
               capacity = 16;
@@ -1102,7 +1102,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             default:
               return;
           }
-          
+
           elements.capacityFormSlider.value = capacity;
           elements.capacityFormValue.value = capacity;
           updateCapacityImpact();
@@ -1245,7 +1245,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (elements.statusFormState) {
       elements.statusFormState.value = doctor.status || 'active';
     }
-    
+
     if (elements.statusFormReturnDate) {
       const today = new Date().toISOString().split('T')[0];
       elements.statusFormReturnDate.min = today;
@@ -1276,11 +1276,11 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     }
 
     const dailyCapacity = doctor.dailyCapacity || 20;
-    
+
     if (elements.capacityFormSlider) {
       elements.capacityFormSlider.value = dailyCapacity;
     }
-    
+
     if (elements.capacityFormValue) {
       elements.capacityFormValue.value = dailyCapacity;
     }
@@ -1291,14 +1291,14 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   // Actualizar impacto de capacidad
   function updateCapacityImpact() {
     if (!state.currentDoctor || !elements.capacityTodayCount || !elements.capacityRemaining) return;
-    
+
     const stats = getDoctorStats(state.currentDoctor.id);
     const newCapacity = parseInt(elements.capacityFormValue?.value || state.currentDoctor.dailyCapacity || 20);
     const remaining = Math.max(0, newCapacity - stats.todayAppointments);
-    
+
     elements.capacityTodayCount.textContent = stats.todayAppointments;
     elements.capacityRemaining.textContent = remaining;
-    
+
     if (remaining === 0) {
       elements.capacityRemaining.style.color = 'var(--danger)';
     } else if (remaining < 5) {
@@ -1361,7 +1361,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   // Limpiar formulario principal
   function clearForm() {
     if (elements.form) elements.form.reset();
-    
+
     if (elements.otherAreasContainer) {
       elements.otherAreasContainer.innerHTML = '';
     }
@@ -1374,14 +1374,14 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (elements.formScheduleEnd) elements.formScheduleEnd.value = '17:00';
     if (elements.formConsultationDuration) elements.formConsultationDuration.value = 30;
     if (elements.formDailyCapacity) elements.formDailyCapacity.value = 20;
-    
+
     if (elements.formAddArea) elements.formAddArea.value = '';
   }
 
   // Agregar área adicional
   function addOtherArea() {
     if (!elements.formAddArea || !elements.otherAreasContainer) return;
-    
+
     const areaId = elements.formAddArea.value;
     if (!areaId) return;
 
@@ -1411,7 +1411,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   function addOtherAreaToContainer(areaId, areaName) {
     if (!elements.otherAreasContainer) return;
-    
+
     const badge = document.createElement('span');
     badge.className = 'badge badge-info';
     badge.dataset.id = areaId;
@@ -1624,14 +1624,14 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
       await updateDoctor(state.currentDoctor.id, updateData);
       showNotification('Estado actualizado correctamente', 'success');
-      
+
       if (newStatus !== 'active') {
-        const upcomingAppointments = store.get('appointments').filter(a => 
-          a.doctorId === state.currentDoctor.id && 
+        const upcomingAppointments = store.get('appointments').filter(a =>
+          a.doctorId === state.currentDoctor.id &&
           a.status === 'scheduled' &&
           new Date(a.dateTime) > new Date()
         );
-        
+
         if (upcomingAppointments.length > 0) {
           showNotification(
             `¡Atención! Este médico tiene ${upcomingAppointments.length} citas programadas. Considere reasignarlas.`,
@@ -1639,7 +1639,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           );
         }
       }
-      
+
       closeStatusModal();
       loadDoctors();
 
@@ -1667,7 +1667,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         `¡Atención! El médico ya tiene ${stats.todayAppointments} citas programadas para hoy. ` +
         `Reducir la capacidad a ${newCapacity} podría causar problemas. ¿Desea continuar?`
       );
-      
+
       if (!confirm) return;
     }
 
@@ -1681,7 +1681,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
       await updateDoctor(state.currentDoctor.id, updateData);
       showNotification('Capacidad actualizada correctamente', 'success');
-      
+
       closeCapacityModal();
       loadDoctors();
 
@@ -1729,7 +1729,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">PERFIL DEL PROFESIONAL MÉDICO</div>
           <button class="btn-close-modal" id="close-view-doctor-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
             ${icons.close}
@@ -1783,7 +1783,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               </div>
               <div style="margin-top: 1rem;">
                 <div style="font-weight: 700; color: #334155; font-size: 0.75rem;">CONTACTO</div>
-                <div style="font-size: 0.9rem; color: #475569;">📞 ${doctor.phone || 'N/A'} • ✉️ ${doctor.email || 'N/A'}</div>
+                <div style="font-size: 0.9rem; color: #475569;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> ${doctor.phone || 'N/A'} • <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> ${doctor.email || 'N/A'}</div>
               </div>
             </div>
 
@@ -1846,8 +1846,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                   </thead>
                   <tbody>
                     ${appointments.slice(0, 5).map(app => {
-                      const patient = store.find('patients', app.patientId);
-                      return `
+      const patient = store.find('patients', app.patientId);
+      return `
                       <tr style="border-top: 1px solid #e2e8f0;">
                         <td style="padding: 1rem;">
                            <div style="font-weight: 700;">${new Date(app.dateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
@@ -1993,8 +1993,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     `;
 
     const icon = type === 'success' ? icons.successCheck :
-                 type === 'error' ? icons.warning :
-                 type === 'warning' ? icons.warning : icons.info;
+      type === 'error' ? icons.warning :
+        type === 'warning' ? icons.warning : icons.info;
 
     notification.innerHTML = `${icon} ${message}`;
     document.body.appendChild(notification);

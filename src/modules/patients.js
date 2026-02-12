@@ -343,7 +343,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="patient-modal">
           <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
             <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
                 ${state.editingId ? 'EDICIÓN DE FICHA DE PACIENTE' : 'REGISTRO DE NUEVO PACIENTE'}
               </div>
@@ -541,7 +541,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         <div class="modal-overlay ${state.showClinicalHistory ? '' : 'hidden'}" id="clinical-history-modal">
           <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
             <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
                 ${icons.clinical} HISTORIAL CLÍNICO: <span id="patient-history-name"></span>
               </div>
@@ -860,8 +860,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
           <h3>No hay pacientes</h3>
           <p class="text-muted" style="margin-bottom: 1.5rem;">
             ${state.filters.search || state.filters.gender || state.filters.ageRange ?
-      'No se encontraron pacientes con los filtros aplicados' :
-      'No hay pacientes registrados en el sistema'}
+        'No se encontraron pacientes con los filtros aplicados' :
+        'No hay pacientes registrados en el sistema'}
           </p>
           ${role === 'admin' || role === 'doctor' ? `
             <button class="btn btn-primary" id="btn-create-first-patient">
@@ -1218,7 +1218,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.filterAllergies) elements.filterAllergies.value = '';
     if (elements.filterBlood) elements.filterBlood.value = '';
     if (elements.sortBy) elements.sortBy.value = 'name';
-    
+
     if (elements.btnToggleView) {
       elements.btnToggleView.innerHTML = `${icons.cardView} Vista Tarjetas`;
     }
@@ -1230,13 +1230,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Cambiar modo de vista
   function toggleViewMode() {
     state.viewMode = state.viewMode === 'list' ? 'cards' : 'list';
-    
+
     if (elements.btnToggleView) {
-      elements.btnToggleView.innerHTML = state.viewMode === 'list' 
-        ? `${icons.cardView} Vista Tarjetas` 
+      elements.btnToggleView.innerHTML = state.viewMode === 'list'
+        ? `${icons.cardView} Vista Tarjetas`
         : `${icons.listView} Vista Lista`;
     }
-    
+
     renderContent();
   }
 
@@ -1524,7 +1524,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">${icons.clinical} EXPEDIENTE DIGITAL DEL PACIENTE</div>
           <button class="btn-close-modal" id="close-view-patient-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
             ${icons.close}
@@ -2007,25 +2007,25 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const notification = document.createElement('div');
     let icon = icons.info;
     let bgColor = 'var(--info)';
-    
+
     switch (type) {
-      case 'success': 
-        bgColor = 'var(--success)'; 
+      case 'success':
+        bgColor = 'var(--success)';
         icon = icons.successCheck;
         break;
-      case 'error': 
-        bgColor = 'var(--danger)'; 
+      case 'error':
+        bgColor = 'var(--danger)';
         icon = icons.cancel;
         break;
-      case 'warning': 
-        bgColor = 'var(--warning)'; 
+      case 'warning':
+        bgColor = 'var(--warning)';
         icon = icons.warning;
         break;
-      default: 
-        bgColor = 'var(--info)'; 
+      default:
+        bgColor = 'var(--info)';
         icon = icons.info;
     }
-    
+
     notification.style.cssText = `
       position: fixed;
       top: 20px;

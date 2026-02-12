@@ -100,86 +100,92 @@ function showError(message) {
   `;
 }
 
-// ===== LOGIN (mantener igual) =====
+// ===== LOGIN =====
 function mountLogin(root, { onSuccess }) {
   root.innerHTML = `
     <div class="login-page">
       <div class="login-card">
-        <div style="text-align: center; margin-bottom: 2rem;">
-          <div style="margin-bottom: 1rem; color: var(--primary);">${ICONS.logo}</div>
-          <h1>Hospital Universitario Manuel Nuñez Tovar</h1>
-          <p style="color: var(--muted);">Sistema de Gestión de Citas</p>
-        </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
-          <button class="btn btn-primary login-btn" data-role="admin" style="text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div>${ICONS.roleAdmin}</div>
-            <div>
-              <div style="font-weight: bold;">Administrador</div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">Acceso completo al sistema</div>
-            </div>
-          </button>
-          
-          <button class="btn login-btn" data-role="doctor" style="background: var(--accent-2); color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div>${ICONS.roleDoctor}</div>
-            <div>
-              <div style="font-weight: bold;">Médico</div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">Gestión de citas y pacientes</div>
-            </div>
-          </button>
-          
-          <button class="btn login-btn" data-role="patient" style="background: #3b82f6; color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div>${ICONS.rolePatient}</div>
-            <div>
-              <div style="font-weight: bold;">Paciente</div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">Ver mis citas e historial</div>
-            </div>
-          </button>
+        <!-- Left panel: form -->
+        <div class="login-form-panel">
+          <h1 class="login-title">Hospital Universitario Manuel Nuñez Tovar</h1>
+          <p class="login-subtitle">Sistema de Gestión de Citas Médicas</p>
 
-          <button class="btn login-btn" data-role="nurse" style="background: #10b981; color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div>${ICONS.roleNurse}</div>
-            <div>
-              <div style="font-weight: bold;">Enfermera</div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">Triage y atención clínica</div>
+          <form id="login-form" class="login-form" autocomplete="off">
+            <div class="login-field">
+              <label class="login-label" for="login-user">Usuario</label>
+              <input class="login-input" type="text" id="login-user" placeholder="Ingrese su usuario" required />
             </div>
-          </button>
+            <div class="login-field">
+              <label class="login-label" for="login-pass">Contraseña</label>
+              <input class="login-input" type="password" id="login-pass" placeholder="Ingrese su contraseña" required />
+            </div>
+            <button type="submit" class="login-submit-btn">INICIAR SESIÓN</button>
+            <div class="login-recover">
+              <a href="#" id="recover-link">Recuperar acceso</a>
+            </div>
+          </form>
 
-          <button class="btn login-btn" data-role="receptionist" style="background: #8b5cf6; color: white; text-align: left; display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-            <div>${ICONS.roleReceptionist}</div>
-            <div>
-              <div style="font-weight: bold;">Recepcionista</div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">Gestión de citas y pacientes</div>
-            </div>
-          </button>
-        </div>
-        
-        <div style="border-top: 1px solid var(--border); padding-top: 1rem;">
-          <p style="color: var(--muted); font-size: 0.8rem; text-align: center;">
+          <div class="login-footer-note">
             <strong>Prototipo de demostración:</strong> Los datos se almacenan localmente en tu navegador.
-          </p>
+          </div>
         </div>
+
+        <!-- Right panel: image -->
+        <div class="login-image-panel">
+          <img src="img/hospital.jpg" alt="Hospital Universitario" />
+          <div class="login-image-overlay">
+            <div class="brand-title">HUMNT</div>
+            <div class="brand-desc">Hospital Universitario Manuel Nuñez Tovar. Sistema de gestión de citas médicas.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick access floating bar -->
+      <div class="quick-access-bar">
+        <span class="quick-access-label">Acceso rápido:</span>
+        <button class="quick-access-btn login-btn" data-role="admin" title="Administrador">Admin</button>
+        <button class="quick-access-btn login-btn" data-role="doctor" title="Médico">Médico</button>
+        <button class="quick-access-btn login-btn" data-role="patient" title="Paciente">Paciente</button>
+        <button class="quick-access-btn login-btn" data-role="nurse" title="Enfermera">Enfermera</button>
+        <button class="quick-access-btn login-btn" data-role="receptionist" title="Recepcionista">Recepción</button>
       </div>
     </div>
   `;
 
-  // Configurar event listeners
+  // Helper to login with a role
+  function loginAs(role) {
+    const user = {
+      id: `${role}_1`,
+      username: role,
+      name: role === 'admin' ? 'Administrador' :
+        role === 'doctor' ? 'Dra. Ana Ruiz' :
+          role === 'nurse' ? 'Enf. Elena Soler' :
+            role === 'receptionist' ? 'Recepcionista Carla' : 'María Gómez',
+      role: role,
+      email: `${role}@hospital.com`,
+      patientId: role === 'patient' ? 'p_1' : null,
+      doctorId: role === 'doctor' ? 'd_1' : null
+    };
+    onSuccess(user);
+  }
+
+  // Form submit — demo: log in as admin by default
+  root.querySelector('#login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    loginAs('admin');
+  });
+
+  // Recover link
+  root.querySelector('#recover-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    alert('Contacte al administrador del sistema para recuperar su acceso.');
+  });
+
+  // Quick-access buttons
   root.querySelectorAll('.login-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const role = btn.dataset.role;
-      const user = {
-        id: `${role}_1`,
-        username: role,
-        name: role === 'admin' ? 'Administrador' :
-          role === 'doctor' ? 'Dra. Ana Ruiz' :
-            role === 'nurse' ? 'Enf. Elena Soler' :
-              role === 'receptionist' ? 'Recepcionista Carla' : 'María Gómez',
-        role: role,
-        email: `${role}@hospital.com`,
-        patientId: role === 'patient' ? 'p_1' : null,
-        doctorId: role === 'doctor' ? 'd_1' : null
-      };
-
-      onSuccess(user);
+      if (role) loginAs(role);
     });
   });
 }
@@ -207,7 +213,7 @@ async function mountAppShell(root, { user, bus, store }) {
               ${ICONS.menu}
             </button>
             <div style="color: var(--primary);">${ICONS.logo}</div>
-            <div style="font-weight: bold;" class="hide-mobile">Hospital Central</div>
+            <div style="font-weight: bold;" class="hide-mobile">Hospital Universitario Manuel Nuñez Tovar</div>
           </div>
           
           <div style="display: flex; align-items: center; gap: 1rem;">

@@ -5,37 +5,37 @@
 // SVG iconos ejecutivos
 const icons = {
   calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/></svg>`,
-  
+
   clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="4.25" y="3.75" width="11.5" height="14" rx="2.25" stroke="currentColor" stroke-width="1.5"/><rect x="6.75" y="2" width="6.5" height="3.5" rx="1.25" stroke="currentColor" stroke-width="1.5"/></svg>`,
-  
+
   user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
-  
+
   doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.5 18c0-3.037 2.486-5.5 6.5-5.5s6.5 2.463 6.5 5.5"/></svg>`,
-  
+
   patient: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
-  
+
   area: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" fill="none" viewBox="0 0 20 20"><rect x="2.25" y="4.25" width="15.5" height="10.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 15.75V17a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5v-1.25"/></svg>`,
-  
+
   successCheck: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" d="M6 10.5l2.5 2 5-5"/></svg>`,
-  
+
   warning: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M10 3v8"/><circle cx="10" cy="15" r="1" fill="currentColor"/><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/></svg>`,
-  
+
   info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" d="M10 7v5"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg>`,
-  
+
   edit: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z"/></svg>`,
-  
+
   cancel: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M7 7l6 6M13 7l-6 6"/></svg>`,
-  
+
   view: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M2 10s2.5-6 8-6 8 6 8 6-2.5 6-8 6-8-6-8-6z"/></svg>`,
-  
+
   clock: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 4v6l3 3"/></svg>`,
-  
+
   plus: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M4 10h12M10 4v12"/></svg>`,
-  
+
   close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M5 5l10 10M15 5L5 15"/></svg>`,
-  
+
   conflict: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 6v5"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>`,
-  
+
   clinical: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3.25" y="2.75" width="13.5" height="14.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 6h7M6.5 10h7M6.5 14h4"/></svg>`
 };
 
@@ -124,7 +124,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   function getDoctorAppointmentsForDate(doctorId, date) {
     const appointments = store.get('appointments');
     const targetDate = new Date(date).toDateString();
-    
+
     return appointments.filter(appointment => {
       if (appointment.doctorId !== doctorId) return false;
       if (appointment.status === 'cancelled') return false;
@@ -136,28 +136,28 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   function hasDoctorAvailability(doctorId, date, excludeAppointmentId = null) {
     const doctor = store.find('doctors', doctorId);
     if (!doctor) return false;
-    
+
     const dailyCapacity = doctor.dailyCapacity || 20;
     const appointments = getDoctorAppointmentsForDate(doctorId, date);
-    
-    const relevantAppointments = excludeAppointmentId 
+
+    const relevantAppointments = excludeAppointmentId
       ? appointments.filter(a => a.id !== excludeAppointmentId)
       : appointments;
-    
+
     return relevantAppointments.length < dailyCapacity;
   }
 
   function getDoctorRemainingAvailability(doctorId, date, excludeAppointmentId = null) {
     const doctor = store.find('doctors', doctorId);
     if (!doctor) return 0;
-    
+
     const dailyCapacity = doctor.dailyCapacity || 20;
     const appointments = getDoctorAppointmentsForDate(doctorId, date);
-    
-    const relevantAppointments = excludeAppointmentId 
+
+    const relevantAppointments = excludeAppointmentId
       ? appointments.filter(a => a.id !== excludeAppointmentId)
       : appointments;
-    
+
     return Math.max(0, dailyCapacity - relevantAppointments.length);
   }
 
@@ -167,34 +167,34 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
   function getAvailableDoctorsForDate(date, areaId = null, excludeAppointmentId = null) {
     const doctors = store.get('doctors');
-    
+
     let filteredDoctors = doctors;
     if (areaId) {
       filteredDoctors = doctors.filter(d => d.areaId === areaId);
     }
-    
-    return filteredDoctors.filter(doctor => 
+
+    return filteredDoctors.filter(doctor =>
       hasDoctorAvailability(doctor.id, date, excludeAppointmentId)
     );
   }
 
   function hasScheduleConflict(doctorId, date, time, duration, excludeAppointmentId = null) {
     const appointments = store.get('appointments');
-    
+
     const newAppointmentStart = new Date(`${date}T${time}`);
     const newAppointmentEnd = new Date(newAppointmentStart.getTime() + (duration * 60000));
-    
+
     return appointments.some(appointment => {
       if (excludeAppointmentId && appointment.id === excludeAppointmentId) return false;
       if (appointment.doctorId !== doctorId) return false;
       if (appointment.status === 'cancelled') return false;
-      
+
       const appointmentDate = new Date(appointment.dateTime);
       if (appointmentDate.toDateString() !== newAppointmentStart.toDateString()) return false;
-      
+
       const existingStart = new Date(appointment.dateTime);
       const existingEnd = new Date(existingStart.getTime() + (appointment.duration * 60000));
-      
+
       return (
         (newAppointmentStart >= existingStart && newAppointmentStart < existingEnd) ||
         (newAppointmentEnd > existingStart && newAppointmentEnd <= existingEnd) ||
@@ -206,47 +206,47 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   function getAvailableTimeSlots(doctorId, date, duration = 30) {
     const doctor = store.find('doctors', doctorId);
     if (!doctor) return [];
-    
+
     const workStart = doctor.workStartHour || 9;
     const workEnd = doctor.workEndHour || 17;
     const lunchStart = doctor.lunchStartHour || 13;
     const lunchEnd = doctor.lunchEndHour || 14;
-    
+
     const existingAppointments = getDoctorAppointmentsForDate(doctorId, date);
-    
+
     const slots = [];
     const startDate = new Date(date);
     startDate.setHours(workStart, 0, 0, 0);
     const endDate = new Date(date);
     endDate.setHours(workEnd, 0, 0, 0);
-    
+
     let currentTime = new Date(startDate);
-    
+
     while (currentTime < endDate) {
       if (currentTime.getHours() >= lunchStart && currentTime.getHours() < lunchEnd) {
         currentTime.setMinutes(currentTime.getMinutes() + 30);
         continue;
       }
-      
+
       const timeStr = currentTime.toTimeString().slice(0, 5);
       const timeEnd = new Date(currentTime.getTime() + (duration * 60000));
-      
+
       const hasConflict = existingAppointments.some(appointment => {
         const appointmentStart = new Date(appointment.dateTime);
         const appointmentEnd = new Date(appointmentStart.getTime() + (appointment.duration * 60000));
-        
+
         return (
           (currentTime >= appointmentStart && currentTime < appointmentEnd) ||
           (timeEnd > appointmentStart && timeEnd <= appointmentEnd) ||
           (currentTime <= appointmentStart && timeEnd >= appointmentEnd)
         );
       });
-      
+
       if (!hasConflict) slots.push(timeStr);
-      
+
       currentTime.setMinutes(currentTime.getMinutes() + 30);
     }
-    
+
     return slots;
   }
 
@@ -392,7 +392,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="appointment-modal">
         <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'ACTUALIZACIÓN DE CITA' : 'REGISTRO DE CITA MÉDICA'}
             </div>
@@ -935,7 +935,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
   function showScheduleConflictWarning(doctor, date, time, duration) {
     let warningElement = document.querySelector('#schedule-conflict-warning');
-    
+
     if (!warningElement) {
       warningElement = document.createElement('div');
       warningElement.id = 'schedule-conflict-warning';
@@ -947,13 +947,13 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         margin: 1rem 0;
         color: #721c24;
       `;
-      
+
       const timeField = elements.formTime;
       if (timeField && timeField.parentNode) {
         timeField.parentNode.parentNode.insertBefore(warningElement, timeField.parentNode.nextSibling);
       }
     }
-    
+
     warningElement.innerHTML = `
       <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
         <div style="font-size: 1.25rem; opacity: 0.7;">${icons.conflict}</div>
@@ -1050,8 +1050,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     elements.calendarContainer.classList.toggle('hidden', view !== 'calendar');
     elements.listContainer.classList.toggle('hidden', view !== 'list');
     if (elements.viewDescription) {
-      elements.viewDescription.textContent = view === 'calendar' 
-        ? 'Vista mensual de citas' 
+      elements.viewDescription.textContent = view === 'calendar'
+        ? 'Vista mensual de citas'
         : 'Lista detallada de todas las citas';
     }
     if (view === 'calendar') renderCalendar();
@@ -1203,7 +1203,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     const areaId = elements.formArea.value;
     const selectedDate = elements.formDate ? elements.formDate.value : null;
-    
+
     if (!selectedDate) {
       const doctors = store.get('doctors');
       let filteredDoctors = doctors;
@@ -1213,9 +1213,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       hideNoDoctorsMessage();
       return;
     }
-    
+
     const availableDoctors = getAvailableDoctorsForDate(selectedDate, areaId, state.editingId);
-    
+
     if (availableDoctors.length === 0) {
       showNoDoctorsMessage();
     } else {
@@ -1226,10 +1226,10 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           ${d.name} - ${d.specialty} (${remaining}/${dailyCapacity} cupos disponibles)
         </option>`;
       }).join('');
-      
+
       elements.formDoctor.innerHTML = `<option value="">Seleccionar médico</option>${options}`;
       hideNoDoctorsMessage();
-      
+
       if (state.editingId && elements.formDoctor.value) {
         const currentDoctor = store.find('doctors', elements.formDoctor.value);
         if (currentDoctor && !availableDoctors.some(d => d.id === currentDoctor.id)) {
@@ -1242,7 +1242,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           }
         }
       }
-      
+
       if (role === 'doctor' && user?.doctorId && !state.editingId) {
         const doctorExists = availableDoctors.some(d => d.id === user.doctorId);
         if (doctorExists) {
@@ -1261,19 +1261,19 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       if (elements.availableTimes) elements.availableTimes.innerHTML = '';
       return;
     }
-    
+
     const doctorId = elements.formDoctor.value;
     const date = elements.formDate.value;
     const duration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
-    
+
     const availableSlots = getAvailableTimeSlots(doctorId, date, duration);
-    
+
     if (elements.availableTimes) {
       elements.availableTimes.innerHTML = availableSlots
         .map(slot => `<option value="${slot}">${slot}</option>`)
         .join('');
     }
-    
+
     if (elements.timeSlotInfo) {
       if (availableSlots.length > 0) {
         elements.timeSlotInfo.innerHTML = `
@@ -1300,17 +1300,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     hideScheduleConflictWarning();
     if (elements.formTime) elements.formTime.classList.remove('error-field');
     if (elements.formDuration) elements.formDuration.classList.remove('error-field');
-    
-    if (elements.formDoctor && elements.formDoctor.value && 
-        elements.formDate && elements.formDate.value &&
-        elements.formTime && elements.formTime.value &&
-        elements.formDuration && elements.formDuration.value) {
-      
+
+    if (elements.formDoctor && elements.formDoctor.value &&
+      elements.formDate && elements.formDate.value &&
+      elements.formTime && elements.formTime.value &&
+      elements.formDuration && elements.formDuration.value) {
+
       const doctorId = elements.formDoctor.value;
       const date = elements.formDate.value;
       const time = elements.formTime.value;
       const duration = parseInt(elements.formDuration.value);
-      
+
       if (hasScheduleConflict(doctorId, date, time, duration, state.editingId)) {
         const doctor = store.find('doctors', doctorId);
         showScheduleConflictWarning(doctor, date, time, duration);
@@ -1356,7 +1356,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.formDoctor && elements.formDoctor.value && elements.formDate && elements.formDate.value) {
       const doctorId = elements.formDoctor.value;
       const date = elements.formDate.value;
-      
+
       if (isDoctorFullyBooked(doctorId, date, state.editingId)) {
         const doctor = store.find('doctors', doctorId);
         showNotification(
@@ -1369,16 +1369,16 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       }
     }
 
-    if (elements.formDoctor && elements.formDoctor.value && 
-        elements.formDate && elements.formDate.value &&
-        elements.formTime && elements.formTime.value &&
-        elements.formDuration && elements.formDuration.value) {
-      
+    if (elements.formDoctor && elements.formDoctor.value &&
+      elements.formDate && elements.formDate.value &&
+      elements.formTime && elements.formTime.value &&
+      elements.formDuration && elements.formDuration.value) {
+
       const doctorId = elements.formDoctor.value;
       const date = elements.formDate.value;
       const time = elements.formTime.value;
       const duration = parseInt(elements.formDuration.value);
-      
+
       if (hasScheduleConflict(doctorId, date, time, duration, state.editingId)) {
         showNotification(
           `Conflicto de horario: El médico ya tiene una cita programada para ${date} a las ${time}`,
@@ -1413,7 +1413,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       showNotification('Por favor, complete todos los campos requeridos correctamente.', 'warning');
       return;
     }
-    
+
     if (elements.formDoctor && elements.formDoctor.value && elements.formDate && elements.formDate.value) {
       const doctorId = elements.formDoctor.value;
       const date = elements.formDate.value;
@@ -1426,17 +1426,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         return;
       }
     }
-    
-    if (elements.formDoctor && elements.formDoctor.value && 
-        elements.formDate && elements.formDate.value &&
-        elements.formTime && elements.formTime.value &&
-        elements.formDuration && elements.formDuration.value) {
-      
+
+    if (elements.formDoctor && elements.formDoctor.value &&
+      elements.formDate && elements.formDate.value &&
+      elements.formTime && elements.formTime.value &&
+      elements.formDuration && elements.formDuration.value) {
+
       const doctorId = elements.formDoctor.value;
       const date = elements.formDate.value;
       const time = elements.formTime.value;
       const duration = parseInt(elements.formDuration.value);
-      
+
       if (hasScheduleConflict(doctorId, date, time, duration, state.editingId)) {
         showNotification(
           `No se puede guardar la cita. Conflicto de horario detectado para ${date} a las ${time}.`,
@@ -1554,7 +1554,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">INFORME DE CITA MÉDICA</div>
           <button class="btn-close-modal" id="close-view-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
             ${icons.close}
@@ -1834,25 +1834,25 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     const notification = document.createElement('div');
     let icon = icons.info;
     let bgColor = 'var(--info)';
-    
+
     switch (type) {
-      case 'success': 
-        bgColor = 'var(--success)'; 
+      case 'success':
+        bgColor = 'var(--success)';
         icon = icons.successCheck;
         break;
-      case 'error': 
-        bgColor = 'var(--danger)'; 
+      case 'error':
+        bgColor = 'var(--danger)';
         icon = icons.cancel;
         break;
-      case 'warning': 
-        bgColor = 'var(--warning)'; 
+      case 'warning':
+        bgColor = 'var(--warning)';
         icon = icons.warning;
         break;
-      default: 
-        bgColor = 'var(--info)'; 
+      default:
+        bgColor = 'var(--info)';
         icon = icons.info;
     }
-    
+
     notification.style.cssText = `
       position: fixed;
       top: 20px;

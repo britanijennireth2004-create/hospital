@@ -175,7 +175,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
           
           <div id="empty-grid" class="hidden">
             <div class="text-center" style="padding: 2rem;">
-              <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">🏥</div>
+              <div style="margin-bottom: 1rem; opacity: 0.3;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg></div>
               <h3>No hay áreas</h3>
               <p class="text-muted">No se encontraron áreas con los filtros aplicados</p>
             </div>
@@ -189,7 +189,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
               <h3 style="margin: 0;">Lista de Áreas</h3>
               <div class="flex gap-2">
                 <button class="btn btn-outline btn-sm" id="btn-toggle-view">
-                  <span id="view-icon">📋</span> Cambiar vista
+                  <span id="view-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span> Cambiar vista
                 </button>
               </div>
             </div>
@@ -285,7 +285,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="area-modal">
         <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'EDICIÓN DE ÁREA / SERVICIO' : 'CONFIGURACIÓN DE NUEVA ÁREA'}
             </div>
@@ -533,7 +533,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
           
           ${area.location ? `
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
-              <span style="opacity: 0.6;">📍</span>
+              <span style="opacity: 0.6;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
               <span>${area.location}</span>
             </div>
           ` : ''}
@@ -858,12 +858,12 @@ export default function mountAreas(root, { bus, store, user, role }) {
   function toggleView() {
     if (state.viewMode === 'grid') {
       state.viewMode = 'list';
-      elements.viewIcon.textContent = '📋';
+      elements.viewIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>';
       elements.areasGrid.parentElement.classList.add('hidden');
       elements.areasTable.parentElement.classList.remove('hidden');
     } else {
       state.viewMode = 'grid';
-      elements.viewIcon.textContent = '🧩';
+      elements.viewIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>';
       elements.areasGrid.parentElement.classList.remove('hidden');
       elements.areasTable.parentElement.classList.add('hidden');
       renderAreasGrid();
@@ -945,6 +945,12 @@ export default function mountAreas(root, { bus, store, user, role }) {
     const action = button.dataset.action;
     const areaId = button.dataset.id;
     const area = store.find('areas', areaId);
+
+    if (!area) {
+      console.error('Área no encontrada con ID:', areaId);
+      showNotification('No se pudo encontrar el área', 'error');
+      return;
+    }
 
     switch (action) {
       case 'view':
@@ -1239,7 +1245,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">DETALLES DEL ÁREA / SERVICIO</div>
           <button class="btn-close-modal" id="close-view-area-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>

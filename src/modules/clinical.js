@@ -228,7 +228,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         <div class="card">
           <div class="flex justify-between items-center">
             <div>
-              <h2>📋 Historia Clínica</h2>
+              <h2><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> Historia Clínica</h2>
               <p class="text-muted">Registros médicos electrónicos de pacientes</p>
             </div>
             ${canCreate ? `
@@ -258,7 +258,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
                   value="${state.searchQuery}"
                 >
                 <div style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted);">
-                  🔍
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </div>
               </div>
               <button class="btn btn-outline btn-sm" id="btn-advanced-filters">
@@ -347,7 +347,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
               
               <div id="empty-state" class="hidden">
                 <div class="text-center" style="padding: 3rem;">
-                  <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">📋</div>
+                  <div style="margin-bottom: 1rem; opacity: 0.3;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div>
                   <h3>No hay registros clínicos</h3>
                   <p class="text-muted">No se encontraron registros con los filtros aplicados</p>
                   ${canCreate ? `
@@ -371,7 +371,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="record-modal">
         <div class="modal-content" style="max-width: 950px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'ACTUALIZACIÓN DE HISTORIA CLÍNICA' : 'NUEVO REGISTRO DE ATENCIÓN MÉDICA'}
             </div>
@@ -382,7 +382,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
             <form id="record-form">
               <!-- Información de Cabecera -->
               <div style="background: #f8fafc; border-radius: 8px; padding: 1.5rem; border: 1px solid #e2e8f0; margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-header); margin-bottom: 1.25rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.5rem;">📌 DATOS GENERALES DE LA ATENCIÓN</div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-header); margin-bottom: 1.25rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> DATOS GENERALES DE LA ATENCIÓN</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                    <div class="form-group">
                       <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">PACIENTE *</label>
@@ -426,7 +426,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
               <!-- Signos Vitales (Sección Verde) -->
               <div style="background: var(--modal-section-forest-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-forest); margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">🌡️ SIGNOS VITALES Y BIOMETRÍA</div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg> SIGNOS VITALES Y BIOMETRÍA</div>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem;">
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">PRESIÓN ARTERIAL</label>
@@ -459,13 +459,13 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
               <!-- Motivo y Síntomas (Sección Oro) -->
               <div style="background: var(--modal-section-gold-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-gold); margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: #b8860b; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">📋 MOTIVO Y SÍNTOMAS</div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: #b8860b; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> MOTIVO Y SÍNTOMAS</div>
                 <textarea class="input" id="form-reason" rows="2" placeholder="Describa el motivo de la consulta..." style="background: white; border-color: var(--modal-section-gold);"></textarea>
               </div>
 
               <!-- Diagnóstico y Tratamiento (Sección Oliva) -->
               <div style="background: var(--modal-section-olive-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-olive); margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">🩺 EVALUACIÓN MÉDICA</div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> EVALUACIÓN MÉDICA</div>
                 <div class="form-group" style="margin-bottom: 1rem;">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-section-olive); font-size: 0.75rem;">DIAGNÓSTICO PRINCIPAL *</label>
                   <textarea class="input" id="form-diagnosis" rows="2" required placeholder="Diagnóstico..." style="background: white; border-color: var(--modal-section-olive); font-weight: 700;"></textarea>
@@ -478,7 +478,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
               <!-- Recetas y Seguimiento -->
               <div style="background: #f1f5f9; border-radius: 8px; padding: 1.5rem; border: 1px solid #cbd5e1;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">💊 PRESCRIPCIONES Y SEGUIMIENTO</div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg> PRESCRIPCIONES Y SEGUIMIENTO</div>
                 <div class="form-group" style="margin-bottom: 1rem;">
                   <label class="form-label" style="font-weight: 700; color: #475569; font-size: 0.75rem;">DETALLE DE MEDICACIÓN</label>
                   <textarea class="input" id="form-prescriptions" rows="3" placeholder="Medicamento - Dosis - Frecuencia..." style="background: white; border-color: #cbd5e1;"></textarea>
@@ -607,12 +607,12 @@ export default function mountClinical(root, { bus, store, user, role }) {
       });
 
       const typeIcon = {
-        consultation: '🩺',
-        followup: '📅',
-        emergency: '🚨',
-        lab: '🧪',
-        prescription: '💊'
-      }[record.type] || '📄';
+        consultation: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+        followup: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        emergency: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+        lab: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 9V3"/><path d="M14 9V3"/><path d="M7 21h10a2 2 0 0 0 1.68-3.09L14 9H10l-4.68 8.91A2 2 0 0 0 7 21Z"/></svg>',
+        prescription: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>'
+      }[record.type] || '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
 
       const statusBadge = getStatusBadge(record.status);
 
@@ -1341,7 +1341,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">HISTORIA CLÍNICA ELECTRÓNICA</div>
           <button class="btn-close-modal" id="close-record-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>
@@ -1369,7 +1369,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
           <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-bottom: 2rem;">
             <div style="background: var(--card-patient); border-radius: 4px; padding: 1.25rem; position: relative;">
                <div style="display: flex; align-items: center; gap: 1rem;">
-                  <div style="width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👤</div>
+                  <div style="width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                   <div>
                     <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">PACIENTE</div>
                     <div style="font-weight: 700; font-size: 1.1rem;">${patient?.name || 'María Gómez'}</div>
@@ -1557,13 +1557,13 @@ export default function mountClinical(root, { bus, store, user, role }) {
         </div>
         
         <div style="padding: 1rem 1.5rem; text-align: center; color: #666; font-size: 0.75rem; border-top: 1px solid var(--modal-border);">
-            Documento clínico electrónico • Generado automáticamente por Hospital General
+            Documento clínico electrónico • Generado automáticamente por Hospital Universitario Manuel Nuñez Tovar
         </div>
 
         <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
-          <button class="btn btn-primary" style="background: #4a7963; border: none; padding: 0.5rem 1rem;" id="print-record-btn">📄 Imprimir</button>
+          <button class="btn btn-primary" style="background: #4a7963; border: none; padding: 0.5rem 1rem;" id="print-record-btn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg> Imprimir</button>
           ${canEditThisRecord ? `
-            <button class="btn btn-primary" style="background: #7c9b1f; border: none; padding: 0.5rem 1rem;" id="edit-record-btn" data-id="${record.id}">✏️ Editar</button>
+            <button class="btn btn-primary" style="background: #7c9b1f; border: none; padding: 0.5rem 1rem;" id="edit-record-btn" data-id="${record.id}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>
           ` : ''}
           <button class="btn btn-danger" style="background: #d55050; border: none; padding: 0.5rem 1rem;" id="close-modal-btn">✕ Cerrar</button>
         </div>

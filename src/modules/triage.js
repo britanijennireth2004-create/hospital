@@ -30,7 +30,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       name: 'Rojo - Inmediato',
       color: '#e53e3e', // Rojo más suave
       lightColor: '#fed7d7', // Fondo claro
-      icon: '🟥',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#e53e3e"/></svg>',
       time: '0-10 min',
       description: 'Amenaza vital inmediata',
       criteria: ['paro cardiorespiratorio', 'convulsiones', 'hemorragia masiva', 'shock', 'coma', 'pso2 < 90%', 'fr > 30 o < 10', 'ta sistólica < 90', 'dolor 10/10']
@@ -39,7 +39,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       name: 'Naranja - Muy urgente',
       color: '#dd6b20', // Naranja más suave
       lightColor: '#feebc8',
-      icon: '🟧',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#dd6b20"/></svg>',
       time: '10-60 min',
       description: 'Riesgo vital potencial',
       criteria: ['dolor torácico', 'disnea moderada', 'trauma severo', 'alteración conciencia', 'pso2 90-94%', 'fr 25-30', 'ta 90-100', 'dolor 8-9/10']
@@ -48,7 +48,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       name: 'Amarillo - Urgente',
       color: '#d69e2e', // Amarillo más suave
       lightColor: '#fefcbf',
-      icon: '🟨',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#d69e2e"/></svg>',
       time: '60-120 min',
       description: 'Urgente pero estable',
       criteria: ['fiebre alta', 'dolor abdominal', 'vómitos persistentes', 'infecciones moderadas', 'pso2 95-97%', 'fr 20-24', 'ta normal', 'dolor 5-7/10']
@@ -57,7 +57,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       name: 'Verde - Poco urgente',
       color: '#38a169', // Verde más suave
       lightColor: '#c6f6d5',
-      icon: '🟩',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#38a169"/></svg>',
       time: '2-4 horas',
       description: 'No urgente',
       criteria: ['resfriado común', 'dolor leve', 'consulta general', 'control rutinario', 'pso2 > 97%', 'fr normal', 'ta normal', 'dolor < 4/10']
@@ -66,7 +66,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       name: 'Azul - No urgente',
       color: '#3182ce', // Azul más suave
       lightColor: '#bee3f8',
-      icon: '🟦',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#3182ce"/></svg>',
       time: '4+ horas',
       description: 'Consulta simple',
       criteria: ['certificados', 'recetas', 'consultas administrativas']
@@ -478,20 +478,20 @@ export default function mountTriage(root, { bus, store, user, role }) {
             <div class="quick-actions">
               ${canProcess ? `
               <button class="btn btn-danger" id="btn-emergency-alert">
-                ⚠️ Alerta de Emergencia
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Alerta de Emergencia
               </button>
               ` : ''}
               <button class="btn btn-outline" id="btn-export-pdf">
-                📊 Exportar Reporte
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> Exportar Reporte
               </button>
               ${canProcess ? `
               <button class="btn btn-outline" id="btn-next-patient">
-                ⏭️ Siguiente Paciente
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg> Siguiente Paciente
               </button>
               ` : ''}
               ${role === 'admin' ? `
                 <button class="btn btn-outline" id="btn-clear-completed">
-                  🧹 Limpiar Completados
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Limpiar Completados
                 </button>
               ` : ''}
             </div>
@@ -505,7 +505,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
             <div class="flex gap-2">
               <div class="input-group">
                 <input type="text" class="input" id="filter-search" placeholder="Buscar paciente..." value="${state.filters.search}">
-                <button class="btn btn-outline" id="btn-search">🔍</button>
+                <button class="btn btn-outline" id="btn-search"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
               </div>
             </div>
           </div>
@@ -543,7 +543,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
             <div class="form-group">
               <label class="form-label">Acciones</label>
               <button class="btn btn-outline" id="btn-refresh" style="width: 100%;">
-                🔄 Actualizar
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Actualizar
               </button>
             </div>
           </div>
@@ -575,7 +575,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         <div class="modal-overlay hidden" id="triage-modal">
           <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
             <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">SISTEMA DE TRIAGE Y PRIORIZACIÓN</div>
               <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
             </div>
@@ -639,7 +639,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
                   <!-- Sugerencia de prioridad MEJORADA -->
                   <div class="form-group" id="priority-suggestion-container" style="display: none;">
                     <label class="form-label">
-                      🎯 Sugerencia de Prioridad
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg> Sugerencia de Prioridad
                       <span id="suggestion-confidence" style="font-size: 0.75rem; color: var(--muted);"></span>
                     </label>
                     <div class="priority-suggestion" id="priority-suggestion">
@@ -2065,7 +2065,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL GENERAL</h2>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">INFORME DE CLASIFICACIÓN DE TRIAGE</div>
           <button class="btn-close-modal" id="close-view-triage-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>
@@ -2474,7 +2474,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         `Fecha de generación: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`,
         `Generado por: ${user.name} (${user.role || 'Personal médico'})`,
         `Período: Últimas 24 horas`,
-        `Hospital: Hospital Central - Servicio de Urgencias`
+        `Hospital: Hospital Universitario Manuel Nuñez Tovar - Servicio de Urgencias`
       ];
 
       reportInfo.forEach((text, i) => {
@@ -2773,7 +2773,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       }
 
       recommendations.push(
-        '• Este reporte es un documento oficial del Hospital Central.',
+        '• Este reporte es un documento oficial del Hospital Universitario Manuel Nuñez Tovar.',
         '• Los tiempos son aproximados y pueden variar según la situación clínica.'
       );
 
@@ -2796,7 +2796,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
       doc.setFontSize(8);
       doc.setTextColor(102, 102, 102);
-      doc.text('Documento generado automáticamente por el Sistema de Triage del Hospital Central',
+      doc.text('Documento generado automáticamente por el Sistema de Triage del Hospital Universitario Manuel Nuñez Tovar',
         pageWidth / 2, yPos, { align: 'center' });
       yPos += 4;
       doc.text('Válido como documentación interna del servicio de urgencias',
@@ -2873,7 +2873,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
     report += `Fecha de generación: ${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}\n`;
     report += `Generado por: ${user.name}\n`;
-    report += `Hospital: Hospital Central - Servicio de Urgencias\n`;
+    report += `Hospital: Hospital Universitario Manuel Nuñez Tovar - Servicio de Urgencias\n`;
     report += '-'.repeat(80) + '\n\n';
 
     report += 'RESUMEN ESTADÍSTICO:\n';
@@ -2982,7 +2982,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     }
 
     report += '\n\n--- FIN DEL REPORTE ---\n';
-    report += 'Hospital Central - Sistema de Triage\n';
+    report += 'Hospital Universitario Manuel Nuñez Tovar - Sistema de Triage\n';
 
     return report;
   }
