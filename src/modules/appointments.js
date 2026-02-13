@@ -520,10 +520,10 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
-            <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">
+            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">
               CANCELAR
             </button>
-            <button class="btn btn-primary" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
+            <button class="btn btn-primary" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
               ${state.isLoading ? 'GUARDANDO...' : (state.editingId ? 'ACTUALIZAR CITA' : 'REGISTRAR CITA')}
             </button>
           </div>

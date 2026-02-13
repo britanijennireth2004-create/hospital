@@ -107,7 +107,7 @@ function mountLogin(root, { onSuccess }) {
       <div class="login-card">
         <!-- Left panel: form -->
         <div class="login-form-panel">
-          <h1 class="login-title">Hospital Universitario Manuel Nuñez Tovar</h1>
+          <h1 class="login-title">Hospital Universitario Manuel Núñez Tovar</h1>
           <p class="login-subtitle">Sistema de Gestión de Citas Médicas</p>
 
           <form id="login-form" class="login-form" autocomplete="off">
@@ -135,7 +135,7 @@ function mountLogin(root, { onSuccess }) {
           <img src="img/hospital.jpg" alt="Hospital Universitario" />
           <div class="login-image-overlay">
             <div class="brand-title">HUMNT</div>
-            <div class="brand-desc">Hospital Universitario Manuel Nuñez Tovar. Sistema de gestión de citas médicas.</div>
+            <div class="brand-desc">Hospital Universitario Manuel Núñez Tovar. Sistema de gestión de citas médicas.</div>
           </div>
         </div>
       </div>
@@ -208,19 +208,18 @@ async function mountAppShell(root, { user, bus, store }) {
       <div class="app-shell">
         <!-- Header -->
         <header class="app-header">
-          <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-left: 1rem;">
             <button class="btn btn-outline btn-sm" id="menu-toggle" style="display: none;">
               ${ICONS.menu}
             </button>
-            <div style="color: var(--primary);">${ICONS.logo}</div>
-            <div style="font-weight: bold;" class="hide-mobile">Hospital Universitario Manuel Nuñez Tovar</div>
+            <div style="font-weight: bold;" class="hide-mobile">Hospital Universitario Manuel Núñez Tovar</div>
           </div>
           
           <div style="display: flex; align-items: center; gap: 1rem;">
             <div class="user-info" style="display: flex; align-items: center; gap: 0.75rem;">
               <div style="text-align: right;" class="user-info-text">
                 <div style="font-weight: 500;">${user.name}</div>
-                <div style="font-size: 0.875rem; color: var(--muted);">${user.role.toUpperCase()}</div>
+                <div style="font-size: 0.875rem; color: var(--card);">${user.role.toUpperCase()}</div>
               </div>
               <div style="width: 36px; height: 36px; background: var(--accent-light); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
                 ${user.name.charAt(0)}

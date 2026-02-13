@@ -14,7 +14,8 @@ export default function mountAreas(root, { bus, store, user, role }) {
     isLoading: false,
     showModal: false,
     currentPage: 1,
-    itemsPerPage: 10
+    itemsPerPage: 10,
+    viewMode: 'grid' // grid o list
   };
 
   let elements = {};
@@ -35,7 +36,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
   // Cargar áreas
   function loadAreas() {
-    let areas = store.get('areas');
+    let areas = store.get('areas') || [];
 
     // Aplicar filtros
     areas = applyFilters(areas);
@@ -53,7 +54,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     state.areas = areas;
     renderAreasList();
+    renderAreasGrid();
     updateStats();
+    loadSelectData();
   }
 
   // Aplicar filtros
@@ -99,8 +102,8 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
   // Obtener estadísticas de área
   function getAreaStats(areaId) {
-    const doctors = store.get('doctors');
-    const appointments = store.get('appointments');
+    const doctors = store.get('doctors') || [];
+    const appointments = store.get('appointments') || [];
     const today = new Date();
     const thisMonth = today.getMonth();
     const thisYear = today.getFullYear();
@@ -160,17 +163,24 @@ export default function mountAreas(root, { bus, store, user, role }) {
           <!-- Se llenará dinámicamente -->
         </div>
 
-        <!-- Vista de tarjetas -->
-        <div class="card">
+        <!-- Vista de tarjetas con scroll horizontal -->
+        <div class="card" id="grid-view-section">
           <div class="card-header">
-            <h3 style="margin: 0;">Departamentos</h3>
-            <div class="text-muted" id="areas-view-count">
-              Cargando...
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <h3 style="margin: 0;">Departamentos</h3>
+                <div class="text-muted" id="areas-view-count">Cargando...</div>
+              </div>
+              <button class="btn btn-outline btn-sm" id="btn-toggle-view">
+                <span id="view-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span> Ver lista
+              </button>
             </div>
           </div>
           
-          <div class="grid grid-4" id="areas-grid">
-            <!-- Se llenará dinámicamente -->
+          <div class="areas-grid-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding-bottom: 0.5rem;">
+            <div class="areas-grid" id="areas-grid" style="display: flex; gap: 1rem; min-width: min-content;">
+              <!-- Se llenará dinámicamente -->
+            </div>
           </div>
           
           <div id="empty-grid" class="hidden">
@@ -182,20 +192,21 @@ export default function mountAreas(root, { bus, store, user, role }) {
           </div>
         </div>
 
-        <!-- Filtros y lista -->
-        <div class="card">
+        <!-- Vista de lista con filtros -->
+        <div class="card" id="list-view-section" style="display: none;">
           <div class="card-header">
             <div class="flex justify-between items-center">
-              <h3 style="margin: 0;">Lista de Áreas</h3>
-              <div class="flex gap-2">
-                <button class="btn btn-outline btn-sm" id="btn-toggle-view">
-                  <span id="view-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span> Cambiar vista
-                </button>
+              <div class="flex items-center gap-2">
+                <h3 style="margin: 0;">Lista de Áreas</h3>
+                <div class="text-muted" id="list-view-count"></div>
               </div>
+              <button class="btn btn-outline btn-sm" id="btn-toggle-view-list">
+                <span id="view-icon-list"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg></span> Ver tarjetas
+              </button>
             </div>
           </div>
           
-          <!-- Filtros -->
+          <!-- Filtros (solo visibles en vista de lista) -->
           <div class="p-4 border-b">
             <div class="grid grid-4">
               <div class="form-group">
@@ -241,7 +252,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
           </div>
           
           <!-- Lista de áreas -->
-          <div class="table-responsive">
+          <div class="table-responsive" id="list-view-container">
             <table class="table" id="areas-table">
               <thead>
                 <tr>
@@ -285,7 +296,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="area-modal">
         <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'EDICIÓN DE ÁREA / SERVICIO' : 'CONFIGURACIÓN DE NUEVA ÁREA'}
             </div>
@@ -352,7 +363,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">COLOR IDENTIFICATIVO</label>
                   <div class="flex items-center gap-2">
                     <input type="color" class="input" id="form-color" 
-                           value="${state.editingId ? '#4CAF50' : '#2196F3'}" 
+                           value="#2196F3" 
                            style="width: 50px; height: 38px; padding: 2px; border-color: var(--modal-border);">
                     <input type="text" class="input" id="form-color-text" 
                            placeholder="#2196F3" style="flex: 1; border-color: var(--modal-border); background: var(--modal-bg);">
@@ -376,6 +387,29 @@ export default function mountAreas(root, { bus, store, user, role }) {
                 </div>
               </div>
               
+              <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CAPACIDAD (CONSULTORIOS)</label>
+                <input type="number" class="input" id="form-capacity" min="1" max="50" value="1" style="border-color: var(--modal-border); background: var(--modal-bg);">
+              </div>
+              
+              <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESPECIALIDADES</label>
+                <div class="flex gap-2">
+                  <input type="text" class="input" id="form-add-specialty" 
+                         placeholder="Ej: Cardiología, Neurología..." style="flex: 1; border-color: var(--modal-border); background: var(--modal-bg);">
+                  <button type="button" class="btn btn-outline" id="btn-add-specialty" style="white-space: nowrap;">Agregar</button>
+                </div>
+                <div id="specialties-container" class="flex flex-wrap gap-1 mt-2">
+                  <!-- Se llenará dinámicamente -->
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL DE CONTACTO</label>
+                <input type="email" class="input" id="form-email" 
+                       placeholder="Ej: area@hospital.com" style="border-color: var(--modal-border); background: var(--modal-bg);">
+              </div>
+              
               ${state.editingId ? `
                 <div class="form-group" style="background: var(--modal-bg); padding: 1rem; border-radius: 4px; margin-top: 1.5rem;">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO OPERATIVO</label>
@@ -396,8 +430,8 @@ export default function mountAreas(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
+            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+            <button class="btn" id="btn-save" style="background: var(--success); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
               ${state.isLoading ? 'GUARDANDO...' : (state.editingId ? 'ACTUALIZAR ÁREA' : 'CONFIRMAR ÁREA')}
             </button>
           </div>
@@ -409,14 +443,23 @@ export default function mountAreas(root, { bus, store, user, role }) {
     elements = {
       statsContainer: root.querySelector('#stats-container'),
       areasGrid: root.querySelector('#areas-grid'),
+      areasGridContainer: root.querySelector('.areas-grid-container'),
       areasViewCount: root.querySelector('#areas-view-count'),
+      listViewCount: root.querySelector('#list-view-count'),
       emptyGrid: root.querySelector('#empty-grid'),
       areasList: root.querySelector('#areas-list'),
       areasTable: root.querySelector('#areas-table'),
+      listViewContainer: root.querySelector('#list-view-container'),
       pagination: root.querySelector('#pagination'),
       emptyState: root.querySelector('#empty-state'),
+      
+      // Secciones de vista
+      gridViewSection: root.querySelector('#grid-view-section'),
+      listViewSection: root.querySelector('#list-view-section'),
       btnToggleView: root.querySelector('#btn-toggle-view'),
+      btnToggleViewList: root.querySelector('#btn-toggle-view-list'),
       viewIcon: root.querySelector('#view-icon'),
+      viewIconList: root.querySelector('#view-icon-list'),
 
       // Filtros
       filterSearch: root.querySelector('#filter-search'),
@@ -453,8 +496,14 @@ export default function mountAreas(root, { bus, store, user, role }) {
       btnCreateFirst: root.querySelector('#btn-create-first')
     };
 
-    // Configurar vista inicial (tarjetas o lista)
-    state.viewMode = 'grid'; // grid o list
+    // Configurar vista inicial
+    if (state.viewMode === 'list') {
+      elements.gridViewSection.style.display = 'none';
+      elements.listViewSection.style.display = 'block';
+    } else {
+      elements.gridViewSection.style.display = 'block';
+      elements.listViewSection.style.display = 'none';
+    }
 
     // Cargar datos iniciales
     loadSelectData();
@@ -463,9 +512,10 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
   // Cargar datos en selects
   function loadSelectData() {
+    const areas = store.get('areas') || [];
+    
     // Áreas padre para filtros
     if (elements.filterParentArea) {
-      const areas = store.get('areas');
       const options = areas
         .filter(a => !a.parentId) // Solo áreas principales
         .map(a => `<option value="${a.id}">${a.name}</option>`)
@@ -475,7 +525,6 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     // Áreas padre para formulario
     if (elements.formParent) {
-      const areas = store.get('areas');
       const options = areas
         .filter(a => !a.parentId) // Solo áreas principales
         .map(a => `<option value="${a.id}">${a.name}</option>`)
@@ -485,7 +534,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     // Médicos jefe
     if (elements.formHeadDoctor) {
-      const doctors = store.get('doctors').filter(d => d.isActive);
+      const doctors = (store.get('doctors') || []).filter(d => d.isActive);
       const options = doctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
       elements.formHeadDoctor.innerHTML = `<option value="">Sin asignar</option>${options}`;
     }
@@ -499,57 +548,63 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     if (areas.length === 0) {
       elements.emptyGrid.classList.remove('hidden');
-      elements.areasGrid.classList.add('hidden');
-      elements.areasViewCount.textContent = '0 áreas principales';
+      elements.areasGridContainer.style.display = 'none';
+      elements.areasViewCount.textContent = '0 áreas';
       return;
     }
 
     elements.emptyGrid.classList.add('hidden');
-    elements.areasGrid.classList.remove('hidden');
-
-    elements.areasViewCount.textContent = `${areas.length} ${areas.length === 1 ? 'área principal' : 'áreas principales'}`;
+    elements.areasGridContainer.style.display = 'block';
+    elements.areasViewCount.textContent = `${areas.length} ${areas.length === 1 ? 'departamento' : 'departamentos'}`;
 
     const cards = areas.map(area => {
       const stats = getAreaStats(area.id);
       const subAreas = state.areas.filter(a => a.parentId === area.id);
 
       return `
-        <div class="card" style="border-left: 4px solid ${area.color || '#2196F3'};">
+        <div class="card" style="flex: 0 0 300px; border-left: 4px solid ${area.color || '#2196F3'}; margin: 0;">
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
             <div style="width: 48px; height: 48px; background: ${area.color || '#2196F3'}; 
                        border-radius: 8px; display: flex; align-items: center; justify-content: center; 
                        color: white; font-size: 1.25rem; font-weight: bold;">
-              ${area.code || area.name.charAt(0)}
+              ${area.code ? area.code.charAt(0) : area.name.charAt(0)}
             </div>
-            <div>
-              <div style="font-weight: 500; font-size: 1.125rem;">${area.name}</div>
-              <div style="color: var(--muted); font-size: 0.875rem;">${area.code || 'Sin código'}</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 600; font-size: 1.125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${area.name}">${area.name}</div>
+              <div style="color: var(--muted); font-size: 0.875rem; font-family: monospace;">${area.code || 'Sin código'}</div>
             </div>
           </div>
           
-          <p style="color: var(--muted); font-size: 0.875rem; margin-bottom: 1rem; min-height: 40px;">
-            ${area.description || 'Sin descripción'}
+          <p style="color: var(--muted); font-size: 0.875rem; margin-bottom: 1.25rem; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+            ${area.description || 'Sin descripción disponible para este departamento médico.'}
           </p>
           
           ${area.location ? `
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
               <span style="opacity: 0.6;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-              <span>${area.location}</span>
+              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${area.location}</span>
             </div>
           ` : ''}
           
-          <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+          ${area.phone ? `
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
+              <span style="opacity: 0.6;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+              <span>${area.phone}</span>
+            </div>
+          ` : ''}
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1.25rem; background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
             <div style="text-align: center;">
-              <div style="font-size: 0.75rem; color: var(--muted);">Médicos</div>
-              <div style="font-weight: 500; font-size: 1.25rem;">${stats.totalDoctors}</div>
+              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Médicos</div>
+              <div style="font-weight: 700; font-size: 1.15rem; color: var(--primary);">${stats.totalDoctors}</div>
+            </div>
+            <div style="text-align: center; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Citas Hoy</div>
+              <div style="font-weight: 700; font-size: 1.15rem; color: var(--accent-2);">${stats.todayAppointments}</div>
             </div>
             <div style="text-align: center;">
-              <div style="font-size: 0.75rem; color: var(--muted);">Citas hoy</div>
-              <div style="font-weight: 500; font-size: 1.25rem; color: var(--accent-2);">${stats.todayAppointments}</div>
-            </div>
-            <div style="text-align: center;">
-              <div style="font-size: 0.75rem; color: var(--muted);">Sub-áreas</div>
-              <div style="font-weight: 500; font-size: 1.25rem;">${subAreas.length}</div>
+              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Subs</div>
+              <div style="font-weight: 700; font-size: 1.15rem; color: var(--info);">${subAreas.length}</div>
             </div>
           </div>
           
@@ -582,12 +637,14 @@ export default function mountAreas(root, { bus, store, user, role }) {
       elements.emptyState.classList.remove('hidden');
       elements.areasTable.classList.add('hidden');
       elements.pagination.classList.add('hidden');
+      elements.listViewCount.textContent = '0 áreas';
       return;
     }
 
     elements.emptyState.classList.add('hidden');
     elements.areasTable.classList.remove('hidden');
     elements.pagination.classList.remove('hidden');
+    elements.listViewCount.textContent = `${state.areas.length} ${state.areas.length === 1 ? 'área' : 'áreas'}`;
 
     const rows = paginatedAreas.map(area => {
       const stats = getAreaStats(area.id);
@@ -661,11 +718,6 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     elements.areasList.innerHTML = rows;
     renderPagination();
-
-    // También renderizar grid si está en ese modo
-    if (state.viewMode === 'grid') {
-      renderAreasGrid();
-    }
   }
 
   // Renderizar paginación
@@ -679,9 +731,28 @@ export default function mountAreas(root, { bus, store, user, role }) {
       return;
     }
 
+    let pageButtons = '';
+    const maxVisible = 5;
+    let startPage = Math.max(1, state.currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageButtons += `
+        <button class="btn btn-sm ${state.currentPage === i ? 'btn-primary' : 'btn-outline'}" 
+                data-page="${i}">
+          ${i}
+        </button>
+      `;
+    }
+
     elements.pagination.innerHTML = `
       <div class="text-sm text-muted">
-        Mostrando ${Math.min(state.currentPage * state.itemsPerPage, state.areas.length)} de ${state.areas.length} áreas
+        Mostrando ${Math.min((state.currentPage - 1) * state.itemsPerPage + 1, state.areas.length)} - 
+        ${Math.min(state.currentPage * state.itemsPerPage, state.areas.length)} de ${state.areas.length} áreas
       </div>
       
       <div class="flex gap-1">
@@ -690,25 +761,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
           ← Anterior
         </button>
         
-        ${Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-      let pageNum;
-      if (totalPages <= 5) {
-        pageNum = i + 1;
-      } else if (state.currentPage <= 3) {
-        pageNum = i + 1;
-      } else if (state.currentPage >= totalPages - 2) {
-        pageNum = totalPages - 4 + i;
-      } else {
-        pageNum = state.currentPage - 2 + i;
-      }
-
-      return `
-            <button class="btn btn-sm ${state.currentPage === pageNum ? 'btn-primary' : 'btn-outline'}" 
-                    data-page="${pageNum}">
-              ${pageNum}
-            </button>
-          `;
-    }).join('')}
+        ${pageButtons}
         
         <button class="btn btn-outline btn-sm ${state.currentPage === totalPages ? 'disabled' : ''}" 
                 data-page="next" ${state.currentPage === totalPages ? 'disabled' : ''}>
@@ -722,9 +775,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
   function updateStats() {
     if (!elements.statsContainer) return;
 
-    const areas = store.get('areas');
-    const doctors = store.get('doctors');
-    const appointments = store.get('appointments');
+    const areas = store.get('areas') || [];
+    const doctors = store.get('doctors') || [];
+    const appointments = store.get('appointments') || [];
 
     const stats = {
       total: areas.length,
@@ -746,7 +799,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
       <div class="card">
         <div class="text-muted text-sm">Áreas activas</div>
         <div class="text-2xl font-bold" style="color: var(--success);">${stats.active}</div>
-        <div class="text-xs text-muted mt-1">${Math.round((stats.active / stats.total) * 100)}% del total</div>
+        <div class="text-xs text-muted mt-1">${stats.total ? Math.round((stats.active / stats.total) * 100) : 0}% del total</div>
       </div>
       
       <div class="card">
@@ -786,9 +839,14 @@ export default function mountAreas(root, { bus, store, user, role }) {
       });
     }
 
-    // Cambiar vista
+    // Cambiar vista (desde grid a list)
     if (elements.btnToggleView) {
-      elements.btnToggleView.addEventListener('click', toggleView);
+      elements.btnToggleView.addEventListener('click', () => toggleView('list'));
+    }
+
+    // Cambiar vista (desde list a grid)
+    if (elements.btnToggleViewList) {
+      elements.btnToggleViewList.addEventListener('click', () => toggleView('grid'));
     }
 
     // Modal
@@ -852,20 +910,28 @@ export default function mountAreas(root, { bus, store, user, role }) {
     if (elements.pagination) {
       elements.pagination.addEventListener('click', handlePagination);
     }
+
+    // Scroll horizontal con rueda del ratón
+    if (elements.areasGridContainer) {
+      elements.areasGridContainer.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          elements.areasGridContainer.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+    }
   }
 
   // Cambiar entre vista de tarjetas y lista
-  function toggleView() {
-    if (state.viewMode === 'grid') {
-      state.viewMode = 'list';
-      elements.viewIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>';
-      elements.areasGrid.parentElement.classList.add('hidden');
-      elements.areasTable.parentElement.classList.remove('hidden');
+  function toggleView(targetView) {
+    state.viewMode = targetView;
+    
+    if (targetView === 'list') {
+      elements.gridViewSection.style.display = 'none';
+      elements.listViewSection.style.display = 'block';
     } else {
-      state.viewMode = 'grid';
-      elements.viewIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>';
-      elements.areasGrid.parentElement.classList.remove('hidden');
-      elements.areasTable.parentElement.classList.add('hidden');
+      elements.gridViewSection.style.display = 'block';
+      elements.listViewSection.style.display = 'none';
       renderAreasGrid();
     }
   }
@@ -1038,7 +1104,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
     // Verificar que no esté ya agregada
     const existingBadges = elements.specialtiesContainer.querySelectorAll('.badge');
     const alreadyExists = Array.from(existingBadges).some(badge =>
-      badge.textContent.trim() === specialty
+      badge.textContent.replace('×', '').trim() === specialty
     );
 
     if (alreadyExists) {
@@ -1054,9 +1120,10 @@ export default function mountAreas(root, { bus, store, user, role }) {
   function addSpecialtyToContainer(specialty) {
     const badge = document.createElement('span');
     badge.className = 'badge badge-info';
+    badge.style.cssText = 'display: inline-flex; align-items: center; padding-right: 0.25rem;';
     badge.innerHTML = `
       ${specialty}
-      <button type="button" class="badge-remove" style="margin-left: 0.5rem; background: none; border: none; color: inherit; cursor: pointer; font-size: 0.75rem;">
+      <button type="button" class="badge-remove" style="margin-left: 0.25rem; background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.25rem;">
         ×
       </button>
     `;
@@ -1199,7 +1266,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
       state.isLoading = false;
       if (elements.btnSave) {
         elements.btnSave.disabled = false;
-        elements.btnSave.textContent = state.editingId ? 'Actualizar' : 'Guardar';
+        elements.btnSave.textContent = state.editingId ? 'ACTUALIZAR ÁREA' : 'CONFIRMAR ÁREA';
       }
     }
   }
@@ -1219,11 +1286,11 @@ export default function mountAreas(root, { bus, store, user, role }) {
     const stats = getAreaStats(area.id);
     const headDoctor = area.headDoctorId ? store.find('doctors', area.headDoctorId) : null;
     const parentArea = area.parentId ? store.find('areas', area.parentId) : null;
-    const doctors = store.get('doctors').filter(d =>
+    const doctors = (store.get('doctors') || []).filter(d =>
       d.areaId === area.id ||
       (d.otherAreas && d.otherAreas.includes(area.id))
     );
-    const subAreas = store.get('areas').filter(a => a.parentId === area.id);
+    const subAreas = (store.get('areas') || []).filter(a => a.parentId === area.id);
 
     // Crear modal de vista detallada
     const modalContainer = document.createElement('div');
@@ -1238,14 +1305,14 @@ export default function mountAreas(root, { bus, store, user, role }) {
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 3000;
       padding: 1rem;
     `;
 
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">DETALLES DEL ÁREA / SERVICIO</div>
           <button class="btn-close-modal" id="close-view-area-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>
@@ -1259,15 +1326,15 @@ export default function mountAreas(root, { bus, store, user, role }) {
             </div>
             <div>
               <h3 style="margin: 0; font-size: 1.5rem; color: var(--modal-header);">${area.name}</h3>
-              <div style="color: #64748b; font-weight: 600; font-size: 0.9rem;">${area.code || 'SIN CÓDIGO'} • ${area.type.toUpperCase()}</div>
+              <div style="color: #64748b; font-weight: 600; font-size: 0.9rem;">${area.code || 'SIN CÓDIGO'} • ${(area.type || 'clinical').toUpperCase()}</div>
             </div>
           </div>
         
-        <div class="modal-body" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
+        <div class="modal-body" style="padding: 1.5rem; max-height: 40vh; overflow-y: auto;">
           <!-- Información general -->
           <div class="card" style="margin-bottom: 1.5rem;">
             <h4 style="margin-bottom: 1rem;">Información general</h4>
-            <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div>
                 <div class="text-muted text-sm">Tipo de área</div>
                 <div class="font-bold">${area.type === 'clinical' ? 'Clínica' :
@@ -1307,7 +1374,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
           ${(area.phone || area.email) ? `
             <div class="card" style="margin-bottom: 1.5rem;">
               <h4 style="margin-bottom: 1rem;">Información de contacto</h4>
-              <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 ${area.phone ? `
                   <div>
                     <div class="text-muted text-sm">Teléfono</div>
@@ -1331,38 +1398,15 @@ export default function mountAreas(root, { bus, store, user, role }) {
               <div style="display: flex; align-items: center; gap: 1rem;">
                 <div style="width: 48px; height: 48px; background: var(--accent); border-radius: 50%; 
                            display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                  ${headDoctor.name.charAt(0)}
+                  ${headDoctor.name ? headDoctor.name.charAt(0) : '?'}
                 </div>
                 <div>
-                  <div style="font-weight: 500;">${headDoctor.name}</div>
-                  <div style="color: var(--muted);">${headDoctor.specialty}</div>
+                  <div style="font-weight: 500;">${headDoctor.name || 'Sin nombre'}</div>
+                  <div style="color: var(--muted);">${headDoctor.specialty || 'Especialidad no especificada'}</div>
                 </div>
               </div>
             </div>
           ` : ''}
-          
-          <!-- Estadísticas -->
-          <div class="card" style="margin-bottom: 1.5rem;">
-            <h4 style="margin-bottom: 1rem;">Estadísticas</h4>
-            <div class="grid grid-4">
-              <div class="text-center">
-                <div class="text-muted text-sm">Médicos asignados</div>
-                <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalDoctors}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-muted text-sm">Citas totales</div>
-                <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.totalAppointments}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-muted text-sm">Citas este mes</div>
-                <div class="text-2xl font-bold" style="color: var(--info);">${stats.monthAppointments}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-muted text-sm">Sub-áreas</div>
-                <div class="text-2xl font-bold" style="color: var(--success);">${subAreas.length}</div>
-              </div>
-            </div>
-          </div>
           
           <!-- Especialidades -->
           ${area.specialties && area.specialties.length > 0 ? `
@@ -1372,6 +1416,39 @@ export default function mountAreas(root, { bus, store, user, role }) {
                 ${area.specialties.map(specialty => `
                   <span class="badge badge-info">${specialty}</span>
                 `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <!-- Estadísticas -->
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <h4 style="margin-bottom: 1rem;">Estadísticas</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+              <div style="text-align: center;">
+                <div class="text-muted text-sm">Médicos</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">${stats.totalDoctors}</div>
+              </div>
+              <div style="text-align: center;">
+                <div class="text-muted text-sm">Citas Hoy</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-2);">${stats.todayAppointments}</div>
+              </div>
+              <div style="text-align: center;">
+                <div class="text-muted text-sm">Citas Mes</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--info);">${stats.monthAppointments}</div>
+              </div>
+              <div style="text-align: center;">
+                <div class="text-muted text-sm">Total Citas</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">${stats.totalAppointments}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Notas adicionales -->
+          ${area.notes ? `
+            <div class="card" style="margin-bottom: 1.5rem;">
+              <h4 style="margin-bottom: 1rem;">Notas adicionales</h4>
+              <div style="padding: 0.75rem; background: var(--bg-light); border-radius: var(--radius);">
+                ${area.notes}
               </div>
             </div>
           ` : ''}
@@ -1422,7 +1499,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
               VER MÉDICOS (${doctors.length})
             </button>
           ` : ''}
-          <button class="btn" id="close-modal-btn" style="background: white; color: var(--modal-header); border: none; padding: 0.6rem 2rem; font-weight: 700; border-radius: 4px;">CERRAR</button>
+          <button class="btn" id="close-modal-btn" style="background: var(--danger); color: #fff; border: none; padding: 0.6rem 2rem; font-weight: 700; border-radius: 4px;">CERRAR</button>
         </div>
         </div>
       </div>
@@ -1492,6 +1569,8 @@ export default function mountAreas(root, { bus, store, user, role }) {
         // Guardar el filtro en localStorage para que doctors.js lo use
         localStorage.setItem('doctor_area_filter', area.id);
       }, 500);
+    } else {
+      showNotification('No se pudo navegar al módulo de médicos', 'error');
     }
   }
 

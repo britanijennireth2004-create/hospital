@@ -358,7 +358,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="doctor-modal">
         <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'EDICIÓN DE PERFIL PROFESIONAL' : 'REGISTRO DE PERSONAL MÉDICO'}
             </div>
@@ -538,8 +538,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
+            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+            <button class="btn" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
               ${state.isLoading ? 'GUARDANDO...' : (state.editingId ? 'ACTUALIZAR PERFIL' : 'REGISTRAR MÉDICO')}
             </button>
           </div>
@@ -595,7 +595,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: #f8f9fa; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e9ecef;">
-            <button class="btn" id="btn-cancel-status" style="background: white; color: #6c757d; border: 1px solid #dee2e6; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+            <button class="btn" id="btn-cancel-status" style="background: var(--danger); color: #fff; border: 1px solid #dee2e6; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
             <button class="btn" id="btn-save-status" style="background: var(--warning); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700;">
               ACTUALIZAR ESTADO
             </button>
@@ -606,7 +606,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       <!-- Modal para ajustar capacidad (Admin/Receptionist) -->
       <div class="modal-overlay ${state.showCapacityModal ? '' : 'hidden'}" id="capacity-modal">
         <div class="modal-content" style="max-width: 500px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--info); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+          <div class="modal-header" style="background: var(--modal-text); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
             <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">AJUSTAR CAPACIDAD</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.currentDoctor ? state.currentDoctor.name : 'Médico'}
@@ -674,8 +674,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: #f8f9fa; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e9ecef;">
-            <button class="btn" id="btn-cancel-capacity" style="background: white; color: #6c757d; border: 1px solid #dee2e6; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save-capacity" style="background: var(--info); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700;">
+            <button class="btn" id="btn-cancel-capacity" style="background: var(--danger); color: #fff; border: 1px solid #dee2e6; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+            <button class="btn" id="btn-save-capacity" style="background: var(--success); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700;">
               ACTUALIZAR CAPACIDAD
             </button>
           </div>
@@ -1871,23 +1871,23 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         </div>
         
         <div class="modal-footer" style="background: #f7fafc; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #edf2f7;">
-          <button class="btn" id="close-modal-btn" style="background: white; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px;">CERRAR</button>
           ${(role === 'admin' || role === 'doctor') ? `
-            <button class="btn" id="edit-doctor-btn" data-id="${doctor.id}" style="background: white; color: var(--modal-header); border: 1px solid var(--modal-header); padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
+            <button class="btn" id="edit-doctor-btn" data-id="${doctor.id}" style="background: var(--modal-section-forest-light); color: var(--modal-header); border: 1px solid var(--modal-header); padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
               ${icons.edit} EDITAR PERFIL
             </button>
-            <button class="btn" id="view-schedule-btn" data-id="${doctor.id}" style="background: var(--modal-header); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.schedule} VER AGENDA COMPLETA
+            <button class="btn" id="view-schedule-btn" data-id="${doctor.id}" style="background: var(--modal-header); color: #fff; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.schedule} VER AGENDA
             </button>
           ` : ''}
           ${canEditStatus ? `
-            <button class="btn" id="change-status-btn" data-id="${doctor.id}" style="background: var(--warning); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.status} CAMBIAR ESTADO
+            <button class="btn" id="change-status-btn" data-id="${doctor.id}" style="background: var(--warning); color: #fff; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.status} ESTADO
             </button>
-            <button class="btn" id="adjust-capacity-btn" data-id="${doctor.id}" style="background: var(--info); color: white; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.capacity} AJUSTAR CAPACIDAD
+            <button class="btn" id="adjust-capacity-btn" data-id="${doctor.id}" style="background: var(--info); color: #fff; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.capacity} CAPACIDAD
             </button>
           ` : ''}
+          <button class="btn" id="close-modal-btn" style="background: var(--danger); color: #fff; border: 1px solid #e2e8f0; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px;">CERRAR</button>
         </div>
       </div>
     `;

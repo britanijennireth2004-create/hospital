@@ -29,6 +29,62 @@ export default function mountClinical(root, { bus, store, user, role }) {
   // Elementos DOM
   let elements = {};
 
+  // ===== FUNCIONES DE SEGURIDAD Y PERMISOS =====
+
+  // Verificar si el usuario tiene permiso para ver un registro específico
+  function hasPermissionToView(record) {
+    if (role === 'admin') return true;
+
+    if (role === 'doctor') {
+      // Los doctores pueden ver todos los registros
+      return true;
+    }
+
+    if (role === 'nurse') {
+      // Las enfermeras pueden ver TODOS los registros clínicos
+      // (para consulta, seguimiento de pacientes, etc.)
+      return true;
+    }
+
+    if (role === 'receptionist') {
+      // Las recepcionistas pueden ver registros básicos
+      // (para consulta de historial)
+      return true;
+    }
+
+    if (role === 'patient') {
+      // Los pacientes solo pueden ver sus propios registros
+      return record.patientId === user.patientId;
+    }
+
+    return false;
+  }
+
+  // Verificar si el usuario tiene permiso para editar un registro específico
+  function hasPermissionToEdit(record) {
+    if (role === 'admin') return true;
+
+    if (role === 'doctor') {
+      // Los doctores solo pueden editar sus propios registros
+      return record.doctorId === user.doctorId;
+    }
+
+    // Las enfermeras NO pueden editar registros (solo lectura)
+    if (role === 'nurse') {
+      return false;
+    }
+
+    // Los pacientes NUNCA pueden editar registros
+    return false;
+  }
+
+  // Verificar si el usuario puede crear nuevos registros
+  function canCreateRecords() {
+    // SOLO admin y doctor pueden crear registros
+    // La enfermera NO puede crear
+    return ['admin', 'doctor'].includes(role);
+  }
+
   // ===== INICIALIZACIÓN =====
   function init() {
     render();
@@ -85,49 +141,6 @@ export default function mountClinical(root, { bus, store, user, role }) {
     return unsubscribe;
   }
 
-  // ===== FUNCIONES DE SEGURIDAD Y PERMISOS =====
-
-  // Verificar si el usuario tiene permiso para ver un registro específico
-  function hasPermissionToView(record) {
-    if (role === 'admin') return true;
-
-    if (role === 'doctor') {
-      // Los doctores pueden ver sus propios registros y todos los registros si están asignados
-      // En este caso, permitimos que vean todos para propósitos del sistema
-      return true;
-    }
-
-    if (role === 'patient') {
-      // Los pacientes solo pueden ver sus propios registros
-      return record.patientId === user.patientId;
-    }
-
-    return false;
-  }
-
-  // Verificar si el usuario tiene permiso para editar un registro específico
-  function hasPermissionToEdit(record) {
-    if (role === 'admin') return true;
-
-    if (role === 'doctor') {
-      // Los doctores solo pueden editar sus propios registros
-      return record.doctorId === user.doctorId;
-    }
-
-    // Los pacientes NUNCA pueden editar registros
-    // Las enfermeras pueden editar los registros que ellas crearon
-    if (role === 'nurse') {
-      return record.createdBy === user.id;
-    }
-
-    return false;
-  }
-
-  // Verificar si el usuario puede crear nuevos registros
-  function canCreateRecords() {
-    return ['admin', 'doctor', 'nurse'].includes(role);
-  }
-
   // ===== FUNCIONES PRINCIPALES =====
 
   // Cargar registros clínicos
@@ -136,10 +149,16 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
     // Filtrar por rol y permisos
     if (role === 'doctor' && user?.doctorId) {
-      // Los doctores ven todos los registros para propósitos del sistema
-      // Si se quiere restringir a solo sus registros, usar:
-      // records = records.filter(record => record.doctorId === user.doctorId);
-    } else if (role === 'patient' && user?.patientId) {
+      // Los doctores ven todos los registros
+    } 
+    else if (role === 'nurse') {
+      // Las enfermeras ven TODOS los registros (solo lectura)
+      // No se aplica filtro adicional
+    }
+    else if (role === 'receptionist') {
+      // Las recepcionistas ven todos los registros (solo lectura)
+    }
+    else if (role === 'patient' && user?.patientId) {
       // Los pacientes solo ven sus propios registros
       records = records.filter(record => record.patientId === user.patientId);
     }
@@ -371,7 +390,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="record-modal">
         <div class="modal-content" style="max-width: 950px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
             <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
               ${state.editingId ? 'ACTUALIZACIÓN DE HISTORIA CLÍNICA' : 'NUEVO REGISTRO DE ATENCIÓN MÉDICA'}
             </div>
@@ -502,8 +521,8 @@ export default function mountClinical(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2.5rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+            <button class="btn" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2.5rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
               ${state.editingId ? 'ACTUALIZAR REGISTRO' : 'FINALIZAR HISTORIA CLÍNICA'}
             </button>
           </div>
@@ -1573,7 +1592,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
     // Agregar al DOM
     document.body.appendChild(modalContainer);
 
-    // Configurar event listeners del modal
+    // Configurar event listeners del modal de detalles
     setupDetailModalListeners(modalContainer, record, patient, doctor, appointment);
   }
 

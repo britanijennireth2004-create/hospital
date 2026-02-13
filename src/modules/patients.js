@@ -527,10 +527,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
             
             <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-              <button class="btn" id="btn-cancel" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;">
+              <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;">
                 ${icons.close} CANCELAR
               </button>
-              <button class="btn" id="btn-save" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;">
+              <button class="btn" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;">
                 ${icons.successCheck} ${state.editingId ? 'ACTUALIZAR FICHA' : 'REGISTRAR PACIENTE'}
               </button>
             </div>
@@ -1737,14 +1737,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </div>
           <div style="display: flex; gap: 0.75rem;">
             ${role === 'admin' || role === 'doctor' ? `
-              <button class="btn" id="btn-edit-patient" data-id="${patient.id}" style="background: var(--modal-header); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
+              <button class="btn" id="btn-edit-patient" data-id="${patient.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
                 ${icons.edit} EDITAR FICHA
               </button>
-              <button class="btn" id="btn-new-appointment-for-patient" data-id="${patient.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
+              <button class="btn" id="btn-new-appointment-for-patient" data-id="${patient.id}" style="background: var(--modal-section-green); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
                 ${icons.plus} NUEVA CITA
               </button>
             ` : ''}
-            <button class="btn" id="close-view-patient-btn-2" style="background: white; color: #4a5568; border: 1px solid #cbd5e1; padding: 0.6rem 1.25rem; font-weight: 700;">
+            <button class="btn" id="close-view-patient-btn-2" style="background: var(--danger); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
               ${icons.close} CERRAR
             </button>
           </div>

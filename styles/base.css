@@ -446,7 +446,7 @@ textarea.error {
   left: 0;
   right: 0;
   height: var(--header-height);
-  background: var(--card);
+  background: var(--bg-header);
   box-shadow: var(--shadow);
   display: flex;
   align-items: center;

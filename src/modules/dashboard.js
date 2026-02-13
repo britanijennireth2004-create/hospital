@@ -4,9 +4,9 @@
 
 // SVG ICONS DEFINITIONS (puedes usar una función helper para obtenerlos)
 const icons = {
-  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="#888" stroke-width="1.5"/><path stroke="#888" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/><path stroke="#888" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/></svg>`,
-  clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="4.25" y="3.75" width="11.5" height="14" rx="2.25" stroke="#888" stroke-width="1.5"/><rect x="6.75" y="2" width="6.5" height="3.5" rx="1.25" stroke="#888" stroke-width="1.5"/></svg>`,
-  user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#888" stroke-width="1.5"/><path stroke="#888" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
+  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="#467c2a" stroke-width="1.5"/><path stroke="#467c2a" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/><path stroke="#467c2a" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/></svg>`,
+  clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="4.25" y="3.75" width="11.5" height="14" rx="2.25" stroke="#ea4632" stroke-width="1.5"/><rect x="6.75" y="2" width="6.5" height="3.5" rx="1.25" stroke="#ea4632" stroke-width="1.5"/></svg>`,
+  user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#10b981" stroke-width="1.5"/><path stroke="#10b981" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
   settings: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="3.5" stroke="#888" stroke-width="1.5"/><path stroke="#888" stroke-width="1.5" d="M10 1.75v2.5M10 15.75v2.5M3.64 3.64l1.77 1.77M14.59 14.59l1.77 1.77M1.75 10h2.5M15.75 10h2.5M3.64 16.36l1.77-1.77M14.59 5.41l1.77-1.77"/></svg>`,
   doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="6" r="4" stroke="#249" stroke-width="1.5"/><path stroke="#249" stroke-width="1.5" d="M3.5 18c0-3.037 2.486-5.5 6.5-5.5s6.5 2.463 6.5 5.5"/></svg>`,
   patient: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#38a169" stroke-width="1.5"/><path stroke="#38a169" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
@@ -14,7 +14,10 @@ const icons = {
   successCheck: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="#38a169" stroke-width="2"/><path stroke="#38a169" stroke-width="2" d="M6 10.5l2.5 2 5-5"/></svg>`,
   warning: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><path stroke="#d69e2e" stroke-width="1.5" d="M10 3v8"/><circle cx="10" cy="15" r="1" fill="#d69e2e"/><circle cx="10" cy="10" r="9" stroke="#d69e2e" stroke-width="1.5"/></svg>`,
   info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="#249" stroke-width="2"/><path stroke="#249" stroke-width="2" d="M10 7v5"/><circle cx="10" cy="14" r="1" fill="#249"/></svg>`,
-  // ... agrega otros iconos si es necesario
+  // Iconos adicionales
+  plus: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  triage: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  history: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
 };
 
 export default function mountDashboard(root, { bus, store, user, role }) {
@@ -118,6 +121,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     const patients = store.get('patients');
     const doctors = store.get('doctors');
     const areas = store.get('areas');
+    const triageRecords = store.get('triage') || [];
 
     // Filtrar por rol si es necesario
     let filteredAppointments = appointments;
@@ -125,17 +129,33 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       filteredAppointments = appointments.filter(a => a.patientId === user.patientId);
     } else if (role === 'doctor' && user.doctorId) {
       filteredAppointments = appointments.filter(a => a.doctorId === user.doctorId);
+    } else if (role === 'nurse') {
+      // Las enfermeras ven todas las citas pero no pueden gestionarlas todas
+      filteredAppointments = appointments;
+    } else if (role === 'receptionist') {
+      // Las recepcionistas ven todas las citas
+      filteredAppointments = appointments;
     }
 
     state.stats = {
       totalAppointments: filteredAppointments.length,
-      todayAppointments: store.getTodayAppointments().length,
-      upcomingAppointments: store.getUpcomingAppointments(7).length,
+      todayAppointments: filteredAppointments.filter(a => {
+        const today = new Date().toDateString();
+        return new Date(a.dateTime).toDateString() === today;
+      }).length,
+      upcomingAppointments: filteredAppointments.filter(a => {
+        const appointmentDate = new Date(a.dateTime);
+        const today = new Date();
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+        return appointmentDate >= today && appointmentDate <= nextWeek && a.status === 'scheduled';
+      }).length,
       totalPatients: patients.length,
       totalDoctors: doctors.length,
       totalAreas: areas.length,
       pendingAppointments: filteredAppointments.filter(a => a.status === 'scheduled').length,
-      completedAppointments: filteredAppointments.filter(a => a.status === 'completed').length
+      completedAppointments: filteredAppointments.filter(a => a.status === 'completed').length,
+      triagePending: triageRecords.filter(t => t.status === 'waiting').length
     };
   }
 
@@ -148,6 +168,12 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       appointments = appointments.filter(a => a.patientId === user.patientId);
     } else if (role === 'doctor' && user.doctorId) {
       appointments = appointments.filter(a => a.doctorId === user.doctorId);
+    } else if (role === 'nurse') {
+      // Las enfermeras ven todas las citas
+      appointments = appointments;
+    } else if (role === 'receptionist') {
+      // Las recepcionistas ven todas las citas
+      appointments = appointments;
     }
 
     // Ordenar por fecha y limitar
@@ -163,7 +189,8 @@ export default function mountDashboard(root, { bus, store, user, role }) {
 
     const { stats } = state;
 
-    container.innerHTML = `
+    // Estadísticas base para todos los roles
+    let statsHTML = `
       <div class="card">
         <div class="text-muted text-sm">Citas totales</div>
         <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
@@ -181,13 +208,28 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         <div class="text-2xl font-bold" style="color: var(--info);">${stats.totalDoctors}</div>
         <div class="text-xs text-muted mt-1">${icons.doctor} Activos</div>
       </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">Próximas citas</div>
-        <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments}</div>
-        <div class="text-xs text-muted mt-1">${icons.warning} 7 días</div>
-      </div>
     `;
+
+    // Estadística adicional para enfermeras
+    if (role === 'nurse') {
+      statsHTML += `
+        <div class="card">
+          <div class="text-muted text-sm">Pacientes en triage</div>
+          <div class="text-2xl font-bold" style="color: var(--warning);">${stats.triagePending || 0}</div>
+          <div class="text-xs text-muted mt-1">${icons.triage} Pendientes</div>
+        </div>
+      `;
+    } else {
+      statsHTML += `
+        <div class="card">
+          <div class="text-muted text-sm">Próximas citas</div>
+          <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments}</div>
+          <div class="text-xs text-muted mt-1">${icons.warning} 7 días</div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = statsHTML;
   }
 
   // Renderizar citas recientes
@@ -215,10 +257,10 @@ export default function mountDashboard(root, { bus, store, user, role }) {
 
       // Badge de estado
       const statusColor = {
-        scheduled: 'var(--info)',
-        confirmed: 'var(--warning)',
-        completed: 'var(--success)',
-        cancelled: 'var(--danger)'
+        scheduled: 'var(--triage-blue-light)',
+        confirmed: 'var(--triage-yellow-light)',
+        completed: 'var(--triage-green-light)',
+        cancelled: 'var(--triage-red-light)'
       };
 
       // Icon for status (use check/alert/info)
@@ -261,71 +303,130 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     const actions = [];
 
     // Acciones según rol
-    if (role === 'admin' || role === 'doctor' || role === 'patient') {
+    if (role === 'admin') {
+      // Admin tiene acceso completo
       actions.push({
         label: 'Nueva cita',
         icon: icons.calendar,
         href: '#appointments',
         color: 'var(--accent)'
       });
-    }
-
-    if (role === 'admin' || role === 'doctor') {
       actions.push({
         label: 'Registrar paciente',
         icon: icons.patient,
         href: '#patients',
         color: 'var(--accent-2)'
       });
-    }
-
-    if (role === 'admin') {
       actions.push({
         label: 'Gestionar médicos',
         icon: icons.doctor,
         href: '#doctors',
         color: 'var(--info)'
       });
-
       actions.push({
         label: 'Gestionar áreas',
         icon: icons.area,
         href: '#areas',
         color: 'var(--warning)'
       });
-    }
-
-    if (role === 'patient') {
       actions.push({
-        label: 'Mi historial',
+        label: 'Historia Clínica',
         icon: icons.clipboard,
         href: '#clinical',
-        color: 'var(--success)'
+        color: 'var(--triage-red)'
       });
-    }
-
-    if (role === 'admin' || role === 'doctor') {
+      actions.push({
+        label: 'Seguridad',
+        icon: icons.settings,
+        href: '#security',
+        color: 'var(--muted)'
+      });
+    } 
+    else if (role === 'doctor') {
+      // Doctor: todas las acciones excepto seguridad
+      actions.push({
+        label: 'Nueva cita',
+        icon: icons.calendar,
+        href: '#appointments',
+        color: 'var(--accent)'
+      });
+      actions.push({
+        label: 'Registrar paciente',
+        icon: icons.patient,
+        href: '#patients',
+        color: 'var(--accent-2)'
+      });
       actions.push({
         label: 'Historia Clínica',
         icon: icons.clipboard,
         href: '#clinical',
         color: 'var(--info)'
       });
+      actions.push({
+        label: 'Realizar Triaje',
+        icon: icons.triage,
+        href: '#triage',
+        color: 'var(--warning)'
+      });
     }
-
-    actions.push({
-      label: 'Seguridad',
-      icon: icons.settings,
-      href: '#security',
-      color: 'var(--muted)'
-    });
+    else if (role === 'nurse') {
+      // Enfermera: ver historial clínico y realizar triaje
+      actions.push({
+        label: 'Realizar Triaje',
+        icon: icons.triage,
+        href: '#triage',
+        color: 'var(--warning)'
+      });
+      actions.push({
+        label: 'Ver Historial Clínico',
+        icon: icons.clipboard,
+        href: '#clinical',
+        color: 'var(--info)'
+      });
+    }
+    else if (role === 'receptionist') {
+      // Recepcionista: crear paciente, agendar cita, ver historial
+      actions.push({
+        label: 'Nuevo Paciente',
+        icon: icons.plus,
+        href: '#patients',
+        color: 'var(--accent-2)'
+      });
+      actions.push({
+        label: 'Agendar Cita',
+        icon: icons.calendar,
+        href: '#appointments',
+        color: 'var(--accent)'
+      });
+      actions.push({
+        label: 'Realizar Triaje',
+        icon: icons.triage,
+        href: '#triage',
+        color: 'var(--warning)'
+      });
+    }
+    else if (role === 'patient') {
+      // Paciente: solo ver historial clínico y citas
+      actions.push({
+        label: 'Mis Citas',
+        icon: icons.calendar,
+        href: '#appointments',
+        color: 'var(--accent)'
+      });
+      actions.push({
+        label: 'Mi Historial Clínico',
+        icon: icons.history,
+        href: '#clinical',
+        color: 'var(--success)'
+      });
+    }
 
     container.innerHTML = `
       <div class="grid grid-2" style="gap: 0.5rem;">
         ${actions.map(action => `
-          <a href="${action.href}" class="btn btn-outline" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; text-align: left;">
+          <a href="${action.href}" class="btn btn-outline" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; text-align: left; border-color: ${action.color}20;">
             <span style="font-size: 1.25rem; display:inline-block;vertical-align:middle">${action.icon}</span>
-            <span>${action.label}</span>
+            <span style="color: ${action.color};">${action.label}</span>
           </a>
         `).join('')}
       </div>

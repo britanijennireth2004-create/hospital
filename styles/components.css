@@ -2,7 +2,7 @@
 
 /* App Shell */
 .app-header {
-  background: var(--card);
+  background: var(--bg-header);
   border-bottom: 1px solid var(--border);
   padding: var(--spacing-md) var(--spacing-lg);
 }

@@ -1,14 +1,15 @@
 :root {
   /* Colores principales */
-  --bg: #f6fbf6;
+  --bg: #d4e8d7;
   --bg-light: #f0f7f0;
-  --card: #ffffff;
-  --text: #0f3b2f;
+  --card: #f6fbf6;
+  --text: #436757;
   --text-light: #56706a;
   --muted: #94a89c;
+  --bg-header: #89aa89;
 
   /* Colores de marca */
-  --accent: #0f8d3a;
+  --accent: #467c2a;
   --accent-dark: #0a6b2c;
   --accent-2: #24b36b;
   --accent-light: rgba(15, 141, 58, 0.1);
@@ -60,4 +61,17 @@
   --modal-border: #b7d6b7;
   --modal-text: #2d4a3e;
   --modal-text-muted: #5a7a6a;
+
+/* variables para niveles de triage */
+  --triage-gray: #cdd8cd;
+  --triage-red: #ea4632;
+  --triage-orange: #ea7d32;
+  --triage-yellow: #eace32;
+  --triage-green: #33ac2a;
+  --triage-blue: #226dc8;
+  --triage-red-light: #fed7d7;
+  --triage-orange-light: #feebc8;
+  --triage-yellow-light: #fefcbf;
+  --triage-green-light: #c6f6d5;
+  --triage-blue-light: #bee3f8;
 }

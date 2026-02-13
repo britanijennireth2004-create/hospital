@@ -28,45 +28,45 @@ export default function mountTriage(root, { bus, store, user, role }) {
   const TRIAGE_LEVELS = {
     red: {
       name: 'Rojo - Inmediato',
-      color: '#e53e3e', // Rojo más suave
-      lightColor: '#fed7d7', // Fondo claro
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#e53e3e"/></svg>',
+      color: 'var(--triage-red)',
+      lightColor: 'var(--bg-light)',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--triage-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
       time: '0-10 min',
       description: 'Amenaza vital inmediata',
       criteria: ['paro cardiorespiratorio', 'convulsiones', 'hemorragia masiva', 'shock', 'coma', 'pso2 < 90%', 'fr > 30 o < 10', 'ta sistólica < 90', 'dolor 10/10']
     },
     orange: {
       name: 'Naranja - Muy urgente',
-      color: '#dd6b20', // Naranja más suave
-      lightColor: '#feebc8',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#dd6b20"/></svg>',
+      color: 'var(--triage-orange)',
+      lightColor: 'var(--bg-light)',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--triage-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
       time: '10-60 min',
       description: 'Riesgo vital potencial',
       criteria: ['dolor torácico', 'disnea moderada', 'trauma severo', 'alteración conciencia', 'pso2 90-94%', 'fr 25-30', 'ta 90-100', 'dolor 8-9/10']
     },
     yellow: {
       name: 'Amarillo - Urgente',
-      color: '#d69e2e', // Amarillo más suave
-      lightColor: '#fefcbf',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#d69e2e"/></svg>',
+      color: 'var(--triage-yellow)',
+      lightColor: 'var(--bg-light)',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--triage-yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
       time: '60-120 min',
       description: 'Urgente pero estable',
       criteria: ['fiebre alta', 'dolor abdominal', 'vómitos persistentes', 'infecciones moderadas', 'pso2 95-97%', 'fr 20-24', 'ta normal', 'dolor 5-7/10']
     },
     green: {
       name: 'Verde - Poco urgente',
-      color: '#38a169', // Verde más suave
-      lightColor: '#c6f6d5',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#38a169"/></svg>',
+      color: 'var(--triage-green)',
+      lightColor: 'var(--bg-light)',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--triage-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="18 8 12 16 9 13"/></svg>',
       time: '2-4 horas',
       description: 'No urgente',
       criteria: ['resfriado común', 'dolor leve', 'consulta general', 'control rutinario', 'pso2 > 97%', 'fr normal', 'ta normal', 'dolor < 4/10']
     },
     blue: {
       name: 'Azul - No urgente',
-      color: '#3182ce', // Azul más suave
-      lightColor: '#bee3f8',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#3182ce"/></svg>',
+      color: 'var(--triage-blue)',
+      lightColor: 'var(--bg-light)',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--triage-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
       time: '4+ horas',
       description: 'Consulta simple',
       criteria: ['certificados', 'recetas', 'consultas administrativas']
@@ -437,8 +437,8 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
   // Renderizar componente principal
   function render() {
-    const canCreate = ['admin', 'doctor', 'nurse'].includes(role);
-    const canProcess = ['admin', 'doctor', 'nurse'].includes(role);
+    const canCreate = ['admin', 'doctor', 'nurse', 'receptionist'].includes(role);
+    const canProcess = ['admin', 'doctor', 'nurse', 'receptionist'].includes(role);
 
     root.innerHTML = `
       <div class="module-triage">
@@ -451,7 +451,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
             </div>
             ${canCreate ? `
             <button class="btn btn-primary" id="btn-new-triage">
-              <span>+</span> Nuevo Triage
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo Triage
             </button>
             ` : ''}
           </div>
@@ -482,7 +482,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
               </button>
               ` : ''}
               <button class="btn btn-outline" id="btn-export-pdf">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> Exportar Reporte
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar Reporte
               </button>
               ${canProcess ? `
               <button class="btn btn-outline" id="btn-next-patient">
@@ -575,7 +575,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         <div class="modal-overlay hidden" id="triage-modal">
           <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
             <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
+              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">SISTEMA DE TRIAGE Y PRIORIZACIÓN</div>
               <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
             </div>
@@ -842,7 +842,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
                   <!-- Sugerencia de prioridad para nuevo paciente -->
                   <div class="form-group" id="quick-priority-suggestion-container" style="display: none;">
                     <label class="form-label">
-                      🎯 Sugerencia de Prioridad
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg> Sugerencia de Prioridad
                       <span id="quick-suggestion-confidence" style="font-size: 0.75rem; color: var(--muted);"></span>
                     </label>
                     <div class="priority-suggestion" id="quick-priority-suggestion">
@@ -879,8 +879,8 @@ export default function mountTriage(root, { bus, store, user, role }) {
                   ← VOLVER
                 </button>
               ` : ''}
-              <button class="btn" id="btn-cancel-triage" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-              <button class="btn" id="btn-save-triage" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+              <button class="btn" id="btn-cancel-triage" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+              <button class="btn" id="btn-save-triage" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                 ${state.isCreatingPatient ? 'REGISTRAR PACIENTE Y TRIAGE' : 'GUARDAR TRIAGE'}
               </button>
             </div>
@@ -891,7 +891,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
         <div class="modal-overlay hidden" id="emergency-modal">
           <div class="modal-content" style="max-width: 550px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
             <div class="modal-header" style="background: #e53e3e; flex-direction: column; align-items: center; padding: 2rem; position: relative;">
-               <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🚨</div>
+               <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+               </div>
                <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 800;">ALERTA DE EMERGENCIA</h2>
                <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500;">SISTEMA DE NOTIFICACIÓN CRÍTICA</div>
                <button class="btn-close-modal" id="btn-close-emergency" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
@@ -905,11 +907,11 @@ export default function mountTriage(root, { bus, store, user, role }) {
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.85rem;">TIPO DE EMERGENCIA / CÓDIGO *</label>
                 <select class="input" id="emergency-type" style="border-color: #feb2b2; background: #fffaf0; font-weight: 700; color: #c53030;">
-                  <option value="code_blue">🔵 Código Azul - Paro cardiorrespiratorio</option>
-                  <option value="code_red">🔴 Código Rojo - Incendio / Fuego</option>
-                  <option value="code_black">⚫ Código Negro - Amenaza Violenta</option>
-                  <option value="mass_casualty">⚠️ Múltiples Víctimas / Triaje Masivo</option>
-                  <option value="evacuation">📢 Evacuación Inmediata</option>
+                  <option value="code_blue">Código Azul - Paro cardiorrespiratorio</option>
+                  <option value="code_red">Código Rojo - Incendio / Fuego</option>
+                  <option value="code_black">Código Negro - Amenaza Violenta</option>
+                  <option value="mass_casualty">Múltiples Víctimas / Triaje Masivo</option>
+                  <option value="evacuation">Evacuación Inmediata</option>
                 </select>
               </div>
               
@@ -927,7 +929,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
             </div>
             
             <div class="modal-footer" style="background: #f7fafc; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #edf2f7;">
-              <button class="btn" id="btn-cancel-emergency" style="background: white; color: #4a5568; border: 1px solid #e2e8f0; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
+              <button class="btn" id="btn-cancel-emergency" style="background: #feb2b2; color: var(--danger); border: 1px solid var(--danger); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
               <button class="btn" id="btn-activate-emergency" style="background: #e53e3e; color: white; border: none; padding: 0.75rem 2rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 12px rgba(229, 62, 62, 0.4);">
                 ACTIVAR ALERTA AHORA
               </button>
@@ -1180,7 +1182,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         // Agregar indicador visual
         const badge = document.createElement('div');
         badge.className = 'suggestion-badge';
-        badge.innerHTML = '🎯';
+        badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
         badge.style.position = 'absolute';
         badge.style.top = '-8px';
         badge.style.right = '-8px';
@@ -1334,7 +1336,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!elements.triageLevels) return;
 
     elements.triageLevels.innerHTML = Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
-      <div class="triage-level" style="border-left: 4px solid ${level.color}; background: ${level.lightColor};">
+      <div class="triage-level" style="border-left: 6px solid ${level.color}; background: ${level.lightColor};">
         <div class="flex justify-between items-center">
           <div>
             <div style="font-weight: 600;">${level.icon} ${level.name}</div>
@@ -1367,7 +1369,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
         <tr>
           <td colspan="7">
             <div class="text-center" style="padding: 3rem;">
-              <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">🏥</div>
+              <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
               <h3>No hay pacientes en triage</h3>
               <p class="text-muted">No hay pacientes en la cola de urgencias con los filtros aplicados</p>
               <button class="btn btn-primary mt-3" id="btn-add-first-triage">
@@ -1415,12 +1419,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
           <td data-label="Prioridad">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <div style="width: 12px; height: 12px; background: ${triageLevel.color}; border-radius: 50%;"></div>
-              <span style="font-weight: 500;">${triageLevel.icon} ${patient.priority.toUpperCase()}</span>
+              <span style="font-weight: 500;">${patient.priority.toUpperCase()}</span>
             </div>
           </td>
           <td data-label="Paciente">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div style="width: 40px; height: 40px; background: ${triageLevel.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
+              <div style="width: 40px; height: 40px; background: var(--triage-gray); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
                 ${patient.fullName.charAt(0)}
               </div>
               <div>
@@ -2093,7 +2097,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
           <!-- Información del Paciente -->
           <div style="background: var(--card-patient); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; border-left: 5px solid rgba(0,0,0,0.1);">
             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-              <div style="width: 45px; height: 45px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">👤</div>
+              <div style="width: 45px; height: 45px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
               <div>
                 <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">DATOS DEL PACIENTE</div>
                 <div style="font-weight: 700; font-size: 1.25rem; color: var(--modal-text);">${triageRecord.fullName}</div>
@@ -2135,7 +2141,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
           <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
             <div>
               <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                📋 SÍNTOMAS Y MOTIVO
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> SÍNTOMAS Y MOTIVO
               </div>
               <div style="background: var(--modal-section-gold-light); border: 1px solid var(--modal-section-gold); border-radius: 6px; padding: 1.25rem;">
                 <div style="font-size: 0.95rem; line-height: 1.6; color: #444;">${triageRecord.symptoms || 'No especificado'}</div>
@@ -2150,7 +2156,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
             <div>
               <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                💓 SIGNOS VITALES
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9-4-18-3 9H2"/></svg> SIGNOS VITALES
               </div>
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -2197,14 +2203,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
         </div>
         
         <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-          <button class="btn" id="close-view-triage-btn-2" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CERRAR</button>
+          <button class="btn" id="close-view-triage-btn-2" style="background: var(--danger); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CERRAR</button>
           
           ${triageRecord.status === 'waiting' ? `
-            <button class="btn" id="btn-start-from-view" data-id="${triageRecord.id}" style="background: white; color: var(--modal-header); border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <button class="btn" id="btn-start-from-view" data-id="${triageRecord.id}" style="background: var(--info); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
               INICIAR ATENCIÓN
             </button>
           ` : triageRecord.status === 'in_progress' ? `
-            <button class="btn" id="btn-complete-from-view" data-id="${triageRecord.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700;">
+            <button class="btn" id="btn-complete-from-view" data-id="${triageRecord.id}" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
               COMPLETAR ATENCIÓN
             </button>
           ` : ''}
@@ -2303,14 +2309,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // Mostrar alerta visual
   function showEmergencyAlert(type, location) {
     const alertTypes = {
-      'code_blue': { title: '🚨 CÓDIGO AZUL', color: '#3182ce' },
-      'code_red': { title: '🔥 CÓDIGO ROJO', color: '#e53e3e' },
-      'code_black': { title: '⚫ CÓDIGO NEGRO', color: '#000000' },
-      'mass_casualty': { title: '🆘 MÚLTIPLES VÍCTIMAS', color: '#d69e2e' },
-      'evacuation': { title: '🚨 EVACUACIÓN', color: '#38a169' }
+      'code_blue': { title: 'CÓDIGO AZUL', color: '#3182ce' },
+      'code_red': { title: 'CÓDIGO ROJO', color: '#e53e3e' },
+      'code_black': { title: 'CÓDIGO NEGRO', color: '#000000' },
+      'mass_casualty': { title: 'MÚLTIPLES VÍCTIMAS', color: '#d69e2e' },
+      'evacuation': { title: 'EVACUACIÓN', color: '#38a169' }
     };
 
-    const alertInfo = alertTypes[type] || { title: '⚠️ EMERGENCIA', color: '#e53e3e' };
+    const alertInfo = alertTypes[type] || { title: 'EMERGENCIA', color: '#e53e3e' };
 
     const alertDiv = document.createElement('div');
     alertDiv.style.cssText = `
@@ -2326,12 +2332,17 @@ export default function mountTriage(root, { bus, store, user, role }) {
       font-weight: bold;
       font-size: 1.25rem;
       animation: flash 1s infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
     `;
 
     alertDiv.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       ${alertInfo.title} - ${location}
       <button onclick="this.parentElement.remove()" 
-              style="position: absolute; right: 1rem; background: transparent; border: 1px solid white; color: white; border-radius: 50%; width: 30px; height: 30px;">
+              style="position: absolute; right: 1rem; background: transparent; border: 1px solid white; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
         ×
       </button>
     `;
@@ -2379,7 +2390,6 @@ export default function mountTriage(root, { bus, store, user, role }) {
   }
 
   // FUNCIÓN MEJORADA: Generar PDF formal para hospital
-  // FUNCIÓN MEJORADA: Generar PDF formal para hospital - VERSIÓN CORREGIDA
   function generatePDF() {
     try {
       const { jsPDF } = window.jspdf;
@@ -2939,50 +2949,6 @@ export default function mountTriage(root, { bus, store, user, role }) {
     report += 'HOSPITAL CENTRAL - CONFIDENCIAL\n';
     report += 'Documento oficial del servicio de urgencias\n';
     report += '='.repeat(80) + '\n';
-
-    return report;
-  }
-
-  // Generar reporte en texto plano (fallback)
-  function generateTextReport() {
-    let report = 'REPORTE DE TRIAGE - HOSPITAL CENTRAL\n';
-    report += '='.repeat(50) + '\n\n';
-    report += `Generado por: ${user.name}\n`;
-    report += `Fecha: ${new Date().toLocaleDateString('es-ES')}\n\n`;
-
-    report += 'ESTADÍSTICAS:\n';
-    report += `- Total en espera: ${state.stats.waiting || 0}\n`;
-    report += `- En atención: ${state.stats.in_progress || 0}\n`;
-    report += `- Atendidos: ${state.stats.completed || 0}\n`;
-    report += `- Tiempo promedio: ${state.stats.averageWaitingTime || 0} min\n`;
-    report += `- Tiempo máximo: ${state.stats.maxWaitingTime || 0} min\n\n`;
-
-    report += 'DISTRIBUCIÓN POR PRIORIDAD:\n';
-    Object.entries(state.stats.byPriority || {}).forEach(([priority, count]) => {
-      const level = TRIAGE_LEVELS[priority];
-      if (level) {
-        report += `- ${level.name}: ${count}\n`;
-      }
-    });
-    report += '\n';
-
-    if (state.filteredPatients && state.filteredPatients.length > 0) {
-      report += 'PACIENTES EN TRIAGE:\n';
-      report += '-'.repeat(80) + '\n';
-
-      state.filteredPatients.forEach(patient => {
-        report += `\nNombre: ${patient.fullName}\n`;
-        report += `Prioridad: ${patient.priority.toUpperCase()}\n`;
-        report += `Síntomas: ${patient.symptoms || 'N/A'}\n`;
-        report += `Tiempo de espera: ${patient.waitingTimeFormatted}\n`;
-        report += `Estado: ${patient.status === 'waiting' ? 'Esperando' :
-          patient.status === 'in_progress' ? 'En atención' : 'Atendido'}\n`;
-        report += '-'.repeat(40) + '\n';
-      });
-    }
-
-    report += '\n\n--- FIN DEL REPORTE ---\n';
-    report += 'Hospital Universitario Manuel Nuñez Tovar - Sistema de Triage\n';
 
     return report;
   }
