@@ -158,31 +158,31 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
         <!-- Stats Cards -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid var(--accent, #3b82f6);">
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-red);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div>
                 <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Eventos Totales</div>
                 <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.auditLogs.length}</div>
               </div>
-              <div style="background: #eff6ff; padding: 0.4rem; border-radius: 8px; color: #3b82f6;">
+              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-red);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21L15 15"/><circle cx="10" cy="10" r="7"/></svg>
               </div>
             </div>
           </div>
 
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid #10b981;">
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-green);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div>
                 <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Sesiones Activas</div>
                 <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.sessions.filter(s => s.isActive).length}</div>
               </div>
-              <div style="background: #ecfdf5; padding: 0.4rem; border-radius: 8px; color: #10b981;">
+              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-green);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </div>
             </div>
           </div>
 
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid #f59e0b;">
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-yellow);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div>
                 <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Accesos Hoy</div>
@@ -191,19 +191,19 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       return d.toDateString() === new Date().toDateString();
     }).length}</div>
               </div>
-              <div style="background: #fffbeb; padding: 0.4rem; border-radius: 8px; color: #f59e0b;">
+              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-yellow);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               </div>
             </div>
           </div>
 
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid #8b5cf6;">
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-blue);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div>
                 <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Seguridad</div>
                 <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 0.25rem;">PROTEGIDO</div>
               </div>
-              <div style="background: #f5f3ff; padding: 0.4rem; border-radius: 8px; color: #8b5cf6;">
+              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-blue);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
             </div>

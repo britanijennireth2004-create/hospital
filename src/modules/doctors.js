@@ -210,30 +210,49 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   }
 
   // Formatear horario
-  function formatSchedule(schedule) {
-    if (!schedule) return 'No definido';
-    if (typeof schedule === 'string') return schedule;
+  function formatSchedule(doctor) {
+    if (!doctor) return 'No definido';
 
-    try {
-      const days = {
-        monday: 'Lun',
-        tuesday: 'Mar',
-        wednesday: 'Mié',
-        thursday: 'Jue',
-        friday: 'Vie',
-        saturday: 'Sáb',
-        sunday: 'Dom'
-      };
-
-      return Object.entries(schedule)
-        .filter(([day, hours]) => hours && hours.start && hours.end)
-        .map(([day, hours]) =>
-          `${days[day] || day}: ${hours.start}-${hours.end}`
-        )
-        .join(', ');
-    } catch {
-      return 'Horario personalizado';
+    // 1. Si hay schedule string (legado)
+    if (typeof doctor.schedule === 'string' && doctor.schedule) {
+      return doctor.schedule;
     }
+
+    // 2. Si hay workDays + horas (formato nuevo)
+    if (doctor.workDays && Array.isArray(doctor.workDays) && doctor.workDays.length > 0) {
+      const daysShort = {
+        'lunes': 'Lun', 'martes': 'Mar', 'miércoles': 'Mié', 'jueves': 'Jue',
+        'viernes': 'Vie', 'sábado': 'Sáb', 'domingo': 'Dom'
+      };
+      const daysStr = doctor.workDays.map(d => daysShort[d.toLowerCase()] || d).join(', ');
+      const start = doctor.scheduleStart || (doctor.workStartHour !== undefined ? `${doctor.workStartHour}:00` : '08:00');
+      const end = doctor.scheduleEnd || (doctor.workEndHour !== undefined ? `${doctor.workEndHour}:00` : '17:00');
+      return `${daysStr} ${start}-${end}`;
+    }
+
+    // 3. Si hay objeto schedule (formato avanzado)
+    if (doctor.schedule && typeof doctor.schedule === 'object') {
+      try {
+        const days = {
+          monday: 'Lun',
+          tuesday: 'Mar',
+          wednesday: 'Mié',
+          thursday: 'Jue',
+          friday: 'Vie',
+          saturday: 'Sáb',
+          sunday: 'Dom'
+        };
+
+        return Object.entries(doctor.schedule)
+          .filter(([day, hours]) => hours && hours.start && hours.end)
+          .map(([day, hours]) => `${days[day] || day}: ${hours.start}-${hours.end}`)
+          .join(', ');
+      } catch {
+        return 'Horario personalizado';
+      }
+    }
+
+    return 'No definido';
   }
 
   // Renderizar componente principal
@@ -864,7 +883,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </td>
           <td data-label="Área">${area?.name || 'No asignada'}</td>
           <td data-label="Horario">
-            <div class="text-sm">${formatSchedule(doctor.schedule)}</div>
+            <div class="text-sm">${formatSchedule(doctor)}</div>
             <div class="text-xs text-muted">${doctor.consultationDuration || 30} min/consulta</div>
           </td>
           <td data-label="Citas hoy">
@@ -1385,7 +1404,27 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const userAccount = store.get('users').find(u => u.doctorId === doctor.id);
     if (elements.formUsername) elements.formUsername.value = userAccount ? userAccount.username : '';
 
-    const workDays = doctor.workDays || ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
+    let workDays = doctor.workDays || [];
+
+    // Si no hay workDays pero hay schedule string (legado)
+    if ((!workDays || workDays.length === 0) && typeof doctor.schedule === 'string') {
+      const s = doctor.schedule.toLowerCase();
+      if (s.includes('lun-vie')) workDays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
+      else if (s.includes('mar-jue')) workDays = ['martes', 'miércoles', 'jueves'];
+      else if (s.includes('lun-sab')) workDays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      else if (s.includes('lun-dom')) workDays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+      const dayAbbrs = { 'lun': 'lunes', 'mar': 'martes', 'mie': 'miércoles', 'jue': 'jueves', 'vie': 'viernes', 'sab': 'sábado', 'dom': 'domingo' };
+      Object.entries(dayAbbrs).forEach(([abbr, full]) => {
+        if (s.includes(abbr) && !workDays.includes(full)) workDays.push(full);
+      });
+    }
+
+    // Si sigue vacío, usar default
+    if (!workDays || workDays.length === 0) {
+      workDays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
+    }
+
     document.querySelectorAll('.form-checkbox').forEach(checkbox => {
       checkbox.checked = workDays.includes(checkbox.value);
     });
@@ -1912,9 +1951,14 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                 ${icons.calendar} HORARIO Y DISPONIBILIDAD
               </div>
               <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="font-weight: 800; font-size: 1.25rem; color: #1a202c;">${doctor.scheduleStart || '08:00'} - ${doctor.scheduleEnd || '17:00'}</div>
+                <div style="font-weight: 800; font-size: 1.25rem; color: #1a202c;">
+                  ${doctor.scheduleStart || (doctor.workStartHour !== undefined ? `${doctor.workStartHour}:00` : '08:00')} - 
+                  ${doctor.scheduleEnd || (doctor.workEndHour !== undefined ? `${doctor.workEndHour}:00` : '17:00')}
+                </div>
                 <div style="font-size: 0.9rem; color: #2d3748; font-weight: 600;">
-                   ${doctor.workDays ? doctor.workDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ') : 'Lunes a Viernes'}
+                   ${doctor.workDays && doctor.workDays.length > 0
+        ? doctor.workDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')
+        : (typeof doctor.schedule === 'string' ? doctor.schedule : 'Lunes a Viernes')}
                 </div>
                 <div style="font-size: 0.85rem; color: #4a5568; display: flex; align-items: center; gap: 0.25rem;">
                   ${icons.schedule} <span style="font-weight: 700;">${doctor.consultationDuration || 30} min</span> por consulta
@@ -1965,8 +2009,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                   </thead>
                   <tbody>
                     ${appointments.slice(0, 5).map(app => {
-      const patient = store.find('patients', app.patientId);
-      return `
+          const patient = store.find('patients', app.patientId);
+          return `
                       <tr style="border-top: 1px solid #e2e8f0;">
                         <td style="padding: 1rem;">
                            <div style="font-weight: 700;">${new Date(app.dateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>

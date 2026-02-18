@@ -135,9 +135,82 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     });
   }
 
+  function isDoctorWorkingAt(doctor, dateStr, timeStr = null, duration = 0) {
+    if (doctor.isActive === false || doctor.status === 'vacation' || doctor.status === 'license') return false;
+
+    const dateObj = new Date(dateStr + 'T12:00:00');
+    const dayIndex = dateObj.getDay();
+    const englishDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const spanishDays = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const dayEn = englishDays[dayIndex];
+    const dayEs = spanishDays[dayIndex];
+
+    let worksThatDay = false;
+    let startStr = doctor.scheduleStart || (doctor.workStartHour !== undefined ? `${doctor.workStartHour.toString().padStart(2, '0')}:00` : '08:00');
+    let endStr = doctor.scheduleEnd || (doctor.workEndHour !== undefined ? `${doctor.workEndHour.toString().padStart(2, '0')}:00` : '18:00');
+
+    // 1. Objeto schedule (formato avanzado)
+    if (doctor.schedule && typeof doctor.schedule === 'object') {
+      const scheduleKeys = Object.keys(doctor.schedule).reduce((acc, key) => { acc[key.toLowerCase()] = doctor.schedule[key]; return acc; }, {});
+      if (scheduleKeys[dayEn]) {
+        const daySched = scheduleKeys[dayEn];
+        if (daySched.start && daySched.end) {
+          worksThatDay = true;
+          startStr = daySched.start;
+          endStr = daySched.end;
+        }
+      }
+    }
+
+    // 2. Array workDays (formato simple)
+    if (!worksThatDay && doctor.workDays && Array.isArray(doctor.workDays) && doctor.workDays.length > 0) {
+      const workDays = doctor.workDays.map(d => d.toLowerCase());
+      const normalizedDayEs = dayEs.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (workDays.includes(dayEs.toLowerCase()) || workDays.includes(normalizedDayEs)) {
+        worksThatDay = true;
+      }
+    }
+
+    // 3. String schedule (formato legado)
+    if (!worksThatDay && typeof doctor.schedule === 'string') {
+      const s = doctor.schedule.toLowerCase();
+      if (s.includes('lun-vie') && dayIndex >= 1 && dayIndex <= 5) worksThatDay = true;
+      else if (s.includes('mar-jue') && dayIndex >= 2 && dayIndex <= 4) worksThatDay = true;
+      else if (s.includes('lun-sab') && dayIndex >= 1 && dayIndex <= 6) worksThatDay = true;
+      else if (s.includes('lun-dom')) worksThatDay = true;
+
+      if (!worksThatDay) {
+        const abbrs = { 'lun': 1, 'mar': 2, 'mie': 3, 'jue': 4, 'vie': 5, 'sab': 6, 'dom': 0 };
+        Object.entries(abbrs).forEach(([a, i]) => { if (s.includes(a) && dayIndex === i) worksThatDay = true; });
+      }
+    }
+
+    // Fallback absoluto solo si no tiene NADA definido
+    if (!worksThatDay && !doctor.workDays && !doctor.schedule) {
+      if (dayIndex >= 1 && dayIndex <= 5) worksThatDay = true;
+    }
+
+    if (!worksThatDay) return false;
+    if (!timeStr) return true;
+
+    const timeToMin = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + (m || 0);
+    };
+
+    const timeVal = timeToMin(timeStr);
+    const endValTarget = timeVal + (duration || 0);
+    const startValTotal = timeToMin(startStr);
+    const endValTotal = timeToMin(endStr);
+
+    return timeVal >= startValTotal && endValTarget <= endValTotal;
+  }
+
   function hasDoctorAvailability(doctorId, date, excludeAppointmentId = null) {
     const doctor = store.find('doctors', doctorId);
     if (!doctor) return false;
+
+    if (!isDoctorWorkingAt(doctor, date)) return false;
 
     const dailyCapacity = doctor.dailyCapacity || 20;
     const appointments = getDoctorAppointmentsForDate(doctorId, date);
@@ -167,7 +240,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     return !hasDoctorAvailability(doctorId, date, excludeAppointmentId);
   }
 
-  function getAvailableDoctorsForDate(date, areaId = null, excludeAppointmentId = null) {
+  function getAvailableDoctorsForDate(date, areaId = null, excludeAppointmentId = null, time = null, duration = 30) {
     const doctors = store.get('doctors');
 
     let filteredDoctors = doctors;
@@ -175,9 +248,18 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       filteredDoctors = doctors.filter(d => d.areaId === areaId);
     }
 
-    return filteredDoctors.filter(doctor =>
-      hasDoctorAvailability(doctor.id, date, excludeAppointmentId)
-    );
+    return filteredDoctors.filter(doctor => {
+      // Disponibilidad general (cupos)
+      if (!hasDoctorAvailability(doctor.id, date, excludeAppointmentId)) return false;
+
+      // Si hay una hora específica, verificar conflicto
+      if (time) {
+        if (!isDoctorWorkingAt(doctor, date, time, duration)) return false;
+        if (hasScheduleConflict(doctor.id, date, time, duration, excludeAppointmentId)) return false;
+      }
+
+      return true;
+    });
   }
 
   function hasScheduleConflict(doctorId, date, time, duration, excludeAppointmentId = null) {
@@ -209,44 +291,85 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     const doctor = store.find('doctors', doctorId);
     if (!doctor) return [];
 
-    const workStart = doctor.workStartHour || 9;
-    const workEnd = doctor.workEndHour || 17;
-    const lunchStart = doctor.lunchStartHour || 13;
-    const lunchEnd = doctor.lunchEndHour || 14;
+    const dateObj = new Date(date + 'T12:00:00');
+    const dayIndex = dateObj.getDay();
+    const englishDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayEn = englishDays[dayIndex];
+
+    const timeToMin = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + (m || 0);
+    };
+
+    let workStartMin = timeToMin(doctor.scheduleStart || (doctor.workStartHour !== undefined ? `${doctor.workStartHour.toString().padStart(2, '0')}:00` : '08:00'));
+    let workEndMin = timeToMin(doctor.scheduleEnd || (doctor.workEndHour !== undefined ? `${doctor.workEndHour.toString().padStart(2, '0')}:00` : '18:00'));
+    let worksThatDay = false;
+
+    // 1. Objeto schedule
+    if (doctor.schedule && typeof doctor.schedule === 'object') {
+      const scheduleKeys = Object.keys(doctor.schedule).reduce((acc, key) => { acc[key.toLowerCase()] = doctor.schedule[key]; return acc; }, {});
+
+      if (scheduleKeys[dayEn] && scheduleKeys[dayEn].start && scheduleKeys[dayEn].end) {
+        worksThatDay = true;
+        workStartMin = timeToMin(scheduleKeys[dayEn].start);
+        workEndMin = timeToMin(scheduleKeys[dayEn].end);
+      }
+    }
+
+    // 2. Array workDays
+    if (!worksThatDay && doctor.workDays && Array.isArray(doctor.workDays) && doctor.workDays.length > 0) {
+      const workDays = doctor.workDays.map(d => d.toLowerCase());
+      const spanishDays = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const dayEs = spanishDays[dayIndex];
+      const normalizedDayEs = dayEs.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (workDays.includes(dayEs.toLowerCase()) || workDays.includes(normalizedDayEs)) worksThatDay = true;
+    }
+
+    // 3. String schedule
+    if (!worksThatDay && typeof doctor.schedule === 'string') {
+      const s = doctor.schedule.toLowerCase();
+      if (s.includes('lun-vie') && dayIndex >= 1 && dayIndex <= 5) worksThatDay = true;
+      else if (s.includes('mar-jue') && dayIndex >= 2 && dayIndex <= 4) worksThatDay = true;
+      else if (s.includes('lun-sab') && dayIndex >= 1 && dayIndex <= 6) worksThatDay = true;
+      else if (s.includes('lun-dom')) worksThatDay = true;
+
+      if (!worksThatDay) {
+        const abbrs = { 'lun': 1, 'mar': 2, 'mie': 3, 'jue': 4, 'vie': 5, 'sab': 6, 'dom': 0 };
+        Object.entries(abbrs).forEach(([a, i]) => { if (s.includes(a) && dayIndex === i) worksThatDay = true; });
+      }
+    }
+
+    // Fallback absoluto solo si no tiene NADA definido
+    if (!worksThatDay && !doctor.workDays && !doctor.schedule) {
+      if (dayIndex >= 1 && dayIndex <= 5) worksThatDay = true;
+    }
+
+    if (!worksThatDay) return [];
 
     const existingAppointments = getDoctorAppointmentsForDate(doctorId, date);
-
     const slots = [];
-    const startDate = new Date(date);
-    startDate.setHours(workStart, 0, 0, 0);
-    const endDate = new Date(date);
-    endDate.setHours(workEnd, 0, 0, 0);
 
-    let currentTime = new Date(startDate);
-
-    while (currentTime < endDate) {
-      if (currentTime.getHours() >= lunchStart && currentTime.getHours() < lunchEnd) {
-        currentTime.setMinutes(currentTime.getMinutes() + 30);
-        continue;
-      }
-
-      const timeStr = currentTime.toTimeString().slice(0, 5);
-      const timeEnd = new Date(currentTime.getTime() + (duration * 60000));
+    let currentMin = workStartMin;
+    while (currentMin + duration <= workEndMin) {
+      const h = Math.floor(currentMin / 60);
+      const m = currentMin % 60;
+      const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+      const timeEndMin = currentMin + duration;
 
       const hasConflict = existingAppointments.some(appointment => {
-        const appointmentStart = new Date(appointment.dateTime);
-        const appointmentEnd = new Date(appointmentStart.getTime() + (appointment.duration * 60000));
+        const aptStart = new Date(appointment.dateTime);
+        const aptStartMin = aptStart.getHours() * 60 + aptStart.getMinutes();
+        const aptEndMin = aptStartMin + (appointment.duration || 30);
 
         return (
-          (currentTime >= appointmentStart && currentTime < appointmentEnd) ||
-          (timeEnd > appointmentStart && timeEnd <= appointmentEnd) ||
-          (currentTime <= appointmentStart && timeEnd >= appointmentEnd)
+          (currentMin >= aptStartMin && currentMin < aptEndMin) ||
+          (timeEndMin > aptStartMin && timeEndMin <= aptEndMin) ||
+          (currentMin <= aptStartMin && timeEndMin >= aptEndMin)
         );
       });
 
       if (!hasConflict) slots.push(timeStr);
-
-      currentTime.setMinutes(currentTime.getMinutes() + 30);
+      currentMin += 30; // Intervalos de 30 minutos para selección
     }
 
     return slots;
@@ -395,8 +518,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
             <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              ${state.editingId ? 'ACTUALIZACIÓN DE CITA' : 'REGISTRO DE CITA MÉDICA'}
+            <div id="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
+              REGISTRO DE CITA MÉDICA
             </div>
             <button class="btn-close-modal" id="btn-close-appointment-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
               ${icons.close}
@@ -450,7 +573,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
               </div>
               
               <!-- Fecha y Hora -->
-              <div style="margin-bottom: 2rem;">
+              <div style="margin-bottom: 2rem;" id="date-time-section">
                 <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
                   <span style="opacity: 0.7;">${icons.calendar}</span> FECHA Y HORA DE LA CITA
                 </div>
@@ -461,7 +584,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                     <input type="date" class="input" id="form-date" required style="border-color: var(--modal-border); background: var(--modal-bg);">
                   </div>
                   
-                  <div class="form-group">
+                  <div class="form-group" id="time-input-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">HORA *</label>
                     <input type="time" class="input" id="form-time" required style="border-color: var(--modal-border); background: var(--modal-bg);"
                            list="available-times" step="1800" min="09:00" max="17:00">
@@ -570,7 +693,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       viewDescription: root.querySelector('#view-description'),
       timeSlotInfo: root.querySelector('#time-slot-info'),
       availableTimes: root.querySelector('#available-times'),
-      noDoctorsMessage: root.querySelector('#no-doctors-message')
+      noDoctorsMessage: root.querySelector('#no-doctors-message'),
+      dateTimeSection: root.querySelector('#date-time-section'),
+      modalSubtitle: root.querySelector('#modal-subtitle')
     };
 
     loadSelectData();
@@ -853,7 +978,221 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     container.querySelectorAll('.calendar-day').forEach(el => {
       el.onclick = () => {
         const date = el.dataset.date;
-        if (date && canCreate) openModalWithDate(date);
+        if (date) {
+          if (el.classList.contains('day-past')) {
+            showNotification('No se pueden agendar o modificar citas en fechas pasadas', 'warning');
+            return;
+          }
+          showDaySchedule(date);
+        }
+      };
+    });
+  }
+
+  function showDaySchedule(dateStr) {
+    const appointments = store.get('appointments');
+    const dayAppointments = appointments.filter(apt => {
+      const d = new Date(apt.dateTime);
+      const m = (d.getMonth() + 1).toString().padStart(2, '0');
+      const day = d.getDate().toString().padStart(2, '0');
+      const aptDateStr = `${d.getFullYear()}-${m}-${day}`;
+      return aptDateStr === dateStr && apt.status !== 'cancelled';
+    });
+
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'day-schedule-modal';
+    modalContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2500;
+      padding: 1rem;
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.2s ease-out;
+    `;
+
+    const formattedDate = new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const dayIndex = new Date(dateStr + 'T12:00:00').getDay();
+    const englishDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const spanishDays = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const dayEn = englishDays[dayIndex];
+    const dayEs = spanishDays[dayIndex];
+
+    const activeDoctors = store.get('doctors').filter(d => d.isActive !== false);
+
+    const doctorsWorkingToday = activeDoctors.filter(d => isDoctorWorkingAt(d, dateStr));
+
+
+    // Determinar el rango de horas
+    let minHour = 8;
+    let maxHour = 18;
+
+    if (doctorsWorkingToday.length > 0) {
+      const allStarts = doctorsWorkingToday.map(d => {
+        if (d.schedule && d.schedule[dayEn]) return parseInt(d.schedule[dayEn].start.split(':')[0]);
+        return parseInt((d.scheduleStart || '08:00').split(':')[0]);
+      });
+      const allEnds = doctorsWorkingToday.map(d => {
+        if (d.schedule && d.schedule[dayEn]) return parseInt(d.schedule[dayEn].end.split(':')[0]);
+        return parseInt((d.scheduleEnd || '17:00').split(':')[0]);
+      });
+      minHour = Math.min(...allStarts, 8);
+      maxHour = Math.max(...allEnds, 18);
+    }
+
+    const timeSlots = [];
+    for (let h = minHour; h <= maxHour; h++) {
+      const timeStr = `${h.toString().padStart(2, '0')}:00`;
+      const appointmentsAtHour = dayAppointments.filter(apt => {
+        const d = new Date(apt.dateTime);
+        return d.getHours() === h;
+      });
+
+      const doctorsAtThisHour = doctorsWorkingToday.filter(d => {
+        if (!isDoctorWorkingAt(d, dateStr, timeStr)) return false;
+
+        // Verificar si tiene citas que solapen con este slot (h:00)
+        const slotStartMin = h * 60;
+        const slotEndMin = slotStartMin + 60; // Slot de 1 hora en la vista de agenda
+
+        const hasConflict = dayAppointments.some(apt => {
+          if (apt.doctorId !== d.id || apt.status === 'cancelled') return false;
+          const aptDate = new Date(apt.dateTime);
+          const aptStartMin = aptDate.getHours() * 60 + aptDate.getMinutes();
+          const aptEndMin = aptStartMin + (apt.duration || 30);
+
+          return (aptStartMin < slotEndMin && aptEndMin > slotStartMin);
+        });
+
+        return !hasConflict;
+      });
+
+
+      const isWorkingHour = doctorsAtThisHour.length > 0;
+
+      timeSlots.push({
+        time: timeStr,
+        appointments: appointmentsAtHour,
+        isWorkingHour,
+        availableDoctors: doctorsAtThisHour
+      });
+    }
+
+    modalContainer.innerHTML = `
+      <style>
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .schedule-slot:hover { transform: scale(1.01); }
+      </style>
+      <div class="modal-content" style="max-width: 550px; width: 100%; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s ease-out;">
+        <div class="modal-header" style="background: var(--modal-header); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Agenda del Día</h3>
+            <p style="margin: 0.25rem 0 0; opacity: 0.9; font-size: 0.875rem;">${formattedDate}</p>
+          </div>
+          <button id="close-schedule" style="background: rgba(255,255,255,0.2); border: none; color: white; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+            ${icons.close}
+          </button>
+        </div>
+        
+        <div class="modal-body" style="padding: 1.5rem; max-height: 500px; overflow-y: auto; background: #f8fafc;">
+          <div class="schedule-grid" style="display: flex; flex-direction: column; gap: 1rem;">
+            ${timeSlots.map(slot => {
+      const isOccupied = slot.appointments.length > 0;
+      const isWorking = slot.isWorkingHour;
+
+      let statusText = isOccupied
+        ? (slot.appointments.length === 1 ? '1 Cita Programada' : `${slot.appointments.length} Citas Programadas`)
+        : (isWorking ? 'Horario Disponible' : 'Fuera de Horario');
+
+      const statusColor = isOccupied ? '#dc2626' : (isWorking ? '#16a34a' : '#64748b');
+      const background = isOccupied ? '#fef2f2' : (isWorking ? '#f0fdf4' : '#f1f5f9');
+      const border = isOccupied ? '#fecaca' : (isWorking ? '#bbf7d0' : '#e2e8f0');
+      const badgeBg = isOccupied ? '#fee2e2' : (isWorking ? '#dcfce7' : '#e2e8f0');
+      const badgeText = isOccupied ? '#dc2626' : (isWorking ? '#16a34a' : '#475569');
+
+      return `
+                <div class="schedule-slot ${isOccupied ? 'occupied' : (isWorking ? 'available' : 'off-hours')}" 
+                     data-time="${slot.time}" 
+                     data-working="${isWorking}"
+                     style="display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem; border-radius: 12px; border: 1px solid ${border}; background: ${background}; cursor: ${isWorking ? 'pointer' : 'not-allowed'}; transition: all 0.2s ease;">
+                  
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                      <div style="background: ${badgeBg}; color: ${badgeText}; padding: 0.25rem 0.75rem; border-radius: 6px; font-weight: 700; font-size: 0.9rem;">
+                        ${slot.time}
+                      </div>
+                      <span style="font-weight: 600; color: ${isOccupied ? '#991b1b' : (isWorking ? '#166534' : '#475569')};">
+                        ${statusText}
+                      </span>
+                    </div>
+                    ${(isWorking && !isOccupied) ? `<span style="font-size: 0.75rem; color: #15803d; font-weight: 500;">Agendar ${icons.plus}</span>` : ''}
+                  </div>
+
+                  ${isOccupied ? `
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; border-top: 1px solid rgba(239, 68, 68, 0.1); padding-top: 0.5rem;">
+                      ${slot.appointments.map(apt => {
+        const patient = store.find('patients', apt.patientId);
+        const doctor = store.find('doctors', apt.doctorId);
+        return `
+                          <div style="background: white; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.8rem; border-left: 3px solid #ef4444; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <div style="font-weight: 700; color: #1e293b;">${patient?.name || 'Paciente N/A'}</div>
+                            <div style="color: #64748b; font-size: 0.75rem;">Dr. ${doctor?.name || 'Médico N/A'}</div>
+                          </div>
+                        `;
+      }).join('')}
+                    </div>
+                  ` : ''}
+                  
+                  ${(!isOccupied && isWorking) ? `
+                    <div style="font-size: 0.7rem; color: #166534; opacity: 0.8;">
+                      Médicos disponibles: ${slot.availableDoctors.map(d => d.name).join(', ')}
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+    }).join('')}
+          </div>
+        </div>
+        
+        <div class="modal-footer" style="padding: 1.25rem; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: center;">
+          <button id="close-schedule-footer" class="btn btn-danger" style="width: 100%; border-radius: 10px; padding: 0.75rem;">Cerrar Calendario</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modalContainer);
+
+    const close = () => {
+      modalContainer.style.opacity = '0';
+      setTimeout(() => modalContainer.remove(), 200);
+    };
+
+    modalContainer.querySelector('#close-schedule').onclick = close;
+    modalContainer.querySelector('#close-schedule-footer').onclick = close;
+    modalContainer.onclick = (e) => { if (e.target === modalContainer) close(); };
+
+    modalContainer.querySelectorAll('.schedule-slot').forEach(el => {
+      el.onclick = () => {
+        if (el.dataset.working === 'false') {
+          showNotification('Este horario está fuera del horario laboral de los médicos para el día de hoy', 'info');
+          return;
+        }
+        const time = el.dataset.time;
+        close();
+        openModalWithDate(dateStr, time);
       };
     });
   }
@@ -878,9 +1217,20 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         return aptDateStr === dateStr;
       });
 
+      const availableDoctors = getAvailableDoctorsForDate(dateStr);
+      const isAvailable = availableDoctors.length > 0;
+
+      const dayDate = new Date(year, month, i);
+      const isPast = dayDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
       html += `
-        <div class="calendar-day ${isToday ? 'today' : ''}" data-date="${dateStr}">
-          <div class="day-number">${i}</div>
+        <div class="calendar-day ${isToday ? 'today' : ''} ${isPast ? 'day-past' : (isAvailable ? 'day-available' : 'day-full')}" data-date="${dateStr}">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="day-number">${i}</div>
+            <div class="day-status-indicator" style="color: ${isPast ? '#64748b' : (isAvailable ? '#16a34a' : '#dc2626')}">
+              ${isPast ? 'Pasado' : (isAvailable ? 'Libre' : 'Lleno')}
+            </div>
+          </div>
           <div class="calendar-appointments">
             ${dayAppointments.slice(0, 3).map(apt => {
         const patient = store.find('patients', apt.patientId);
@@ -905,12 +1255,21 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     return html;
   }
 
-  function openModalWithDate(dateStr) {
+  function openModalWithDate(dateStr, timeStr = null) {
+    if (elements.dateTimeSection) {
+      elements.dateTimeSection.classList.toggle('hidden', !!timeStr);
+    }
+
     openModal();
     if (elements.formDate) {
       elements.formDate.value = dateStr;
       updateDoctorsByAreaAndDate();
       updateAvailableTimeSlots();
+      if (timeStr && elements.formTime) {
+        elements.formTime.value = timeStr;
+        validateDoctorSchedule();
+      }
+      updateModalSubtitle();
     }
   }
 
@@ -1013,7 +1372,10 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       elements.formDoctor.addEventListener('change', updateAvailableTimeSlots);
     }
     if (elements.formTime) {
-      elements.formTime.addEventListener('change', validateDoctorSchedule);
+      elements.formTime.addEventListener('change', () => {
+        validateDoctorSchedule();
+        updateDoctorsByAreaAndDate();
+      });
     }
     if (elements.formDuration) {
       elements.formDuration.addEventListener('change', () => {
@@ -1040,6 +1402,32 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       .error-field { border-color: #e53e3e !important; background-color: #fff5f5 !important; }
       .available-slot { color: #38a169 !important; font-weight: 600; }
       .no-slots { color: #e53e3e !important; font-weight: 600; }
+      
+      /* Estilos para disponibilidad en el calendario */
+      .calendar-day.day-available {
+        background-color: #f0fdf4 !important;
+      }
+      .calendar-day.day-full {
+        background-color: #fef2f2 !important;
+      }
+      .calendar-day.day-available:hover {
+        background-color: #dcfce7 !important;
+      }
+      .calendar-day.day-full:hover {
+        background-color: #fee2e2 !important;
+      }
+      .calendar-day.day-past {
+        background-color: #f1f5f9 !important;
+        opacity: 0.6;
+        cursor: not-allowed !important;
+      }
+      .day-status-indicator {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+      
       @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     `;
     document.head.appendChild(style);
@@ -1101,6 +1489,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     state.showModal = true;
     if (elements.modal) elements.modal.classList.remove('hidden');
 
+    if (elements.dateTimeSection) elements.dateTimeSection.classList.remove('hidden');
+
+    if (elements.modalSubtitle) {
+      elements.modalSubtitle.textContent = state.editingId ? 'ACTUALIZACIÓN DE CITA' : 'REGISTRO DE CITA MÉDICA';
+    }
+
     if (appointment) {
       populateForm(appointment);
     } else {
@@ -1122,6 +1516,22 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
     hideNoDoctorsMessage();
     hideScheduleConflictWarning();
+  }
+
+  function updateModalSubtitle() {
+    if (!elements.modalSubtitle || !elements.formDate || !elements.formTime) return;
+
+    const date = elements.formDate.value;
+    const time = elements.formTime.value;
+    const isEditing = !!state.editingId;
+
+    let text = isEditing ? 'ACTUALIZACIÓN DE CITA' : 'REGISTRO DE CITA MÉDICA';
+    if (date && time) {
+      const formattedDate = new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+      text += ` - ${formattedDate} a las ${time}`;
+    }
+
+    elements.modalSubtitle.textContent = text;
   }
 
   function closeModal() {
@@ -1205,6 +1615,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     const areaId = elements.formArea.value;
     const selectedDate = elements.formDate ? elements.formDate.value : null;
+    const selectedTime = elements.formTime ? elements.formTime.value : null;
+    const selectedDuration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
 
     if (!selectedDate) {
       const doctors = store.get('doctors');
@@ -1216,16 +1628,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       return;
     }
 
-    const availableDoctors = getAvailableDoctorsForDate(selectedDate, areaId, state.editingId);
+    const availableDoctors = getAvailableDoctorsForDate(selectedDate, areaId, state.editingId, selectedTime, selectedDuration);
 
     if (availableDoctors.length === 0) {
+      elements.formDoctor.innerHTML = `<option value="">Sin médicos disponibles hoy</option>`;
       showNoDoctorsMessage();
     } else {
       const options = availableDoctors.map(d => {
         const remaining = getDoctorRemainingAvailability(d.id, selectedDate, state.editingId);
         const dailyCapacity = d.dailyCapacity || 20;
         return `<option value="${d.id}" class="doctor-available">
-          ${d.name} - ${d.specialty} (${remaining}/${dailyCapacity} cupos disponibles)
+          ${d.name} - ${d.specialty} (${remaining}/${dailyCapacity} cupos)
         </option>`;
       }).join('');
 
@@ -1235,19 +1648,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       if (state.editingId && elements.formDoctor.value) {
         const currentDoctor = store.find('doctors', elements.formDoctor.value);
         if (currentDoctor && !availableDoctors.some(d => d.id === currentDoctor.id)) {
-          if (availableDoctors.length > 0) {
-            elements.formDoctor.value = '';
-            showNotification(
-              `El Dr. ${currentDoctor.name} ya no tiene disponibilidad para el ${selectedDate}. Por favor, seleccione otro médico.`,
-              'warning'
-            );
-          }
+          elements.formDoctor.value = '';
+          showNotification(
+            `El Dr. ${currentDoctor.name} no tiene disponibilidad para el ${selectedDate}. seleccione otro médico.`,
+            'warning'
+          );
         }
       }
 
       if (role === 'doctor' && user?.doctorId && !state.editingId) {
-        const doctorExists = availableDoctors.some(d => d.id === user.doctorId);
-        if (doctorExists) {
+        const isSelectedWorking = availableDoctors.some(d => d.id === user.doctorId);
+        if (isSelectedWorking) {
           elements.formDoctor.value = user.doctorId;
           updateAvailableTimeSlots();
         }
@@ -1283,7 +1694,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <br>
           <small>Seleccione un horario de la lista o ingrese manualmente</small>
         `;
-        if (elements.formTime && elements.formTime.value && !availableSlots.includes(elements.formTime.value)) {
+
+        const isTimeFieldVisible = elements.dateTimeSection && !elements.dateTimeSection.classList.contains('hidden');
+        if (isTimeFieldVisible && elements.formTime && elements.formTime.value && !availableSlots.includes(elements.formTime.value)) {
           elements.formTime.value = '';
           showNotification('El horario seleccionado ya no está disponible. Por favor, seleccione otro.', 'warning');
         }
@@ -1293,7 +1706,11 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <br>
           <small>El médico no tiene horarios libres en esta fecha. Seleccione otra fecha.</small>
         `;
-        if (elements.formTime) elements.formTime.value = '';
+
+        const isTimeFieldVisible = elements.dateTimeSection && !elements.dateTimeSection.classList.contains('hidden');
+        if (isTimeFieldVisible && elements.formTime) {
+          elements.formTime.value = '';
+        }
       }
     }
   }
@@ -1319,6 +1736,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         if (elements.formTime) elements.formTime.classList.add('error-field');
         if (elements.formDuration) elements.formDuration.classList.add('error-field');
       }
+
+      const doctor = store.find('doctors', doctorId);
+      if (doctor && !isDoctorWorkingAt(doctor, date, time, duration)) {
+        showNotification(`El médico no trabaja en este horario o la cita excede su turno (${time})`, 'warning');
+        if (elements.formTime) elements.formTime.classList.add('error-field');
+      }
     }
   }
 
@@ -1336,6 +1759,16 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     requiredFields.forEach(field => {
       if (field) field.classList.remove('error-field');
     });
+
+    if (elements.formDoctor && elements.formDoctor.value && elements.formDate && elements.formDate.value && elements.formTime && elements.formTime.value) {
+      const doctor = store.find('doctors', elements.formDoctor.value);
+      const duration = parseInt(elements.formDuration?.value || 30);
+      if (doctor && !isDoctorWorkingAt(doctor, elements.formDate.value, elements.formTime.value, duration)) {
+        showNotification(`El médico seleccionado no trabaja en el horario solicitado o la cita excede su turno (${elements.formTime.value})`, 'warning');
+        if (elements.formTime) elements.formTime.classList.add('error-field');
+        isValid = false;
+      }
+    }
 
     requiredFields.forEach(field => {
       if (field && !field.value.trim()) {

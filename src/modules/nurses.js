@@ -87,40 +87,6 @@ export default function mountNurses(root, { bus, store, user, role }) {
     updateStats();
   }
 
-  // ... (render function remains mostly the same, but we need to ensure we don't duplicate logic if possible)
-  // Since replace_file_content replaces a block, I should check where I am starting/ending.
-  // I am targeting init() and setupEventListeners changes mainly.
-
-  // Checking original file structure... 
-  // I will replace from init() definition down to the end of setupEventListeners to include both changes comfortably?
-  // No, that's too much code. 
-  // I'll do init first, then setupEventListeners.
-
-  // Wait, I can't split init replacement easily without duplicating render() inside the instruction if I replace the whole block.
-  // I'll just replace init() and setupEventListeners() separately.
-
-  // Actually, I'll use multi_replace.
-
-
-  function loadNurses() {
-    let raw = store.get('nurses') || [];
-    state.nurses = raw.filter(nurse => {
-      if (state.filters.search) {
-        const s = state.filters.search.toLowerCase();
-        const fields = [nurse.name, nurse.specialty, nurse.license].join(' ').toLowerCase();
-        if (!fields.includes(s)) return false;
-      }
-      if (state.filters.specialty && nurse.specialty !== state.filters.specialty) return false;
-      if (state.filters.areaId && nurse.areaId !== state.filters.areaId) return false;
-      if (state.filters.status === 'active' && !nurse.isActive) return false;
-      if (state.filters.status === 'inactive' && nurse.isActive !== false) return false;
-      return true;
-    }).sort((a, b) => a.name.localeCompare(b.name));
-
-    renderNursesList();
-    updateStats();
-  }
-
   function render() {
     const canManage = role === 'admin' || role === 'receptionist';
     root.innerHTML = `
@@ -193,7 +159,6 @@ export default function mountNurses(root, { bus, store, user, role }) {
                   <th>Especialidad</th>
                   <th>Área</th>
                   <th>Horario/Turno</th>
-                  <th>Carga</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -201,7 +166,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
               <tbody id="nurses-list"></tbody>
             </table>
           </div>
-          <div id="pagination" class="flex justify-between items-center mt-3"></div>
+          <div id="pagination" class="flex justify-center items-center mt-3"></div>
         </div>
 
       </div>
@@ -272,8 +237,9 @@ export default function mountNurses(root, { bus, store, user, role }) {
                       <option value="license">Licencia</option>
                     </select>
                  </div>
+              </div>
               <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
-                ${icons.settings || ''} CREDENCIALES DE ACCESO
+                ${icons.user} CREDENCIALES DE ACCESO
               </div>
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group">
@@ -420,7 +386,6 @@ export default function mountNurses(root, { bus, store, user, role }) {
          <tr>
            <td>
               <div class="flex items-center gap-3">
-                 <div class="avatar-circle" style="background:var(--info); color:white;">${nurse.name.charAt(0)}</div>
                  <div>
                     <div class="font-bold">${nurse.name}</div>
                     <div class="text-xs text-muted">Lic: ${nurse.license}</div>
@@ -434,16 +399,10 @@ export default function mountNurses(root, { bus, store, user, role }) {
            </td>
            <td>
               <div class="flex items-center gap-2">
-                 <span class="text-sm font-bold badge badge-info">${nurse.dailyCapacity || 15}</span>
-                 <button class="btn-icon text-muted" onclick="window.nursesAction('capacity', '${nurse.id}')" title="Ajustar">${icons.capacity}</button>
-              </div>
-           </td>
-           <td>
-              <div class="flex items-center gap-2">
                  <span class="badge ${nurse.isActive ? 'badge-success' : 'badge-danger'}">
                     ${nurse.status === 'vacation' ? 'Vacaciones' : (nurse.isActive ? 'Activo' : 'Inactivo')}
                  </span>
-                 <button class="btn-icon text-muted" onclick="window.nursesAction('status', '${nurse.id}')" title="Cambiar">${icons.status}</button>
+                 <button class="btn btn-xs btn-outline" onclick="window.nursesAction('status', '${nurse.id}')" title="Cambiar">${icons.status}</button>
               </div>
            </td>
            <td>
@@ -464,15 +423,27 @@ export default function mountNurses(root, { bus, store, user, role }) {
       if (action === 'edit') openModal(nurse);
       if (action === 'view') viewNurse(nurse);
       if (action === 'status') {
-        elements.statusSelect.value = nurse.status || 'active';
-        elements.statusModal.classList.remove('hidden');
+        if (elements.statusSelect) {
+          elements.statusSelect.value = nurse.status || 'active';
+        }
+        if (elements.statusModal) {
+          elements.statusModal.classList.remove('hidden');
+        }
       }
       if (action === 'capacity') {
         const cap = nurse.dailyCapacity || 15;
-        elements.capacityValue.value = cap;
-        elements.capacitySlider.value = cap;
-        elements.currentCapDisplay.textContent = cap;
-        elements.capacityModal.classList.remove('hidden');
+        if (elements.capacityValue) {
+          elements.capacityValue.value = cap;
+        }
+        if (elements.capacitySlider) {
+          elements.capacitySlider.value = cap;
+        }
+        if (elements.currentCapDisplay) {
+          elements.currentCapDisplay.textContent = cap;
+        }
+        if (elements.capacityModal) {
+          elements.capacityModal.classList.remove('hidden');
+        }
       }
     };
 
@@ -483,12 +454,15 @@ export default function mountNurses(root, { bus, store, user, role }) {
     const pages = Math.ceil(state.nurses.length / state.itemsPerPage);
     elements.pagination.innerHTML = Array.from({ length: pages }, (_, i) =>
       `<button class="btn btn-sm ${state.currentPage === i + 1 ? 'btn-primary' : 'btn-outline'}" 
-           style="${state.currentPage === i + 1 ? 'background:var(--info);border:none;' : ''}"
+           style="${state.currentPage === i + 1 ? 'background: transparent; color: var(--info);' : ''}"
            onclick="window.nursesPage(${i + 1})">${i + 1}</button>`
     ).join('');
-    window.nursesPage = p => { state.currentPage = p; renderNursesList(); };
+    
+    window.nursesPage = p => { 
+      state.currentPage = p; 
+      renderNursesList(); 
+    };
   }
-
   function updateStats() {
     const total = state.nurses.length;
     const active = state.nurses.filter(n => n.isActive).length;
@@ -534,13 +508,13 @@ export default function mountNurses(root, { bus, store, user, role }) {
                    </div>
                    <div class="mt-4">
                       <div class="text-xs text-muted font-bold">CONTACTO</div>
-                      <div>${icons.user} ${nurse.phone} • ${nurse.email}</div>
+                      <div>${nurse.phone} • ${nurse.email}</div>
                    </div>
                 </div>
                 
                 <div style="background: #f0fdf4; border-radius: 8px; padding: 1.5rem; border-left: 4px solid #16a34a;">
                    <div style="font-weight: 800; color: #166534; margin-bottom: 1rem;">HORARIO Y ÁREA</div>
-                   <div class="text-xl font-bold text-gray-800">${nurse.scheduleStart} - ${nurse.scheduleEnd}</div>
+                   <div class="text-xl font-bold text-gray-800">${nurse.scheduleStart || '07:00'} - ${nurse.scheduleEnd || '15:00'}</div>
                    <div class="text-sm font-bold text-gray-600 mb-2">Turno Regular</div>
                    <div class="flex items-center gap-2">
                       <span class="badge" style="background:white; border:1px solid #ddd;">${area?.name || 'General'}</span>
@@ -573,12 +547,22 @@ export default function mountNurses(root, { bus, store, user, role }) {
     });
 
     // Status Modal Events
-    if (elements.btnCancelStatus) elements.btnCancelStatus.addEventListener('click', () => elements.statusModal && elements.statusModal.classList.add('hidden'));
-    if (elements.btnCloseStatus) elements.btnCloseStatus.addEventListener('click', () => elements.statusModal && elements.statusModal.classList.add('hidden'));
+    if (elements.btnCancelStatus) {
+      elements.btnCancelStatus.addEventListener('click', () => {
+        if (elements.statusModal) elements.statusModal.classList.add('hidden');
+      });
+    }
+    
+    if (elements.btnCloseStatus) {
+      elements.btnCloseStatus.addEventListener('click', () => {
+        if (elements.statusModal) elements.statusModal.classList.add('hidden');
+      });
+    }
+    
     if (elements.btnSaveStatus) {
       elements.btnSaveStatus.addEventListener('click', () => {
         if (!state.currentNurse) return;
-        const newStatus = elements.statusSelect.value;
+        const newStatus = elements.statusSelect ? elements.statusSelect.value : 'active';
         store.update('nurses', state.currentNurse.id, {
           status: newStatus,
           isActive: newStatus === 'active'
@@ -593,6 +577,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
       if (elements.capacityValue) elements.capacityValue.value = e.target.value;
       if (elements.currentCapDisplay) elements.currentCapDisplay.textContent = e.target.value;
     };
+    
     const updateInput = (e) => {
       if (elements.capacitySlider) elements.capacitySlider.value = e.target.value;
       if (elements.currentCapDisplay) elements.currentCapDisplay.textContent = e.target.value;
@@ -601,12 +586,22 @@ export default function mountNurses(root, { bus, store, user, role }) {
     if (elements.capacitySlider) elements.capacitySlider.addEventListener('input', updateSlider);
     if (elements.capacityValue) elements.capacityValue.addEventListener('input', updateInput);
 
-    if (elements.btnCancelCapacity) elements.btnCancelCapacity.addEventListener('click', () => elements.capacityModal && elements.capacityModal.classList.add('hidden'));
-    if (elements.btnCloseCapacity) elements.btnCloseCapacity.addEventListener('click', () => elements.capacityModal && elements.capacityModal.classList.add('hidden'));
+    if (elements.btnCancelCapacity) {
+      elements.btnCancelCapacity.addEventListener('click', () => {
+        if (elements.capacityModal) elements.capacityModal.classList.add('hidden');
+      });
+    }
+    
+    if (elements.btnCloseCapacity) {
+      elements.btnCloseCapacity.addEventListener('click', () => {
+        if (elements.capacityModal) elements.capacityModal.classList.add('hidden');
+      });
+    }
+    
     if (elements.btnSaveCapacity) {
       elements.btnSaveCapacity.addEventListener('click', () => {
         if (!state.currentNurse) return;
-        const cap = parseInt(elements.capacityValue && elements.capacityValue.value);
+        const cap = parseInt(elements.capacityValue ? elements.capacityValue.value : 15);
         if (cap > 0) {
           store.update('nurses', state.currentNurse.id, { dailyCapacity: cap });
           if (elements.capacityModal) elements.capacityModal.classList.add('hidden');
@@ -619,20 +614,27 @@ export default function mountNurses(root, { bus, store, user, role }) {
   function openModal(nurse = null) {
     state.editingId = nurse?.id || null;
     if (elements.modal) elements.modal.classList.remove('hidden');
-    elements.form.reset();
+    if (elements.form) elements.form.reset();
+    
     if (nurse) {
-      elements.fName.value = nurse.name;
-      elements.fDni.value = nurse.dni || '';
-      elements.fPhone.value = nurse.phone;
-      elements.fEmail.value = nurse.email;
+      if (elements.fName) elements.fName.value = nurse.name;
+      if (elements.fDni) elements.fDni.value = nurse.dni || '';
+      if (elements.fPhone) elements.fPhone.value = nurse.phone;
+      if (elements.fEmail) elements.fEmail.value = nurse.email;
       if (elements.fAddress) elements.fAddress.value = nurse.address || '';
-      elements.fLicense.value = nurse.license;
-      elements.fSpec.value = nurse.specialty;
-      elements.fArea.value = nurse.areaId;
-      elements.fStart.value = nurse.scheduleStart || '07:00';
-      elements.fEnd.value = nurse.scheduleEnd || '15:00';
-      elements.fCap.value = nurse.dailyCapacity || 15;
+      if (elements.fLicense) elements.fLicense.value = nurse.license;
+      if (elements.fSpec) elements.fSpec.value = nurse.specialty;
+      if (elements.fArea) elements.fArea.value = nurse.areaId;
+      if (elements.fStart) elements.fStart.value = nurse.scheduleStart || '07:00';
+      if (elements.fEnd) elements.fEnd.value = nurse.scheduleEnd || '15:00';
+      if (elements.fCap) elements.fCap.value = nurse.dailyCapacity || 15;
       if (elements.fStatus) elements.fStatus.value = nurse.status || 'active';
+      
+      // Para edición, no requerir contraseña
+      if (elements.fPass) elements.fPass.required = false;
+    } else {
+      // Para nuevo registro, requerir contraseña
+      if (elements.fPass) elements.fPass.required = true;
     }
   }
 
@@ -642,7 +644,10 @@ export default function mountNurses(root, { bus, store, user, role }) {
   }
 
   function saveNurse() {
-    if (!elements.form.checkValidity()) { elements.form.reportValidity(); return; }
+    if (!elements.form.checkValidity()) { 
+      elements.form.reportValidity(); 
+      return; 
+    }
 
     // Validar permisos para crear
     if (!state.editingId && role !== 'admin' && role !== 'receptionist') {
@@ -652,17 +657,17 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
     const status = elements.fStatus ? elements.fStatus.value : 'active';
     const data = {
-      name: elements.fName.value,
-      dni: elements.fDni.value,
-      phone: elements.fPhone.value,
-      email: elements.fEmail.value,
+      name: elements.fName ? elements.fName.value : '',
+      dni: elements.fDni ? elements.fDni.value : '',
+      phone: elements.fPhone ? elements.fPhone.value : '',
+      email: elements.fEmail ? elements.fEmail.value : '',
       address: elements.fAddress ? elements.fAddress.value : '',
-      license: elements.fLicense.value,
-      specialty: elements.fSpec.value,
-      areaId: elements.fArea.value,
-      scheduleStart: elements.fStart.value,
-      scheduleEnd: elements.fEnd.value,
-      dailyCapacity: parseInt(elements.fCap.value),
+      license: elements.fLicense ? elements.fLicense.value : '',
+      specialty: elements.fSpec ? elements.fSpec.value : 'Enfermería General',
+      areaId: elements.fArea ? elements.fArea.value : '',
+      scheduleStart: elements.fStart ? elements.fStart.value : '07:00',
+      scheduleEnd: elements.fEnd ? elements.fEnd.value : '15:00',
+      dailyCapacity: parseInt(elements.fCap ? elements.fCap.value : 15),
       status: status,
       isActive: status === 'active'
     };
@@ -671,9 +676,16 @@ export default function mountNurses(root, { bus, store, user, role }) {
       store.update('nurses', state.editingId, data);
     } else {
       const n = store.add('nurses', data);
-      const username = elements.fUser.value || data.email.split('@')[0];
-      const password = elements.fPass.value || 'demo123';
-      store.add('users', { username, password, name: data.name, role: 'nurse', email: data.email, staffId: n.id });
+      const username = elements.fUser ? elements.fUser.value || data.email.split('@')[0] : data.email.split('@')[0];
+      const password = elements.fPass ? elements.fPass.value : 'demo123';
+      store.add('users', { 
+        username, 
+        password, 
+        name: data.name, 
+        role: 'nurse', 
+        email: data.email, 
+        staffId: n.id 
+      });
     }
     closeModal();
     loadNurses();

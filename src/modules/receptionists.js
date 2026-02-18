@@ -159,7 +159,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
             </table>
           </div>
           
-          <div id="pagination" class="flex justify-between items-center mt-3"></div>
+          <div id="pagination" class="flex justify-center items-center mt-3"></div>
         </div>
       </div>
 
@@ -308,7 +308,6 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
             <tr>
               <td>
                 <div class="flex items-center gap-3">
-                    <div class="avatar-circle" style="background: #fff7ed; color: #f59e0b; font-weight: 700;">${item.name.charAt(0)}</div>
                     <div>
                         <div class="font-bold">${item.name}</div>
                         <div class="text-xs text-muted">ID: ${item.dni || 'N/A'}</div>
@@ -325,7 +324,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
                     <span class="badge ${item.isActive ? 'badge-success' : 'badge-danger'}">
                         ${item.status === 'vacation' ? 'Vacaciones' : (item.isActive ? 'Activo' : 'Inactivo')}
                     </span>
-                    <button class="btn-icon text-muted" onclick="window.recAction('status', '${item.id}')" title="Cambiar">${icons.status}</button>
+                    <button class="btn btn-xs btn-outline" onclick="window.recAction('status', '${item.id}')" title="Cambiar">${icons.status}</button>
                  </div>
               </td>
               <td>
@@ -358,7 +357,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     const pages = Math.ceil(state.receptionists.length / state.itemsPerPage);
     elements.pagination.innerHTML = Array.from({ length: pages }, (_, i) =>
       `<button class="btn btn-sm ${state.currentPage === i + 1 ? 'btn-primary' : 'btn-outline'}" 
-            style="${state.currentPage === i + 1 ? 'background:#f59e0b;border:none;' : ''}" 
+            style="${state.currentPage === i + 1 ? 'background: transparent; color: var(--info);' : ''}" 
             onclick="window.recPage(${i + 1})">${i + 1}</button>`
     ).join('');
     window.recPage = p => { state.currentPage = p; renderList(); };
