@@ -140,60 +140,102 @@ export default function mountSecurity(root, { bus, store, user, role }) {
     );
 
     root.innerHTML = `
-      <div class="security-module">
+      <div class="security-module animated-fade-in" style="max-width: 1400px; margin: 0 auto; padding: 1rem;">
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <div>
-            <h1 style="margin: 0; color: var(--text);"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Seguridad del Sistema</h1>
-            <p style="color: var(--muted); margin-top: 0.25rem;">Auditoría, sesiones y políticas de seguridad</p>
+        <div class="card" style="margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h2 style="margin: 0;">Seguridad y Auditoría</h2>
+              <p style="color: var(--muted); margin: 0;">Control de acceso, sesiones y registro de actividad</p>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <button class="btn btn-outline" id="btn-export-logs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar Logs
+              </button>
+            </div>
           </div>
-          <button class="btn btn-primary" id="btn-export-logs">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar Logs
-          </button>
         </div>
 
         <!-- Stats Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="stats-card" style="background: var(--card); padding: 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow);">
-            <div style="font-size: 2rem; font-weight: bold; color: var(--accent);">${state.auditLogs.length}</div>
-            <div style="color: var(--muted); font-size: 0.875rem;">Eventos Registrados</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid var(--accent, #3b82f6);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Eventos Totales</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.auditLogs.length}</div>
+              </div>
+              <div style="background: #eff6ff; padding: 0.4rem; border-radius: 8px; color: #3b82f6;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21L15 15"/><circle cx="10" cy="10" r="7"/></svg>
+              </div>
+            </div>
           </div>
-          <div class="stats-card" style="background: var(--card); padding: 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow);">
-            <div style="font-size: 2rem; font-weight: bold; color: var(--info);">${state.sessions.filter(s => s.isActive).length}</div>
-            <div style="color: var(--muted); font-size: 0.875rem;">Sesiones Activas</div>
+
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid #10b981;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Sesiones Activas</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.sessions.filter(s => s.isActive).length}</div>
+              </div>
+              <div style="background: #ecfdf5; padding: 0.4rem; border-radius: 8px; color: #10b981;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+            </div>
           </div>
-          <div class="stats-card" style="background: var(--card); padding: 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow);">
-            <div style="font-size: 2rem; font-weight: bold; color: var(--success);">${state.loginHistory.filter(l => l.success).length}</div>
-            <div style="color: var(--muted); font-size: 0.875rem;">Accesos Exitosos</div>
+
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid #f59e0b;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Accesos Hoy</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.loginHistory.filter(l => {
+      const d = new Date(l.timestamp);
+      return d.toDateString() === new Date().toDateString();
+    }).length}</div>
+              </div>
+              <div style="background: #fffbeb; padding: 0.4rem; border-radius: 8px; color: #f59e0b;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              </div>
+            </div>
           </div>
-          <div class="stats-card" style="background: var(--card); padding: 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow);">
-            <div style="font-size: 2rem; font-weight: bold; color: var(--warning);">${state.policies.sessionTimeoutMinutes || 480} min</div>
-            <div style="color: var(--muted); font-size: 0.875rem;">Timeout de Sesión</div>
+
+          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 4px solid #8b5cf6;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Seguridad</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 0.25rem;">PROTEGIDO</div>
+              </div>
+              <div style="background: #f5f3ff; padding: 0.4rem; border-radius: 8px; color: #8b5cf6;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Tabs -->
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0;">
+        <!-- Tabs Premium -->
+        <div style="background: white; padding: 0.5rem; border-radius: 12px 12px 0 0; display: flex; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 0;">
           <button class="tab-btn ${state.activeTab === 'audit' ? 'active' : ''}" data-tab="audit" 
-            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'audit' ? 'var(--accent)' : 'transparent'}; color: ${state.activeTab === 'audit' ? 'white' : 'var(--text)'}; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 500;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Auditoría
+            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'audit' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'audit' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+            AUDITORÍA
           </button>
           <button class="tab-btn ${state.activeTab === 'sessions' ? 'active' : ''}" data-tab="sessions"
-            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'sessions' ? 'var(--accent)' : 'transparent'}; color: ${state.activeTab === 'sessions' ? 'white' : 'var(--text)'}; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 500;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Sesiones
+            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'sessions' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'sessions' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            SESIONES ACTIVAS
           </button>
           <button class="tab-btn ${state.activeTab === 'logins' ? 'active' : ''}" data-tab="logins"
-            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'logins' ? 'var(--accent)' : 'transparent'}; color: ${state.activeTab === 'logins' ? 'white' : 'var(--text)'}; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 500;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Historial de Acceso
+            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'logins' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'logins' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            HISTORIAL DE ACCESO
           </button>
           <button class="tab-btn ${state.activeTab === 'policies' ? 'active' : ''}" data-tab="policies"
-            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'policies' ? 'var(--accent)' : 'transparent'}; color: ${state.activeTab === 'policies' ? 'white' : 'var(--text)'}; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 500;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Políticas
+            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'policies' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'policies' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            POLÍTICAS
           </button>
         </div>
 
         <!-- Content -->
-        <div class="tab-content" style="background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.5rem;">
+        <div class="tab-content" style="background: white; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 2rem; min-height: 500px; border: 1px solid #e2e8f0; border-top: none;">
           ${renderTabContent(paginatedLogs, totalPages)}
         </div>
       </div>
@@ -214,10 +256,9 @@ export default function mountSecurity(root, { bus, store, user, role }) {
   // Tab de Auditoría
   function renderAuditTab(logs, totalPages) {
     return `
-      <!-- Filtros -->
-      <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-        <input type="text" id="filter-search" placeholder="Buscar..." value="${state.filters.search}"
-          style="flex: 1; min-width: 200px; padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.875rem;">
+      <div class="grid" style="grid-template-columns: 1.5fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1.5rem;">
+        <input type="text" id="filter-search" placeholder="Buscar por usuario o descripción..." value="${state.filters.search}"
+          style="padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.875rem;">
         <select id="filter-action" style="padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius);">
           <option value="">Todas las acciones</option>
           <option value="LOGIN" ${state.filters.action === 'LOGIN' ? 'selected' : ''}>Login</option>
@@ -233,7 +274,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
           <option value="appointments" ${state.filters.module === 'appointments' ? 'selected' : ''}>Citas</option>
           <option value="clinical" ${state.filters.module === 'clinical' ? 'selected' : ''}>Historia Clínica</option>
         </select>
-        <button class="btn btn-outline btn-sm" id="btn-clear-filters">Limpiar</button>
+        <button class="btn btn-outline" id="btn-clear-filters" style="white-space: nowrap;">Limpiar</button>
       </div>
 
       <!-- Tabla -->
@@ -241,38 +282,43 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr style="background: var(--bg-light); text-align: left;">
-              <th style="padding: 0.875rem; font-weight: 600; color: var(--text);">Fecha/Hora</th>
-              <th style="padding: 0.875rem; font-weight: 600; color: var(--text);">Usuario</th>
-              <th style="padding: 0.875rem; font-weight: 600; color: var(--text);">Acción</th>
-              <th style="padding: 0.875rem; font-weight: 600; color: var(--text);">Módulo</th>
-              <th style="padding: 0.875rem; font-weight: 600; color: var(--text);">Descripción</th>
+              <th style="padding: 0.875rem;">Fecha/Hora</th>
+              <th style="padding: 0.875rem;">Usuario</th>
+              <th style="padding: 0.875rem;">Módulo</th>
+              <th style="padding: 0.875rem;">Acción</th>
+              <th style="padding: 0.875rem;">Descripción</th>
+              <th style="padding: 0.875rem; text-align: right;">Acciones</th>
             </tr>
           </thead>
           <tbody>
             ${logs.length ? logs.map(log => `
-              <tr style="border-bottom: 1px solid var(--border);" class="table-row-hover">
+              <tr style="border-bottom: 1px solid var(--border);">
                 <td style="padding: 0.875rem;">
                   <div style="font-size: 0.875rem;">${formatDateTime(log.timestamp)}</div>
-                  <div style="font-size: 0.75rem; color: var(--muted);">${timeAgo(log.timestamp)}</div>
                 </td>
                 <td style="padding: 0.875rem;">
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div class="avatar avatar-sm">${log.userName?.charAt(0) || '?'}</div>
-                    <div>
-                      <div style="font-weight: 500;">${log.userName || 'Desconocido'}</div>
-                      <div style="font-size: 0.75rem; color: var(--muted);">${log.userRole || ''}</div>
-                    </div>
-                  </div>
+                  <div style="font-weight: 500;">${log.userName}</div>
+                  <div style="font-size: 0.75rem; color: var(--muted);">${log.userRole}</div>
                 </td>
-                <td style="padding: 0.875rem;">${getActionBadge(log.action)}</td>
-                <td style="padding: 0.875rem; font-size: 0.875rem;">${getModuleBadge(log.module)}</td>
-                <td style="padding: 0.875rem; font-size: 0.875rem; max-width: 250px;">${log.description || '-'}</td>
+                <td style="padding: 0.875rem;">
+                  ${getModuleBadge(log.module)}
+                </td>
+                <td style="padding: 0.875rem;">
+                  ${getActionBadge(log.action)}
+                </td>
+                <td style="padding: 0.875rem;">
+                  <div style="font-size: 0.875rem; color: var(--muted);">${log.description}</div>
+                </td>
+                <td style="padding: 0.875rem; text-align: right;">
+                  <button class="btn btn-outline btn-sm btn-view-log" data-id="${log.id}">
+                    Ver detalles
+                  </button>
+                </td>
               </tr>
             `).join('') : `
               <tr>
-                <td colspan="5" style="padding: 3rem; text-align: center; color: var(--muted);">
-                  <div style="margin-bottom: 1rem;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
-                  <div>No hay registros de auditoría</div>
+                <td colspan="6" style="padding: 3rem; text-align: center; color: var(--muted);">
+                  No hay registros de auditoría
                 </td>
               </tr>
             `}
@@ -304,7 +350,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
       <div style="display: grid; gap: 1rem;">
         ${sessions.length ? sessions.map(session => `
-          <div style="background: white; border-radius: var(--radius); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--modal-border); border-left: 4px solid ${session.isActive ? 'var(--success)' : 'var(--muted)'};">
+          <div style="background: white; border-radius: var(--radius); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--modal-border); border-left: 4px solid ${session.isActive ? 'var(--success)' : 'var(--muted)'}; transition: all 0.2s;">
             <div style="display: flex; align-items: center; gap: 1rem;">
               <div class="avatar" style="background: var(--modal-header); color: white;">${session.userName?.charAt(0) || '?'}</div>
               <div>
@@ -324,7 +370,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
                 <div>Última: ${timeAgo(session.lastActivity)}</div>
               </div>
               ${session.userId !== user.id ? `
-                <button class="btn btn-sm btn-outline btn-terminate-session" data-id="${session.id}" style="border-color: var(--danger); color: var(--danger); margin-top: 0.25rem;">
+                <button class="btn btn-sm btn-outline btn-terminate-session" data-id="${session.id}" style="border-color: var(--danger); color: var(--danger); margin-top: 0.25rem; font-weight: 600;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Terminar Sesión
                 </button>
               ` : ''}
@@ -372,7 +418,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
                   <div style="font-size: 0.75rem; color: var(--muted);">${login.userRole}</div>
                 </td>
                 <td style="padding: 0.875rem;">
-                  ${login.action === 'login' ? '<span class="badge badge-success"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Ingreso</span>' : '<span class="badge badge-info"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Salida</span>'}
+                  ${login.action === 'login' ? '<span class="badge badge-success">Ingreso</span>' : '<span class="badge badge-info">Salida</span>'}
                 </td>
                 <td style="padding: 0.875rem;">
                   ${login.success ? '<span class="badge badge-success">✓ Exitoso</span>' : '<span class="badge badge-danger">✗ Fallido</span>'}
@@ -529,6 +575,13 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       showNotification('Políticas restauradas a valores predeterminados', 'info');
     }
 
+    // Ver detalles de log
+    if (e.target.classList.contains('btn-view-log')) {
+      const logId = e.target.dataset.id;
+      const log = state.auditLogs.find(l => l.id === logId);
+      if (log) showLogDetailsModal(log);
+    }
+
     // Terminar sesión
     if (e.target.classList.contains('btn-terminate-session')) {
       const sessionId = e.target.dataset.id;
@@ -643,6 +696,94 @@ export default function mountSecurity(root, { bus, store, user, role }) {
     };
     store.add('auditLogs', log);
     state.auditLogs = store.get('auditLogs');
+  }
+
+  // Renderizar detalles de log (JSON)
+  function renderLogDetails(details) {
+    if (!details || Object.keys(details).length === 0) {
+      return '<div style="color: #64748b; font-size: 0.875rem; font-style: italic;">Sin detalles adicionales</div>';
+    }
+
+    let entries = Object.entries(details);
+
+    return `
+      <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.75rem 1.5rem; align-items: baseline;">
+        ${entries.map(([key, value]) => `
+          <div style="font-weight: 700; color: #475569; font-size: 0.75rem; text-transform: uppercase; text-align: right;">${key}:</div>
+          <div style="font-size: 0.85rem; color: #1e293b; font-family: 'JetBrains Mono', monospace; background: #f8fafc; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0; word-break: break-all;">
+            ${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Mostrar modal de detalles de log
+  function showLogDetailsModal(log) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.75); display: flex; align-items: center;
+      justify-content: center; z-index: 5000; backdrop-filter: blur(8px);
+      padding: 1rem; animation: fadeIn 0.2s ease-out;
+    `;
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Detalles del Evento de Auditoría</h3>
+          <button class="close-modal" id="close-log-modal">&times;</button>
+        </div>
+        
+        <div class="modal-body" style="padding: 1.5rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Fecha y Hora</div>
+              <div style="font-weight: 500;">${formatDateTime(log.timestamp)}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Módulo</div>
+              <div>${getModuleBadge(log.module)}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Usuario</div>
+              <div style="font-weight: 500;">${log.userName} (${log.userRole})</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Acción</div>
+              <div>${getActionBadge(log.action)}</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem;">Descripción</div>
+            <div style="padding: 1rem; background: var(--bg-light); border-radius: 4px; border-left: 4px solid var(--accent);">${log.description}</div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem;">Detalles Técnicos</div>
+            <div style="background: #f1f5f9; padding: 1rem; border-radius: 4px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
+              ${renderLogDetails(log.details)}
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="close-log-btn">Cerrar</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeModal = () => {
+      modal.style.opacity = '0';
+      setTimeout(() => modal.remove(), 200);
+    };
+
+    modal.querySelector('#close-log-modal').addEventListener('click', closeModal);
+    modal.querySelector('#close-log-btn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   }
 
   // Mostrar notificación

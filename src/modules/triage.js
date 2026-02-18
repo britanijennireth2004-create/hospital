@@ -133,7 +133,22 @@ export default function mountTriage(root, { bus, store, user, role }) {
     // Actualizar cada 30 segundos
     const intervalId = setInterval(updateStats, 30000);
 
-    return { unsubscribePatients, unsubscribeTriage, intervalId };
+    return {
+      destroy: () => {
+        unsubscribePatients();
+        unsubscribeTriage();
+        clearInterval(intervalId);
+      }
+    };
+  }
+
+  // Debounce helper
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
   }
 
   // Cargar datos
@@ -510,7 +525,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
             </div>
           </div>
           
-          <div class="grid grid-4">
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
             <div class="form-group">
               <label class="form-label">Filtrar por estado</label>
               <select class="input" id="filter-status">
@@ -1498,12 +1513,15 @@ export default function mountTriage(root, { bus, store, user, role }) {
       });
     }
 
+    // Búsqueda en tiempo real con debounce
+    const debouncedFilter = debounce(() => {
+      state.filters.search = elements.filterSearch.value;
+      applyFilters();
+      updateUI();
+    }, 300);
+
     if (elements.filterSearch) {
-      elements.filterSearch.addEventListener('input', debounce(() => {
-        state.filters.search = elements.filterSearch.value;
-        applyFilters();
-        renderContent();
-      }, 300));
+      elements.filterSearch.addEventListener('input', debouncedFilter);
     }
 
     if (elements.btnSearch) {
@@ -3024,7 +3042,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
   }
 
   // Inicializar módulo
-  const { unsubscribePatients, unsubscribeTriage, intervalId } = init();
+  const moduleInstance = init();
 
   // Exponer funciones globales
   window.triageModule = {
@@ -3036,9 +3054,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     refresh: loadData,
 
     destroy() {
-      if (unsubscribePatients) unsubscribePatients();
-      if (unsubscribeTriage) unsubscribeTriage();
-      if (intervalId) clearInterval(intervalId);
+      if (moduleInstance && moduleInstance.destroy) moduleInstance.destroy();
 
       // Remover banner de emergencia si existe
       const emergencyBanner = document.querySelector('#emergency-banner');

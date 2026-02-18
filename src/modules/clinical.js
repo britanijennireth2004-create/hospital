@@ -134,11 +134,16 @@ export default function mountClinical(root, { bus, store, user, role }) {
     });
 
     // También escuchar cambios en pacientes para actualizar filtros
-    store.subscribe('patients', () => {
+    const unsubscribePatients = store.subscribe('patients', () => {
       updatePatientSelects();
     });
 
-    return unsubscribe;
+    return {
+      destroy: () => {
+        unsubscribe();
+        unsubscribePatients();
+      }
+    };
   }
 
   // ===== FUNCIONES PRINCIPALES =====
@@ -150,7 +155,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
     // Filtrar por rol y permisos
     if (role === 'doctor' && user?.doctorId) {
       // Los doctores ven todos los registros
-    } 
+    }
     else if (role === 'nurse') {
       // Las enfermeras ven TODOS los registros (solo lectura)
       // No se aplica filtro adicional
@@ -268,7 +273,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
           <div class="flex justify-between items-center mb-3">
             <h3 style="margin: 0;">Registros Clínicos</h3>
             <div class="flex items-center gap-2">
-              <div class="relative" style="width: 300px;">
+              <div class="relative" style="flex: 1; max-width: 500px;">
                 <input 
                   type="text" 
                   class="input" 
@@ -288,7 +293,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
           
           <!-- Filtros avanzados (colapsable) -->
           <div id="advanced-filters" class="hidden">
-            <div class="grid grid-4 gap-3 mt-3">
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem;">
               <div class="form-group">
                 <label class="form-label">Paciente</label>
                 <select class="input" id="filter-patient">
@@ -1885,13 +1890,13 @@ export default function mountClinical(root, { bus, store, user, role }) {
   }
 
   // ===== INICIALIZACIÓN Y DESTRUCCIÓN =====
-  const unsubscribe = init();
+  const moduleInstance = init();
 
   return {
     refresh: loadClinicalRecords,
 
     destroy() {
-      if (unsubscribe) unsubscribe();
+      if (moduleInstance && moduleInstance.destroy) moduleInstance.destroy();
       // También limpiar cualquier modal abierto
       const detailModal = document.querySelector('#view-clinical-record-modal');
       if (detailModal && detailModal.parentNode) {

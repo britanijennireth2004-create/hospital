@@ -1,3 +1,5 @@
+import { Logger } from '../utils/logger.js';
+
 /**
  * Módulo de Gestión de Pacientes - CRUD Completo
  */
@@ -82,7 +84,19 @@ export default function mountPatients(root, { bus, store, user, role }) {
       loadData();
     });
 
-    return unsubscribe;
+    return {
+      destroy: () => {
+        unsubscribe();
+      }
+    };
+  }
+
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
   }
 
   // Cargar datos
@@ -227,7 +241,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
           </div>
           
-          <div class="grid grid-4">
+          <div class="grid" style="grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1rem;">
             <!-- Búsqueda -->
             <div class="form-group">
               <label class="form-label">Buscar</label>
@@ -378,6 +392,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       </div>
                     </div>
                     
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                      <div class="form-group">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">LUGAR DE NACIMIENTO</label>
+                        <input type="text" class="input" id="form-birthplace" placeholder="Ciudad, Estado/Provincia" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NACIONALIDAD</label>
+                        <input type="text" class="input" id="form-nationality" placeholder="Ej: Venezolana" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      </div>
+                    </div>
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                       <div class="form-group">
                         <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO *</label>
@@ -393,7 +418,21 @@ export default function mountPatients(root, { bus, store, user, role }) {
                           <option value="O">Otro</option>
                         </select>
                       </div>
-                      
+
+                      <div class="form-group">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO CIVIL</label>
+                        <select class="input" id="form-civil-status" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                          <option value="">Seleccionar</option>
+                          <option value="Soltero/a">Soltero/a</option>
+                          <option value="Casado/a">Casado/a</option>
+                          <option value="Divorciado/a">Divorciado/a</option>
+                          <option value="Viudo/a">Viudo/a</option>
+                          <option value="Concubinato">Concubinato</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                       <div class="form-group">
                         <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GRUPO SANGUÍNEO</label>
                         <select class="input" id="form-blood-type" style="border-color: var(--modal-border); background: var(--modal-bg);">
@@ -407,6 +446,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
                           <option value="AB+">AB+</option>
                           <option value="AB-">AB-</option>
                         </select>
+                      </div>
+
+                      <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 4px;">
+                          <input type="checkbox" id="form-consent" style="width: 18px; height: 18px;">
+                          <span style="font-size: 0.85rem; font-weight: 600; color: var(--modal-section-forest);">CONSENTIMIENTO INFORMADO FIRMADO</span>
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -511,6 +557,22 @@ export default function mountPatients(root, { bus, store, user, role }) {
                         </div>
                       </div>
                     </div>
+
+                    <!-- Credenciales de Acceso -->
+                    <div style="background: #eff6ff; padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid #bfdbfe;">
+                      <div style="font-weight: 700; color: #1e40af; font-size: 0.85rem; margin-bottom: 0.75rem;">${icons.settings || ''} CREDENCIALES DE ACCESO</div>
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Usuario (Email por defecto)</label>
+                          <input type="text" class="input" id="form-username" placeholder="Nombre de usuario" style="border-color: var(--modal-border);">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Contraseña *</label>
+                          <input type="password" class="input" id="form-password" placeholder="Mínimo 6 caracteres" style="border-color: var(--modal-border);">
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -591,6 +653,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
       formBirthdate: root.querySelector('#form-birthdate'),
       formGender: root.querySelector('#form-gender'),
       formBloodType: root.querySelector('#form-blood-type'),
+      formBirthPlace: root.querySelector('#form-birthplace'),
+      formNationality: root.querySelector('#form-nationality'),
+      formCivilStatus: root.querySelector('#form-civil-status'),
+      formConsent: root.querySelector('#form-consent'),
       allergiesContainer: root.querySelector('#allergies-container'),
       formChronicDiseases: root.querySelector('#form-chronic-diseases'),
       formRegularMeds: root.querySelector('#form-regular-meds'),
@@ -607,6 +673,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
       formInsuranceCompany: root.querySelector('#form-insurance-company'),
       formInsuranceNumber: root.querySelector('#form-insurance-number'),
       formStatus: root.querySelector('#form-status'),
+      formUsername: root.querySelector('#form-username'),
+      formPassword: root.querySelector('#form-password'),
       btnAddAllergy: root.querySelector('#btn-add-allergy'),
       btnCloseModal: root.querySelector('#btn-close-modal'),
       btnCancel: root.querySelector('#btn-cancel'),
@@ -671,7 +739,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     `;
   }
 
-  // Renderizar fila de paciente - SIN BOTÓN DE HISTORIAL
+  // Renderizar fila de paciente - CON BOTÓN DE HISTORIAL
   function renderPatientRow(patient) {
     const age = calculateAge(patient.birthDate);
     const lastVisit = getLastVisit(patient.id);
@@ -724,6 +792,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
             <button class="btn btn-outline btn-sm" data-action="view" data-id="${patient.id}">
               ${icons.view} Ver
             </button>
+            <button class="btn btn-outline btn-sm" data-action="history" data-id="${patient.id}" style="color: var(--modal-section-gold);">
+              ${icons.clinical} Historial
+            </button>
             ${role === 'admin' || role === 'doctor' ? `
               <button class="btn btn-outline btn-sm" data-action="edit" data-id="${patient.id}">
                 ${icons.edit} Editar
@@ -735,7 +806,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     `;
   }
 
-  // Renderizar vista de tarjetas - SIN BOTÓN DE HISTORIAL
+  // Renderizar vista de tarjetas - CON BOTÓN DE HISTORIAL
   function renderCardsView() {
     elements.contentContainer.innerHTML = `
       <div class="grid grid-3">
@@ -755,7 +826,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     });
   }
 
-  // Renderizar tarjeta de paciente - SIN BOTÓN DE HISTORIAL
+  // Renderizar tarjeta de paciente - CON BOTÓN DE HISTORIAL
   function renderPatientCard(patient) {
     const age = calculateAge(patient.birthDate);
     const clinicalCount = state.clinicalRecords.filter(cr => cr.patientId === patient.id).length;
@@ -839,6 +910,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
           <div class="card-actions flex gap-2">
             <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="view" data-id="${patient.id}">
               ${icons.view} Ver
+            </button>
+            <button class="btn btn-outline btn-sm" style="flex: 1; color: var(--modal-section-gold);" data-action="history" data-id="${patient.id}">
+              ${icons.clinical} Historial
             </button>
             ${role === 'admin' || role === 'doctor' ? `
               <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="edit" data-id="${patient.id}">
@@ -1027,31 +1101,50 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Configurar event listeners
   function setupEventListeners() {
+    // Debounced search
+    const debouncedFilters = debounce(() => {
+      state.currentPage = 1;
+      applyFilters();
+      renderContent();
+      renderStats();
+    }, 300);
+
     if (elements.filterSearch) {
       elements.filterSearch.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') applyFilterChanges();
       });
+      elements.filterSearch.addEventListener('input', debouncedFilters);
     }
 
     if (elements.btnSearch) {
       elements.btnSearch.addEventListener('click', applyFilterChanges);
     }
 
-    if (elements.filterGender) {
-      elements.filterGender.addEventListener('change', applyFilterChanges);
-    }
-
-    if (elements.filterStatus) {
-      elements.filterStatus.addEventListener('change', applyFilterChanges);
-    }
-
-    if (elements.sortBy) {
-      elements.sortBy.addEventListener('change', () => {
-        state.sortBy = elements.sortBy.value;
+    // Apply filters on change for other filter elements
+    [elements.filterGender, elements.filterStatus, elements.sortBy,
+    elements.filterAge, elements.filterAllergies, elements.filterBlood, elements.itemsPerPage].forEach(el => {
+      if (el) el.addEventListener('change', () => {
+        state.filters = {
+          search: elements.filterSearch?.value || '',
+          gender: elements.filterGender?.value || '',
+          status: elements.filterStatus?.value || 'active',
+          ageRange: elements.filterAge?.value || '',
+          hasAllergies: elements.filterAllergies?.value || '',
+          bloodType: elements.filterBlood?.value || ''
+        };
+        if (el === elements.sortBy) {
+          state.sortBy = elements.sortBy.value;
+        }
+        if (el === elements.itemsPerPage) {
+          state.itemsPerPage = parseInt(elements.itemsPerPage.value);
+          updatePagination();
+        }
+        state.currentPage = 1;
         applyFilters();
         renderContent();
+        renderStats();
       });
-    }
+    });
 
     if (elements.btnResetFilters) {
       elements.btnResetFilters.addEventListener('click', resetFilters);
@@ -1065,13 +1158,38 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.btnToggleAdvanced.addEventListener('click', toggleAdvancedFilters);
     }
 
-    if (elements.filterAge) {
-      elements.filterAge.addEventListener('change', applyFilterChanges);
+    if (elements.btnToggleAdvanced) { // Duplicate check for button, logic for icon/text update
+      // Assuming logic is handled in toggleAdvancedFilters
     }
 
-    if (elements.filterAllergies) {
-      elements.filterAllergies.addEventListener('change', applyFilterChanges);
+    // ... Any other listeners that were cut off or misplaced
+
+    // Pagination controls
+    if (elements.paginationControls) {
+      // Handled in renderPagination
     }
+
+    // Modal controls
+    if (elements.btnNewPatient) elements.btnNewPatient.addEventListener('click', () => openModal());
+    if (elements.btnCloseModal) elements.btnCloseModal.addEventListener('click', closeModal);
+    if (elements.btnCancel) elements.btnCancel.addEventListener('click', closeModal);
+    if (elements.btnSave) elements.btnSave.addEventListener('click', savePatient);
+
+    if (elements.btnAddAllergy) {
+      elements.btnAddAllergy.addEventListener('click', () => addAllergyField());
+    }
+
+    // Tab switching
+    elements.tabBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        switchTab(e.target.dataset.tab);
+      });
+    });
+
+    // Clinical History Modal
+    if (elements.btnCloseHistory) elements.btnCloseHistory.addEventListener('click', closeClinicalHistoryModal);
+    if (elements.btnCloseHistoryFooter) elements.btnCloseHistoryFooter.addEventListener('click', closeClinicalHistoryModal);
+
 
     if (elements.filterBlood) {
       elements.filterBlood.addEventListener('change', applyFilterChanges);
@@ -1177,7 +1295,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
       case 'view':
         viewPatientDetails(patient);
         break;
-      // El action 'history' ha sido eliminado
+      case 'history':
+        viewClinicalHistory(patient);
+        break;
     }
   }
 
@@ -1335,6 +1455,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.formBirthdate) elements.formBirthdate.value = patient.birthDate || '';
     if (elements.formGender) elements.formGender.value = patient.gender || '';
     if (elements.formBloodType) elements.formBloodType.value = patient.bloodType || '';
+    if (elements.formBirthPlace) elements.formBirthPlace.value = patient.birthPlace || '';
+    if (elements.formNationality) elements.formNationality.value = patient.nationality || '';
+    if (elements.formCivilStatus) elements.formCivilStatus.value = patient.civilStatus || '';
+    if (elements.formConsent) elements.formConsent.checked = patient.consent?.granted || false;
 
     if (elements.allergiesContainer && patient.allergies) {
       elements.allergiesContainer.innerHTML = '';
@@ -1387,10 +1511,37 @@ export default function mountPatients(root, { bus, store, user, role }) {
     try {
       if (state.editingId) {
         await store.update('patients', state.editingId, formData);
+        Logger.log(store, user, {
+          action: Logger.Actions.UPDATE,
+          module: Logger.Modules.PATIENTS,
+          description: `Paciente actualizado: ${formData.name}`,
+          details: { patientId: state.editingId, ...formData }
+        });
         showNotification('Paciente actualizado correctamente', 'success');
       } else {
-        await store.add('patients', formData);
-        showNotification('Paciente creado correctamente', 'success');
+        const result = await store.add('patients', formData);
+
+        // Crear usuario asociado
+        const username = (elements.formUsername && elements.formUsername.value) || formData.email.split('@')[0] || `paciente_${result.id.split('_').pop()}`;
+        const password = (elements.formPassword && elements.formPassword.value) || 'demo123';
+
+        store.add('users', {
+          username,
+          password,
+          name: formData.name,
+          role: 'patient',
+          email: formData.email,
+          patientId: result.id,
+          isActive: true
+        });
+
+        Logger.log(store, user, {
+          action: Logger.Actions.CREATE,
+          module: Logger.Modules.PATIENTS,
+          description: `Paciente creado con acceso: ${formData.name}`,
+          details: { patientId: result.id, ...formData }
+        });
+        showNotification('Paciente y usuario creados correctamente', 'success');
       }
 
       closeModal();
@@ -1469,6 +1620,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
       birthDate: elements.formBirthdate?.value || '',
       gender: elements.formGender?.value || '',
       bloodType: elements.formBloodType?.value || null,
+      birthPlace: elements.formBirthPlace?.value || '',
+      nationality: elements.formNationality?.value || '',
+      civilStatus: elements.formCivilStatus?.value || '',
+      consent: {
+        granted: elements.formConsent?.checked || false,
+        date: elements.formConsent?.checked ? (state.editingId ? (store.find('patients', state.editingId)?.consent?.date || Date.now()) : Date.now()) : null,
+        scope: 'Tratamiento de datos personales y sensibles según normativa vigente'
+      },
       allergies: allergies,
       chronicDiseases: elements.formChronicDiseases?.value || '',
       regularMeds: elements.formRegularMeds?.value || '',
@@ -1531,7 +1690,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </button>
         </div>
         
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column;">
           <!-- Cabecera de Identidad -->
           <div style="padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 1.5rem; background: #f8fafc;">
             <div style="width: 70px; height: 70px; background: var(--card-patient); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--modal-header); font-size: 2rem; font-weight: 800; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -1547,26 +1706,26 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
           </div>
 
-          <!-- Navegación de Pestañas -->
-          <div style="display: flex; background: #edeff2; padding: 0 1.5rem;">
-            <button type="button" class="tab-btn active" data-tab="info" style="padding: 1rem 1.5rem; border: none; background: white; font-weight: 700; color: var(--modal-header); cursor: pointer; border-bottom: 3px solid var(--modal-header);">
+          <!-- Franja de Títulos (Antiguos Tabs) -->
+          <div style="display: flex; background: #edeff2; padding: 1rem 1.5rem; justify-content: space-around; border-bottom: 1px solid #e2e8f0;">
+            <div style="font-weight: 700; color: var(--modal-header); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
               ${icons.user} INFORMACIÓN
-            </button>
-            <button type="button" class="tab-btn" data-tab="medical" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">
+            </div>
+            <div style="font-weight: 700; color: #666; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
               ${icons.diagnosis} MÉDICO
-            </button>
-            <button type="button" class="tab-btn" data-tab="appointments" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">
+            </div>
+            <div style="font-weight: 700; color: #666; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
               ${icons.calendar} CITAS
-            </button>
-            <button type="button" class="tab-btn" data-tab="records" style="padding: 1rem 1.5rem; border: none; background: transparent; font-weight: 600; color: #666; cursor: pointer;">
+            </div>
+            <div style="font-weight: 700; color: #666; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
               ${icons.clinical} REGISTROS
-            </button>
+            </div>
           </div>
           
-          <!-- Contenido de pestañas -->
-          <div id="view-tab-content" style="padding: 1.5rem; overflow-y: auto; flex: 1;">
-            <!-- Pestaña 1: Información -->
-            <div class="tab-pane active" data-tab="info">
+          <!-- Contenido de secciones (stacked) -->
+          <div id="view-content-wrapper" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Sección 1: Información -->
+            <div class="patient-section" data-section="info">
               <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
                 <div style="background: var(--card-patient); border-radius: 8px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.05);">
                   <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">
@@ -1576,17 +1735,36 @@ export default function mountPatients(root, { bus, store, user, role }) {
                     <div>
                       <div style="font-weight: 700; color: #666; font-size: 0.7rem;">NACIMIENTO</div>
                       <div style="font-weight: 600;">${patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-ES') : 'N/A'}</div>
+                      <div style="font-size: 0.75rem; color: #888;">${patient.birthPlace || ''}</div>
                     </div>
                     <div>
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">GÉNERO</div>
-                      <div style="font-weight: 600;">${patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Femenino' : 'Otro'}</div>
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">NACIONALIDAD</div>
+                      <div style="font-weight: 600;">${patient.nationality || 'No especificada'}</div>
                     </div>
                     <div>
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">SANGRE</div>
-                      <div style="font-weight: 600;">${patient.bloodType || 'N/A'}</div>
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">GÉNERO / E. CIVIL</div>
+                      <div style="font-weight: 600;">
+                        ${patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Femenino' : 'Otro'}
+                        ${patient.civilStatus ? ` • ${patient.civilStatus}` : ''}
+                      </div>
                     </div>
                     <div>
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">ESTADO</div>
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">GRUPO SANGUÍNEO</div>
+                      <div style="font-weight: 600;">${patient.bloodType || 'Desconocido'}</div>
+                    </div>
+                    <div style="grid-column: span 2; margin-top: 0.5rem; padding: 0.75rem; background: ${patient.consent?.granted ? '#f0fff4' : '#fff5f5'}; border: 1px solid ${patient.consent?.granted ? '#c6f6d5' : '#feb2b2'}; border-radius: 4px;">
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.25rem;">${patient.consent?.granted ? icons.successCheck : icons.cancel}</span>
+                        <div>
+                          <div style="font-weight: 700; font-size: 0.75rem; color: ${patient.consent?.granted ? 'var(--modal-section-forest)' : '#c53030'};">CONSENTIMIENTO INFORMADO</div>
+                          <div style="font-size: 0.75rem; color: ${patient.consent?.granted ? '#2f855a' : '#9b2c2c'};">
+                            ${patient.consent?.granted ? `Otorgado el ${new Date(patient.consent.date).toLocaleDateString('es-ES')}` : 'Sin consentimiento firmado'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="margin-top: 0.5rem;">
+                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">ESTADO FICHA</div>
                       <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}" style="width: fit-content; font-size: 0.7rem;">
                         ${patient.isActive ? icons.successCheck : icons.cancel} ${patient.isActive ? 'ACTIVO' : 'INACTIVO'}
                       </span>
@@ -1621,8 +1799,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </div>
             </div>
             
-            <!-- Pestaña 2: Historial Médico -->
-            <div class="tab-pane" data-tab="medical">
+            <!-- Sección 2: Historial Médico -->
+            <div class="patient-section" data-section="medical" style="border-top: 1px solid #eee; padding-top: 2rem;">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div>
                    <div style="font-size: 0.85rem; font-weight: 700; color: #c53030; margin-bottom: 1rem;">${icons.allergy} ALERGIAS Y CONTRAINDICACIONES</div>
@@ -1651,8 +1829,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </div>
             </div>
             
-            <!-- Pestaña 3: Citas -->
-            <div class="tab-pane" data-tab="appointments">
+            <!-- Sección 3: Citas -->
+            <div class="patient-section" data-section="appointments" style="border-top: 1px solid #eee; padding-top: 2rem;">
+              <h4 style="color: #666; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">${icons.calendar} HISTORIAL DE CITAS</h4>
               ${appointments.length > 0 ? `
                 <div class="table-responsive">
                   <table class="table">
@@ -1694,8 +1873,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
               ` : '<div style="text-align: center; padding: 2rem; color: #666;">No hay citas registradas</div>'}
             </div>
             
-            <!-- Pestaña 4: Registros -->
-            <div class="tab-pane" data-tab="records">
+            <!-- Sección 4: Registros -->
+            <div class="patient-section" data-section="records" style="border-top: 1px solid #eee; padding-top: 2rem;">
+              <h4 style="color: #666; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">${icons.clinical} REGISTROS CLÍNICOS</h4>
               ${clinicalRecords.length > 0 ? `
                 <div class="table-responsive">
                   <table class="table">
@@ -1788,22 +1968,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    const tabBtns = modalContainer.querySelectorAll('.tab-btn');
-    const tabPanes = modalContainer.querySelectorAll('.tab-pane');
 
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
-        tabBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        tabPanes.forEach(pane => {
-          pane.classList.remove('active');
-          if (pane.dataset.tab === tab) {
-            pane.classList.add('active');
-          }
-        });
-      });
-    });
 
     modalContainer.addEventListener('click', (e) => {
       if (e.target === modalContainer) closeModal();
@@ -1828,6 +1993,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
     }
 
     renderClinicalHistory();
+  }
+
+  // Cerrar historial clínico
+  function closeClinicalHistoryModal() {
+    state.showClinicalHistory = false;
+    state.selectedPatient = null;
+
+    if (elements.clinicalHistoryModal) {
+      elements.clinicalHistoryModal.classList.add('hidden');
+    }
   }
 
   // Renderizar historial clínico
@@ -2062,14 +2237,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
   }
 
   // Inicializar módulo
-  const unsubscribe = init();
+  const moduleInstance = init();
 
   window.viewFullRecord = viewClinicalRecord;
 
   return {
     refresh: loadData,
     destroy() {
-      if (unsubscribe) unsubscribe();
+      if (moduleInstance && moduleInstance.destroy) moduleInstance.destroy();
       delete window.viewFullRecord;
     }
   };

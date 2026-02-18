@@ -71,12 +71,25 @@ export async function createStore(bus) {
         dni: '12345678A',
         name: 'María Gómez',
         birthDate: '1985-03-12',
+        birthPlace: 'Maturín, Monagas',
+        nationality: 'Venezolana',
+        civilStatus: 'Soltera',
         gender: 'F',
         phone: '555-0101',
         email: 'maria@email.com',
         address: 'Calle Principal 123',
         bloodType: 'O+',
         allergies: [],
+        emergencyContact: {
+          name: 'Pedro Gómez',
+          phone: '555-0909',
+          relation: 'Padre'
+        },
+        consent: {
+          granted: true,
+          date: Date.now() - 30 * 24 * 60 * 60 * 1000,
+          scope: 'Tratamiento de datos sensibles y clínicos'
+        },
         isActive: true,
         createdAt: Date.now()
       },
@@ -85,12 +98,25 @@ export async function createStore(bus) {
         dni: '87654321B',
         name: 'Juan López',
         birthDate: '1990-11-02',
+        birthPlace: 'Caracas, DC',
+        nationality: 'Venezolana',
+        civilStatus: 'Casado',
         gender: 'M',
         phone: '555-0102',
         email: 'juan@email.com',
         address: 'Avenida Central 456',
         bloodType: 'A+',
         allergies: ['Penicilina'],
+        emergencyContact: {
+          name: 'Laura de López',
+          phone: '555-0808',
+          relation: 'Esposa'
+        },
+        consent: {
+          granted: true,
+          date: Date.now() - 60 * 24 * 60 * 60 * 1000,
+          scope: 'Tratamiento de datos sensibles y clínicos'
+        },
         isActive: true,
         createdAt: Date.now()
       }
@@ -101,11 +127,18 @@ export async function createStore(bus) {
         id: 'd_1',
         name: 'Dra. Ana Ruiz',
         specialty: 'Medicina General',
+        subspecialties: ['Nutrición Clínica'],
+        healthSystemNumber: 'MPPS-45678',
+        hireDate: '2020-05-15',
+        contractType: 'Fijo',
         areaId: 'area_1',
         license: 'MG-12345',
         email: 'ana.ruiz@hospital.com',
         phone: '555-0201',
         schedule: 'Lun-Vie 8:00-16:00',
+        workStartHour: 8,
+        workEndHour: 16,
+        dailyCapacity: 20,
         isActive: true,
         createdAt: Date.now()
       },
@@ -113,23 +146,18 @@ export async function createStore(bus) {
         id: 'd_2',
         name: 'Dr. Luis Pérez',
         specialty: 'Cardiología',
+        subspecialties: ['Arritmias'],
+        healthSystemNumber: 'MPPS-98765',
+        hireDate: '2018-03-10',
+        contractType: 'Fijo',
         areaId: 'area_3',
         license: 'C-67890',
         email: 'luis.perez@hospital.com',
         phone: '555-0202',
         schedule: 'Mar-Jue 10:00-18:00',
-        isActive: true,
-        createdAt: Date.now()
-      },
-      {
-        id: 'd_3',
-        name: 'Dra. Laura Sánchez',
-        specialty: 'Pediatría',
-        areaId: 'area_2',
-        license: 'P-34567',
-        email: 'laura.sanchez@hospital.com',
-        phone: '555-0203',
-        schedule: 'Lun-Mie-Vie 9:00-17:00',
+        workStartHour: 10,
+        workEndHour: 18,
+        dailyCapacity: 15,
         isActive: true,
         createdAt: Date.now()
       }
@@ -166,17 +194,58 @@ export async function createStore(bus) {
       }
     ],
 
+    nurses: [
+      {
+        id: 'n_1',
+        name: 'Enf. Elena Soler',
+        email: 'elena.soler@hospital.com',
+        phone: '555-0301',
+        areaId: 'area_1',
+        shift: 'Mañana',
+        isActive: true,
+        createdAt: Date.now()
+      },
+      {
+        id: 'n_2',
+        name: 'Enf. Roberto Díaz',
+        email: 'roberto.diaz@hospital.com',
+        phone: '555-0302',
+        areaId: 'area_3',
+        shift: 'Tarde',
+        isActive: true,
+        createdAt: Date.now()
+      }
+    ],
+
+    receptionists: [
+      {
+        id: 'r_1',
+        name: 'Recepcionista Carla Román',
+        email: 'carla.recepcion@hospital.com',
+        phone: '555-0401',
+        areaId: 'area_1',
+        title: 'Recepcionista Principal',
+        isActive: true,
+        createdAt: Date.now()
+      }
+    ],
+
     appointments: [
       {
         id: 'apt_1',
         patientId: 'p_1',
         doctorId: 'd_1',
         areaId: 'area_1',
-        dateTime: Date.now() + 2 * 24 * 60 * 60 * 1000, // 2 días en el futuro
+        dateTime: Date.now() + 2 * 24 * 60 * 60 * 1000,
         duration: 30,
         status: 'scheduled',
+        priority: 'rutina', // rutina, urgencia, control, especial
+        type: 'control', // primera_vez, control, procedimiento
         reason: 'Consulta general',
         notes: '',
+        arrivalDateTime: null,
+        startDateTime: null,
+        endDateTime: null,
         createdAt: Date.now(),
         createdBy: 'admin_1'
       },
@@ -185,26 +254,18 @@ export async function createStore(bus) {
         patientId: 'p_2',
         doctorId: 'd_2',
         areaId: 'area_3',
-        dateTime: Date.now() + 6 * 24 * 60 * 60 * 1000, // 6 días en el futuro
+        dateTime: Date.now() + 6 * 24 * 60 * 60 * 1000,
         duration: 45,
         status: 'scheduled',
+        priority: 'urgencia',
+        type: 'primera_vez',
         reason: 'Dolor en el pecho',
         notes: 'Requiere electrocardiograma',
+        arrivalDateTime: null,
+        startDateTime: null,
+        endDateTime: null,
         createdAt: Date.now(),
         createdBy: 'patient_2'
-      },
-      {
-        id: 'apt_3',
-        patientId: 'p_1',
-        doctorId: 'd_3',
-        areaId: 'area_2',
-        dateTime: Date.now() - 3 * 24 * 60 * 60 * 1000, // 3 días en el pasado
-        duration: 30,
-        status: 'completed',
-        reason: 'Control pediátrico',
-        notes: 'Vacuna anual aplicada',
-        createdAt: Date.now() - 10 * 24 * 60 * 60 * 1000,
-        createdBy: 'patient_1'
       }
     ],
 
@@ -233,160 +294,64 @@ export async function createStore(bus) {
             dosage: '500mg',
             frequency: 'Cada 8 horas',
             duration: '3 días'
-          },
-          {
-            medication: 'Ibuprofeno',
-            dosage: '400mg',
-            frequency: 'Cada 12 horas',
-            duration: '2 días'
           }
         ],
-        notes: 'Paciente alérgico a penicilina. Se recomienda evitar cambios bruscos de temperatura.',
-        followUp: Date.now() + 7 * 24 * 60 * 60 * 1000,
-        recommendations: 'Acudir a urgencias si fiebre persiste más de 72 horas o dificultad respiratoria',
+        notes: 'Paciente alérgico a penicilina.',
         status: 'finalized',
         createdAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
         createdBy: 'doctor_1'
-      },
-      {
-        id: 'cr_2',
-        patientId: 'p_2',
-        doctorId: 'd_2',
-        date: Date.now() - 10 * 24 * 60 * 60 * 1000,
-        type: 'emergency',
-        vitalSigns: {
-          bloodPressure: '140/90',
-          heartRate: 95,
-          temperature: 37.2,
-          spo2: 96,
-          weight: 78,
-          height: 175
-        },
-        symptoms: 'Dolor precordial opresivo de 30 minutos de evolución, irradiado a brazo izquierdo',
-        diagnosis: 'Síndrome coronario agudo. Derivado a unidad coronaria',
-        treatment: 'Monitorización continua, oxigenoterapia, analgesia, antiagregación plaquetaria',
-        prescriptions: [
-          {
-            medication: 'Ácido Acetilsalicílico',
-            dosage: '300mg',
-            frequency: 'Dosis única',
-            duration: '1 dosis'
-          },
-          {
-            medication: 'Clopidogrel',
-            dosage: '300mg',
-            frequency: 'Dosis de carga',
-            duration: '1 dosis'
-          }
-        ],
-        notes: 'Paciente con antecedentes de HTA y tabaquismo. ECG con elevación ST en cara anterior. Transportado en ambulancia medicalizada.',
-        status: 'finalized',
-        createdAt: Date.now() - 10 * 24 * 60 * 60 * 1000,
-        createdBy: 'doctor_2'
       }
     ],
-
-    // Añadir a la sección defaultData en store.js:
 
     triage: [
       {
         id: 'triage_1',
         patientId: 'p_1',
         priority: 'orange',
-        symptoms: 'Dolor torácico intenso con irradiación al brazo izquierdo, náuseas, diaforesis',
-        observations: 'Paciente con antecedentes de HTA y tabaquismo. ECG solicitado.',
-        vitalSigns: {
-          bloodPressure: '150/95',
-          heartRate: 110,
-          temperature: 37.2,
-          spo2: 94,
-          respiratoryRate: 22,
-          painLevel: 9
-        },
+        symptoms: 'Dolor torácico intenso',
         status: 'in_progress',
         triagedBy: 'doctor_1',
         triagedByName: 'Dra. Ana Ruiz',
-        createdAt: Date.now() - 15 * 60 * 1000, // 15 minutos atrás
-        startedAt: Date.now() - 5 * 60 * 1000   // 5 minutos atrás
-      },
-      {
-        id: 'triage_2',
-        patientId: 'p_2',
-        priority: 'yellow',
-        symptoms: 'Fractura expuesta en pierna derecha, dolor intenso, deformidad visible',
-        observations: 'Accidente de tránsito. Estable hemodinámicamente.',
-        vitalSigns: {
-          bloodPressure: '130/85',
-          heartRate: 95,
-          temperature: 36.8,
-          spo2: 97,
-          respiratoryRate: 18,
-          painLevel: 8
-        },
-        status: 'waiting',
-        triagedBy: 'doctor_2',
-        triagedByName: 'Dr. Luis Pérez',
-        createdAt: Date.now() - 30 * 60 * 1000  // 30 minutos atrás
+        createdAt: Date.now() - 15 * 60 * 1000
       }
     ],
 
-    // Colecciones vacías para funcionalidades futuras
-    labResults: [],
-    messages: [],
+    // Gestión de Recursos Críticos
+    consultorios: [
+      {
+        id: 'con_1',
+        name: 'Consultorio 101',
+        area: 'Consulta Externa',
+        status: 'available',
+        floor: '1',
+        location: 'Ala Norte, Pasillo 1',
+        capacity: 1,
+        equipment: 'Camilla, Negatoscopio, Tensiómetro',
+        managerId: 'admin_1'
+      },
+      {
+        id: 'con_2',
+        name: 'Consultorio 102',
+        area: 'Consulta Externa',
+        status: 'available',
+        floor: '1',
+        location: 'Ala Norte, Pasillo 1',
+        capacity: 1,
+        equipment: 'Camilla, Escritorio médico',
+        managerId: 'admin_1'
+      }
+    ],
+    equiposMedicos: [
+      { id: 'eq_1', name: 'Rayos X Móvil', status: 'available', condition: 'good', lastMaintenance: '2024-01-15' },
+      { id: 'eq_2', name: 'Ecógrafo 4D', status: 'maintenance', condition: 'fair', lastMaintenance: '2023-11-20' }
+    ],
+    suministros: [
+      { id: 'sum_1', name: 'Oxígeno (Tanque)', stock: 15, unit: 'unidades', minStock: 5, category: 'Gases Medicinales' }
+    ],
 
     // ===== MÓDULO DE SEGURIDAD =====
-    auditLogs: [
-      {
-        id: 'audit_1',
-        userId: 'admin_1',
-        userName: 'Administrador',
-        userRole: 'admin',
-        action: 'LOGIN',
-        module: 'auth',
-        description: 'Inicio de sesión exitoso',
-        details: { ip: '192.168.1.100', browser: 'Chrome' },
-        timestamp: Date.now() - 2 * 60 * 60 * 1000
-      },
-      {
-        id: 'audit_2',
-        userId: 'doctor_1',
-        userName: 'Dra. Ana Ruiz',
-        userRole: 'doctor',
-        action: 'CREATE',
-        module: 'appointments',
-        description: 'Cita médica creada',
-        details: { appointmentId: 'apt_1', patientName: 'María Gómez' },
-        timestamp: Date.now() - 1 * 60 * 60 * 1000
-      },
-      {
-        id: 'audit_3',
-        userId: 'admin_1',
-        userName: 'Administrador',
-        userRole: 'admin',
-        action: 'UPDATE',
-        module: 'patients',
-        description: 'Datos de paciente actualizados',
-        details: { patientId: 'p_1', fields: ['phone', 'address'] },
-        timestamp: Date.now() - 30 * 60 * 1000
-      }
-    ],
-
-    sessions: [
-      {
-        id: 'session_1',
-        userId: 'admin_1',
-        userName: 'Administrador',
-        userRole: 'admin',
-        startTime: Date.now(),
-        lastActivity: Date.now(),
-        expiresAt: Date.now() + 8 * 60 * 60 * 1000,
-        ipAddress: '192.168.1.100',
-        browser: 'Chrome 120',
-        device: 'Windows PC',
-        isActive: true
-      }
-    ],
-
+    auditLogs: [],
+    sessions: [],
     passwordPolicies: {
       minLength: 8,
       requireUppercase: true,
@@ -397,43 +362,32 @@ export async function createStore(bus) {
       preventReuse: 3,
       sessionTimeoutMinutes: 480
     },
+    loginHistory: [],
 
-    loginHistory: [
+    // Personal de Enfermería
+    nurses: [
       {
-        id: 'login_1',
-        userId: 'admin_1',
-        userName: 'Administrador',
-        userRole: 'admin',
-        action: 'login',
-        success: true,
-        ipAddress: '192.168.1.100',
-        browser: 'Chrome 120',
-        device: 'Windows PC',
-        timestamp: Date.now() - 2 * 60 * 60 * 1000
-      },
+        id: 'n_1',
+        name: 'Enf. Elena Soler',
+        email: 'elena.soler@hospital.com',
+        phone: '555-0301',
+        areaId: 'area_1',
+        shift: 'Mañana',
+        isActive: true,
+        createdAt: Date.now()
+      }
+    ],
+
+    // Personal de Recepción
+    receptionists: [
       {
-        id: 'login_2',
-        userId: 'doctor_1',
-        userName: 'Dra. Ana Ruiz',
-        userRole: 'doctor',
-        action: 'login',
-        success: true,
-        ipAddress: '192.168.1.101',
-        browser: 'Firefox 121',
-        device: 'MacOS',
-        timestamp: Date.now() - 24 * 60 * 60 * 1000
-      },
-      {
-        id: 'login_3',
-        userId: 'patient_1',
-        userName: 'María Gómez',
-        userRole: 'patient',
-        action: 'logout',
-        success: true,
-        ipAddress: '192.168.1.102',
-        browser: 'Safari',
-        device: 'iPhone',
-        timestamp: Date.now() - 48 * 60 * 60 * 1000
+        id: 'r_1',
+        name: 'Recepcionista Carla Román',
+        email: 'carla.recepcion@hospital.com',
+        phone: '555-0401',
+        areaId: 'area_1',
+        isActive: true,
+        createdAt: Date.now()
       }
     ]
   };

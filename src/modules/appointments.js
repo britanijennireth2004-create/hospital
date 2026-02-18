@@ -1,3 +1,5 @@
+import { Logger } from '../utils/logger.js';
+
 /**
  * Módulo de Citas Médicas - Gestión completa
  */
@@ -293,7 +295,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         <!-- Filtros -->
         <div class="card mb-4" id="filters-container">
           <h3 class="mb-3">Filtros</h3>
-          <div class="grid grid-4">
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
             <div class="form-group">
               <label class="form-label">Estado</label>
               <select class="input" id="filter-status">
@@ -1476,11 +1478,25 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   }
 
   async function createAppointment(data) {
-    return store.add('appointments', data);
+    const result = await store.add('appointments', data);
+    Logger.log(store, user, {
+      action: Logger.Actions.CREATE,
+      module: Logger.Modules.APPOINTMENTS,
+      description: `Cita médica creada para el paciente ID: ${data.patientId}`,
+      details: { appointmentId: result.id, ...data }
+    });
+    return result;
   }
 
   async function updateAppointment(id, data) {
-    return store.update('appointments', id, data);
+    const result = await store.update('appointments', id, data);
+    Logger.log(store, user, {
+      action: Logger.Actions.UPDATE,
+      module: Logger.Modules.APPOINTMENTS,
+      description: `Cita médica actualizada ID: ${id}`,
+      details: { appointmentId: id, changes: data }
+    });
+    return result;
   }
 
   async function cancelAppointment(appointment) {
@@ -1493,6 +1509,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         status: 'cancelled',
         cancelledAt: Date.now(),
         cancelledBy: user.id
+      });
+      Logger.log(store, user, {
+        action: Logger.Actions.DELETE,
+        module: Logger.Modules.APPOINTMENTS,
+        description: `Cita médica cancelada ID: ${appointment.id}`,
+        details: { appointmentId: appointment.id, reason: 'Cancelado por usuario' }
       });
       showNotification('Cita cancelada correctamente', 'success');
       loadAppointments();

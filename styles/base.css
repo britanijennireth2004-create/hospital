@@ -510,126 +510,11 @@ textarea.error {
   font-weight: 600;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1024px) {
-  .grid-4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 
-@media (max-width: 768px) {
-  :root {
-    --sidebar-width: 280px;
-  }
 
-  .app-header {
-    padding: 0 1rem;
-  }
 
-  #menu-toggle {
-    display: block !important;
-  }
+/* ===== COMPONENTES NO-RESPONSIVE (fuera de media queries) ===== */
 
-  .app-sidebar {
-    position: fixed;
-    top: var(--header-height);
-    bottom: 0;
-    left: 0;
-    transform: translateX(-100%);
-    width: var(--sidebar-width) !important;
-  }
-
-  .app-sidebar.open {
-    transform: translateX(0);
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
-  }
-
-  .app-content {
-    padding: 1rem;
-  }
-
-  .grid-3,
-  .grid-4 {
-    grid-template-columns: 1fr;
-  }
-
-  .grid-2 {
-    grid-template-columns: 1fr;
-  }
-
-  .card {
-    padding: 1rem;
-  }
-
-  .modal-content {
-    width: 95%;
-    margin: 0;
-  }
-
-  /* Ocultar elementos menos importantes en móvil */
-  .hide-mobile {
-    display: none !important;
-  }
-
-  /* Botones bloque en móvil */
-  .btn-mobile-block {
-    width: 100%;
-  }
-
-  /* Ajustes de tablas en móvil */
-  .table-responsive {
-    border: 0;
-  }
-
-  .table thead {
-    display: none;
-  }
-
-  .table tr {
-    display: block;
-    margin-bottom: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: white;
-  }
-
-  .table td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    text-align: right;
-    border-bottom: 1px solid var(--border-light);
-  }
-
-  .table td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    text-align: left;
-    margin-right: 1rem;
-    color: var(--muted);
-  }
-
-  .table td:last-child {
-    border-bottom: 0;
-  }
-}
-
-@media (max-width: 480px) {
-  h1 {
-    font-size: 1.5rem;
-  }
-
-  h2 {
-    font-size: 1.25rem;
-  }
-
-  .user-info-text {
-    display: none;
-  }
-}
-
-/* En tu archivo de estilos principal */
 .triage-level {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
@@ -775,57 +660,6 @@ textarea.error {
   transform: translateY(-2px);
 }
 
-/* ===== RESPONSIVE EXTRA ===== */
-@media (max-width: 768px) {
-  .record-item>div {
-    flex-direction: column;
-    gap: 0.75rem !important;
-  }
-
-  .record-item div[style*="justify-content: space-between"] {
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 0.5rem;
-  }
-
-  /* Ajustar grid de estadísticas en dashboard y módulos */
-  #stats-container {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.5rem !important;
-  }
-
-  #stats-container .card {
-    padding: 0.75rem !important;
-  }
-
-  #stats-container .text-2xl {
-    font-size: 1.25rem !important;
-  }
-}
-
-@media (max-width: 480px) {
-  #stats-container {
-    grid-template-columns: 1fr !important;
-  }
-
-  .modal-body {
-    padding: 1rem;
-  }
-
-  .modal-footer {
-    flex-direction: column;
-    padding: 1rem;
-  }
-
-  .modal-footer button {
-    width: 100%;
-  }
-
-  .grid-2 {
-    grid-template-columns: 1fr !important;
-  }
-}
-
 /* ===== IMPRESIÓN EN ESCALA DE GRISES ===== */
 @media print {
   * {
@@ -834,7 +668,6 @@ textarea.error {
     filter: grayscale(100%) !important;
   }
 
-  /* Asegurar que el texto sea legible */
   body {
     background: white !important;
     color: black !important;

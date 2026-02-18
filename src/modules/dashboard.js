@@ -189,44 +189,68 @@ export default function mountDashboard(root, { bus, store, user, role }) {
 
     const { stats } = state;
 
-    // Estadísticas base para todos los roles
-    let statsHTML = `
-      <div class="card">
-        <div class="text-muted text-sm">Citas totales</div>
-        <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
-        <div class="text-xs text-muted mt-1">${icons.calendar} ${stats.todayAppointments} hoy</div>
-      </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">Pacientes</div>
-        <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.totalPatients}</div>
-        <div class="text-xs text-muted mt-1">${icons.user} Registrados</div>
-      </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">Médicos</div>
-        <div class="text-2xl font-bold" style="color: var(--info);">${stats.totalDoctors}</div>
-        <div class="text-xs text-muted mt-1">${icons.doctor} Activos</div>
-      </div>
-    `;
+    // Estadísticas según rol
+    let statsHTML = '';
 
-    // Estadística adicional para enfermeras
-    if (role === 'nurse') {
-      statsHTML += `
+    if (role === 'patient') {
+      statsHTML = `
         <div class="card">
-          <div class="text-muted text-sm">Pacientes en triage</div>
-          <div class="text-2xl font-bold" style="color: var(--warning);">${stats.triagePending || 0}</div>
-          <div class="text-xs text-muted mt-1">${icons.triage} Pendientes</div>
+          <div class="text-muted text-sm">Mis Citas</div>
+          <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
+          <div class="text-xs text-muted mt-1">${icons.calendar} Programadas</div>
+        </div>
+        
+        <div class="card">
+          <div class="text-muted text-sm">Historias Clínicas</div>
+          <div class="text-2xl font-bold" style="color: var(--accent-2);">${store.get('clinicalRecords')?.filter(r => r.patientId === user.patientId).length || 0}</div>
+          <div class="text-xs text-muted mt-1">${icons.clipboard} Registros propios</div>
+        </div>
+        
+        <div class="card">
+          <div class="text-muted text-sm">Próxima Visita</div>
+          <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments > 0 ? 'Programada' : 'No hay'}</div>
+          <div class="text-xs text-muted mt-1">${icons.info} Ver detalle abajo</div>
         </div>
       `;
     } else {
-      statsHTML += `
+      // Estadísticas para personal (admin, doctor, nurse, receptionist)
+      statsHTML = `
         <div class="card">
-          <div class="text-muted text-sm">Próximas citas</div>
-          <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments}</div>
-          <div class="text-xs text-muted mt-1">${icons.warning} 7 días</div>
+          <div class="text-muted text-sm">Citas totales</div>
+          <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
+          <div class="text-xs text-muted mt-1">${icons.calendar} ${stats.todayAppointments} hoy</div>
+        </div>
+        
+        <div class="card">
+          <div class="text-muted text-sm">Pacientes</div>
+          <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.totalPatients}</div>
+          <div class="text-xs text-muted mt-1">${icons.user} Registrados</div>
+        </div>
+        
+        <div class="card">
+          <div class="text-muted text-sm">Médicos</div>
+          <div class="text-2xl font-bold" style="color: var(--info);">${stats.totalDoctors}</div>
+          <div class="text-xs text-muted mt-1">${icons.doctor} Activos</div>
         </div>
       `;
+
+      if (role === 'nurse') {
+        statsHTML += `
+          <div class="card">
+            <div class="text-muted text-sm">Pacientes en triage</div>
+            <div class="text-2xl font-bold" style="color: var(--warning);">${stats.triagePending || 0}</div>
+            <div class="text-xs text-muted mt-1">${icons.triage} Pendientes</div>
+          </div>
+        `;
+      } else {
+        statsHTML += `
+          <div class="card">
+            <div class="text-muted text-sm">Próximas citas</div>
+            <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments}</div>
+            <div class="text-xs text-muted mt-1">${icons.warning} 7 días</div>
+          </div>
+        `;
+      }
     }
 
     container.innerHTML = statsHTML;
@@ -341,7 +365,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         href: '#security',
         color: 'var(--muted)'
       });
-    } 
+    }
     else if (role === 'doctor') {
       // Doctor: todas las acciones excepto seguridad
       actions.push({

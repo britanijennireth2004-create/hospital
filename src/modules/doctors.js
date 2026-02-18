@@ -1,3 +1,5 @@
+import { Logger } from '../utils/logger.js';
+
 /**
  * Módulo de Médicos - Gestión completa
  */
@@ -118,7 +120,20 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       loadDoctors();
     });
 
-    return unsubscribe;
+    return {
+      destroy: () => {
+        unsubscribe();
+      }
+    };
+  }
+
+  // Debounce helper
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
   }
 
   // Cargar médicos
@@ -223,7 +238,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Renderizar componente principal
   function render() {
-    const canManage = role === 'admin' || role === 'doctor';
+    const canManage = role === 'admin' || role === 'receptionist';
     const canEditStatus = role === 'admin' || role === 'receptionist';
 
     root.innerHTML = `
@@ -254,7 +269,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         <!-- Filtros -->
         <div class="card">
           <h3 class="mb-3">Búsqueda y Filtros</h3>
-          <div class="grid grid-4">
+          <div class="grid" style="grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1rem;">
             <div class="form-group">
               <label class="form-label">Buscar</label>
               <input type="text" class="input" id="filter-search" 
@@ -530,6 +545,24 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                 </div>
               ` : ''}
               
+              <!-- Credenciales de Acceso -->
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
+                ${icons.settings}
+                CREDENCIALES DE ACCESO
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE DE USUARIO</label>
+                  <input type="text" class="input" id="form-username" placeholder="Se usará el email si se deja vacío" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CONTRASEÑA DE ACCESO *</label>
+                  <input type="password" class="input" id="form-password" ${state.editingId ? '' : 'required'} placeholder="Mínimo 6 caracteres" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                </div>
+              </div>
+
               <div class="form-group" style="margin-top: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOTAS INTERNAS</label>
                 <textarea class="input" id="form-notes" rows="2" placeholder="Notas adicionales..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
@@ -721,6 +754,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       formDailyCapacity: root.querySelector('#form-daily-capacity'),
       formStatus: root.querySelector('#form-status'),
       formNotes: root.querySelector('#form-notes'),
+      formUsername: root.querySelector('#form-username'),
+      formPassword: root.querySelector('#form-password'),
       btnCloseModal: root.querySelector('#btn-close-modal'),
       btnCancel: root.querySelector('#btn-cancel'),
       btnSave: root.querySelector('#btn-save'),
@@ -805,7 +840,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const rows = paginatedDoctors.map(doctor => {
       const stats = getDoctorStats(doctor.id);
       const area = store.find('areas', doctor.areaId);
-      const canEdit = role === 'admin' || (role === 'doctor' && user?.doctorId === doctor.id);
+      const canEdit = role === 'admin' || role === 'receptionist' || (role === 'doctor' && user?.doctorId === doctor.id);
       const dailyCapacity = doctor.dailyCapacity || 20;
       const capacityPercentage = Math.min(Math.round((stats.todayAppointments / dailyCapacity) * 100), 100);
 
@@ -1001,16 +1036,21 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.btnClearFilters.addEventListener('click', clearFiltersHandler);
     }
 
+    // Debounced search
     if (elements.filterSearch) {
-      let searchTimeout;
+      const debouncedLoad = debounce(() => { state.currentPage = 1; loadDoctors(); }, 300);
       elements.filterSearch.addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-          state.filters.search = e.target.value;
-          loadDoctors();
-        }, 300);
+        state.filters.search = e.target.value;
+        debouncedLoad();
       });
     }
+
+    // Other filter changes
+    [elements.filterSpecialty, elements.filterArea, elements.filterStatus].forEach(el => {
+      if (el) {
+        el.addEventListener('change', () => { state.currentPage = 1; loadDoctors(); });
+      }
+    });
 
     if (elements.btnNewDoctor) {
       elements.btnNewDoctor.addEventListener('click', () => openModal());
@@ -1341,6 +1381,10 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (elements.formStatus) elements.formStatus.value = doctor.status || 'active';
     if (elements.formNotes) elements.formNotes.value = doctor.notes || '';
 
+    // Cargar nombre de usuario asociado
+    const userAccount = store.get('users').find(u => u.doctorId === doctor.id);
+    if (elements.formUsername) elements.formUsername.value = userAccount ? userAccount.username : '';
+
     const workDays = doctor.workDays || ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
     document.querySelectorAll('.form-checkbox').forEach(checkbox => {
       checkbox.checked = workDays.includes(checkbox.value);
@@ -1557,13 +1601,21 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       dailyCapacity: elements.formDailyCapacity ? parseInt(elements.formDailyCapacity.value) : 20,
       status: elements.formStatus ? elements.formStatus.value : 'active',
       isActive: elements.formStatus ? elements.formStatus.value === 'active' : true,
-      notes: elements.formNotes ? elements.formNotes.value.trim() || null : null
+      notes: elements.formNotes ? elements.formNotes.value.trim() || null : null,
+      username: elements.formUsername ? elements.formUsername.value.trim() : '',
+      password: elements.formPassword ? elements.formPassword.value : ''
     };
   }
 
   // Guardar médico (formulario principal)
   async function saveDoctor() {
     if (!validateForm()) {
+      return;
+    }
+
+    // Validar permisos para crear
+    if (!state.editingId && role !== 'admin' && role !== 'receptionist') {
+      showNotification('No tienes permiso para registrar nuevos médicos', 'error');
       return;
     }
 
@@ -1578,10 +1630,60 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
       if (state.editingId) {
         await updateDoctor(state.editingId, formData);
+
+        // Actualizar usuario asociado
+        const userAccount = store.get('users').find(u => u.doctorId === state.editingId);
+        if (userAccount) {
+          const userUpdates = {};
+
+          if (formData.username && formData.username !== userAccount.username) {
+            userUpdates.username = formData.username;
+          }
+
+          if (formData.password) {
+            userUpdates.password = formData.password;
+          }
+
+          if (formData.name !== userAccount.name) userUpdates.name = formData.name;
+          if (formData.email !== userAccount.email) userUpdates.email = formData.email;
+          if (formData.isActive !== userAccount.isActive) userUpdates.isActive = formData.isActive;
+
+          if (Object.keys(userUpdates).length > 0) {
+            store.update('users', userAccount.id, userUpdates);
+          }
+        }
+
+        Logger.log(store, user, {
+          action: Logger.Actions.UPDATE,
+          module: Logger.Modules.DOCTORS,
+          description: `Médico actualizado: ${formData.name}`,
+          details: { doctorId: state.editingId, ...formData }
+        });
         showNotification('Médico actualizado correctamente', 'success');
       } else {
-        await createDoctor(formData);
-        showNotification('Médico registrado correctamente', 'success');
+        const result = await createDoctor(formData);
+
+        // Crear usuario asociado
+        const username = formData.username || formData.email.split('@')[0];
+        const password = formData.password || 'demo123';
+
+        store.add('users', {
+          username: username,
+          password: password,
+          name: formData.name,
+          role: 'doctor',
+          email: formData.email,
+          doctorId: result.id,
+          isActive: true
+        });
+
+        Logger.log(store, user, {
+          action: Logger.Actions.CREATE,
+          module: Logger.Modules.DOCTORS,
+          description: `Médico registrado con usuario: ${formData.name}`,
+          details: { doctorId: result.id, ...formData }
+        });
+        showNotification('Médico y usuario registrados correctamente', 'success');
       }
 
       closeModal();
@@ -1623,6 +1725,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       };
 
       await updateDoctor(state.currentDoctor.id, updateData);
+      Logger.log(store, user, {
+        action: Logger.Actions.UPDATE,
+        module: Logger.Modules.DOCTORS,
+        description: `Estado de médico actualizado: ${state.currentDoctor.name} -> ${newStatus}`,
+        details: { doctorId: state.currentDoctor.id, ...updateData }
+      });
       showNotification('Estado actualizado correctamente', 'success');
 
       if (newStatus !== 'active') {
@@ -1672,14 +1780,25 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     }
 
     try {
-      const updateData = {
+      await updateDoctor(state.currentDoctor.id, {
         dailyCapacity: newCapacity,
         capacityReason: reason || null,
         capacityChangedBy: user?.id || 'system',
         capacityChangedAt: new Date().toISOString()
-      };
+      });
 
-      await updateDoctor(state.currentDoctor.id, updateData);
+      Logger.log(store, user, {
+        action: Logger.Actions.UPDATE,
+        module: Logger.Modules.DOCTORS,
+        description: `Capacidad de médico ajustada: ${state.currentDoctor.name} -> ${newCapacity}`,
+        details: {
+          doctorId: state.currentDoctor.id,
+          oldCapacity: state.currentDoctor.dailyCapacity,
+          newCapacity,
+          reason
+        }
+      });
+
       showNotification('Capacidad actualizada correctamente', 'success');
 
       closeCapacityModal();
@@ -1871,7 +1990,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         </div>
         
         <div class="modal-footer" style="background: #f7fafc; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #edf2f7;">
-          ${(role === 'admin' || role === 'doctor') ? `
+          ${(role === 'admin' || role === 'receptionist' || (role === 'doctor' && user?.doctorId === doctor.id)) ? `
             <button class="btn" id="edit-doctor-btn" data-id="${doctor.id}" style="background: var(--modal-section-forest-light); color: var(--modal-header); border: 1px solid var(--modal-header); padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
               ${icons.edit} EDITAR PERFIL
             </button>
@@ -2006,14 +2125,16 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   }
 
   // Inicializar módulo
-  const unsubscribe = init();
+  const moduleInstance = init();
 
   // Retornar API pública
   return {
     refresh: loadDoctors,
 
     destroy() {
-      if (unsubscribe) unsubscribe();
+      if (moduleInstance && typeof moduleInstance.destroy === 'function') {
+        moduleInstance.destroy();
+      }
     }
   };
 }

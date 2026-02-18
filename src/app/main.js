@@ -3,6 +3,7 @@
 import { createBus } from '../core/bus.js';
 import { createStore } from '../core/store.js';
 import { ICONS } from './icons.js';
+import { Logger } from '../utils/logger.js';
 
 // Estado global
 const APP_STATE = {
@@ -38,13 +39,28 @@ const ROUTES = {
     label: 'Médicos',
     icon: ICONS.doctor,
     module: () => import('../modules/doctors.js'),
-    permission: (role) => ['admin', 'doctor', 'patient', 'receptionist'].includes(role)
+    permission: (role) => ['admin', 'receptionist', 'doctor'].includes(role),
+    parent: 'personal'
+  },
+  nurses: {
+    label: 'Enfermeras',
+    icon: ICONS.nurse,
+    module: () => import('../modules/nurses.js'),
+    permission: (role) => ['admin', 'receptionist', 'nurse'].includes(role),
+    parent: 'personal'
+  },
+  receptionists: {
+    label: 'Recepcionistas',
+    icon: ICONS.receptionist,
+    module: () => import('../modules/receptionists.js'),
+    permission: (role) => ['admin', 'receptionist'].includes(role),
+    parent: 'personal'
   },
   areas: {
     label: 'Áreas',
     icon: ICONS.building,
     module: () => import('../modules/areas.js'),
-    permission: (role) => ['admin', 'doctor', 'patient', 'receptionist'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'receptionist', 'nurse', 'patient'].includes(role)
   },
   clinical: {
     label: 'Historia Clínica',
@@ -57,6 +73,12 @@ const ROUTES = {
     icon: ICONS.triage,
     module: () => import('../modules/triage.js'),
     permission: (role) => ['admin', 'doctor', 'nurse', 'receptionist'].includes(role)
+  },
+  resources: {
+    label: 'Recursos',
+    icon: ICONS.resources,
+    module: () => import('../modules/resources.js'),
+    permission: (role) => ['admin', 'receptionist'].includes(role)
   },
   security: {
     label: 'Seguridad',
@@ -166,6 +188,12 @@ function mountLogin(root, { onSuccess }) {
       patientId: role === 'patient' ? 'p_1' : null,
       doctorId: role === 'doctor' ? 'd_1' : null
     };
+    Logger.log(APP_STATE.store, user, {
+      action: Logger.Actions.LOGIN,
+      module: Logger.Modules.AUTH,
+      description: `Inicio de sesión exitoso: ${user.name}`,
+      details: { username: user.username, role: user.role }
+    });
     onSuccess(user);
   }
 
@@ -190,34 +218,25 @@ function mountLogin(root, { onSuccess }) {
   });
 }
 
-// ===== APP SHELL MEJORADO =====
-// ===== APP SHELL MEJORADO =====
+// ===== APP SHELL =====
 async function mountAppShell(root, { user, bus, store }) {
   const state = {
-    currentRoute: 'dashboard',
-    sidebarOpen: window.innerWidth >= 1024 // Cerrado por defecto en tablets y móviles
+    currentRoute: 'dashboard'
   };
 
   // Renderizar shell
   function render() {
-    const routes = Object.entries(ROUTES).filter(([_, route]) =>
-      route.permission(user.role)
-    );
-
     root.innerHTML = `
       <div class="app-shell">
         <!-- Header -->
         <header class="app-header">
-          <div style="display: flex; align-items: center; gap: 1rem; margin-left: 1rem;">
-            <button class="btn btn-outline btn-sm" id="menu-toggle" style="display: none;">
-              ${ICONS.menu}
-            </button>
-            <div style="font-weight: bold;" class="hide-mobile">Hospital Universitario Manuel Núñez Tovar</div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: 1rem;">
+            <div style="font-weight: bold;">Hospital Universitario Manuel Núñez Tovar</div>
           </div>
           
           <div style="display: flex; align-items: center; gap: 1rem;">
             <div class="user-info" style="display: flex; align-items: center; gap: 0.75rem;">
-              <div style="text-align: right;" class="user-info-text">
+              <div style="text-align: right;">
                 <div style="font-weight: 500;">${user.name}</div>
                 <div style="font-size: 0.875rem; color: var(--card);">${user.role.toUpperCase()}</div>
               </div>
@@ -225,28 +244,69 @@ async function mountAppShell(root, { user, bus, store }) {
                 ${user.name.charAt(0)}
               </div>
             </div>
-            <button class="btn btn-danger btn-sm" id="btn-logout" title="Cerrar Sesión">
-              <span class="hide-mobile">Salir</span>
-              <span style="display: none;" class="show-mobile">✕</span>
+            <button class="btn btn-danger btn-sm" id="btn-logout" title="Cerrar Sesión" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 50%;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </button>
           </div>
         </header>
 
         <!-- Main content -->
         <main class="app-main">
-          <!-- Sidebar -->
-          <nav class="app-sidebar ${state.sidebarOpen ? 'open' : ''}">
+          <!-- Sidebar siempre visible -->
+          <nav class="app-sidebar">
             <div class="nav-menu">
               <div style="font-weight: bold; font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--muted); padding: 0 0.75rem; letter-spacing: 0.05em;">MENÚ PRINCIPAL</div>
               <div id="nav-links">
-                ${routes.map(([routeId, route]) => `
-                  <button 
-                    class="nav-btn ${state.currentRoute === routeId ? 'active' : ''}" 
-                    data-route="${routeId}">
-                    <span>${route.icon}</span>
-                    <span>${route.label}</span>
-                  </button>
-                `).join('')}
+                ${(() => {
+        const items = [];
+        const personalRoutes = Object.entries(ROUTES).filter(([_, r]) => r.parent === 'personal' && r.permission(user.role));
+
+        const renderRoute = (id, r) => `
+                    <button class="nav-btn ${state.currentRoute === id ? 'active' : ''}" data-route="${id}">
+                      <span>${r.icon}</span>
+                      <span>${r.label}</span>
+                    </button>
+                  `;
+
+        const renderPersonal = () => {
+          if (personalRoutes.length === 0) return '';
+          const isSubActive = personalRoutes.some(([subId]) => state.currentRoute === subId);
+          return `
+                      <div class="nav-dropdown-container ${isSubActive ? 'open' : ''}" id="personal-dropdown-container">
+                        <button class="nav-btn dropdown-trigger" id="personal-dropdown-btn">
+                          <span>${ICONS.staff}</span>
+                          <span>Personal</span>
+                          <span class="chevron" style="margin-left: auto;">${ICONS.chevronDown}</span>
+                        </button>
+                        <div class="nav-dropdown-content">
+                          ${personalRoutes.map(([subId, subR]) => `
+                            <button class="nav-btn sub-btn ${state.currentRoute === subId ? 'active' : ''}" data-route="${subId}">
+                              <span>${subR.icon}</span>
+                              <span>${subR.label}</span>
+                            </button>
+                          `).join('')}
+                        </div>
+                      </div>
+                    `;
+        };
+
+        const mainRoutes = Object.entries(ROUTES).filter(([_, r]) => !r.parent && r.permission(user.role));
+
+        mainRoutes.forEach(([id, r]) => {
+          items.push(renderRoute(id, r));
+          // Si acabamos de renderizar pacientes, insertamos el Personal después
+          if (id === 'patients') {
+            items.push(renderPersonal());
+          }
+        });
+
+        // Si por casualidad 'patients' no está permitido pero hay personal, lo ponemos al final
+        if (!mainRoutes.some(([id]) => id === 'patients') && personalRoutes.length > 0) {
+          items.push(renderPersonal());
+        }
+
+        return items.join('');
+      })()}
               </div>
             </div>
           </nav>
@@ -256,50 +316,51 @@ async function mountAppShell(root, { user, bus, store }) {
             <div id="module-container"></div>
           </div>
         </main>
-        
-        <!-- Overlay para móvil -->
-        <div id="sidebar-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 850;"></div>
       </div>
+
+      <style>
+        .nav-dropdown-container { display: flex; flex-direction: column; overflow: hidden; }
+        .nav-dropdown-content { 
+          display: none; 
+          flex-direction: column; 
+          padding-left: 0.75rem; 
+          background: rgba(0,0,0,0.03); 
+          border-radius: 8px;
+          margin: 0.25rem 0.75rem;
+        }
+        .nav-dropdown-container.open .nav-dropdown-content { display: flex; }
+        .nav-dropdown-container.open .chevron { transform: rotate(180deg); }
+        .chevron { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sub-btn { font-size: 0.8rem !important; height: 38px !important; margin: 2px 0 !important; }
+        .dropdown-trigger { width: 100% !important; cursor: pointer; }
+      </style>
     `;
-
-    // Elementos del DOM
-    const menuToggle = root.querySelector('#menu-toggle');
-    const sidebar = root.querySelector('.app-sidebar');
-    const overlay = root.querySelector('#sidebar-overlay');
-
-    // Manejo de Sidebar
-    const toggleSidebar = () => {
-      state.sidebarOpen = !state.sidebarOpen;
-      sidebar.classList.toggle('open', state.sidebarOpen);
-      if (window.innerWidth < 768) {
-        overlay.style.display = state.sidebarOpen ? 'block' : 'none';
-      }
-    };
-
-    if (menuToggle) {
-      menuToggle.addEventListener('click', toggleSidebar);
-    }
-
-    if (overlay) {
-      overlay.addEventListener('click', toggleSidebar);
-    }
 
     // Configurar navegación
     root.querySelectorAll('.nav-btn').forEach(btn => {
+      if (btn.id === 'personal-dropdown-btn') {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const container = document.getElementById('personal-dropdown-container');
+          container.classList.toggle('open');
+        });
+        return;
+      }
       btn.addEventListener('click', () => {
         const route = btn.dataset.route;
         navigateTo(route);
-
-        // Autocerrar sidebar en móvil al navegar
-        if (window.innerWidth < 768 && state.sidebarOpen) {
-          toggleSidebar();
-        }
       });
     });
 
     // Configurar logout
     root.querySelector('#btn-logout').addEventListener('click', () => {
       if (confirm('¿Estás seguro de cerrar sesión?')) {
+        Logger.log(store, user, {
+          action: Logger.Actions.LOGOUT,
+          module: Logger.Modules.AUTH,
+          description: `Cerrar sesión: ${user.name}`,
+          details: { userId: user.id }
+        });
         localStorage.removeItem('hospital_user');
         APP_STATE.user = null;
         APP_STATE.role = null;
@@ -327,14 +388,17 @@ async function mountAppShell(root, { user, bus, store }) {
       btn.style.color = isActive ? 'var(--accent)' : 'var(--text)';
     });
 
+    // Asegurar que el dropdown esté abierto si se navega a un sub-item
+    const subRoute = ROUTES[routeId];
+    if (subRoute && subRoute.parent === 'personal') {
+      const container = document.getElementById('personal-dropdown-container');
+      if (container) container.classList.add('open');
+    }
+
     // Cargar módulo
     await loadModule(routeId);
 
-    // Cerrar sidebar en móvil
-    if (window.innerWidth < 768 && state.sidebarOpen) {
-      state.sidebarOpen = false;
-      render();
-    }
+    // Ya no se cierra con re-render aquí, se cierra en el event listener de nav-btn
   }
 
   // Cargar módulo
@@ -344,7 +408,11 @@ async function mountAppShell(root, { user, bus, store }) {
 
     // Limpiar módulo anterior
     if (APP_STATE.currentModule && APP_STATE.currentModule.destroy) {
-      await APP_STATE.currentModule.destroy();
+      try {
+        await APP_STATE.currentModule.destroy();
+      } catch (error) {
+        console.error('Error al destruir el módulo anterior:', error);
+      }
     }
 
     moduleContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';

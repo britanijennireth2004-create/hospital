@@ -1002,26 +1002,3 @@
 .quick-access-btn[data-role="receptionist"] {
   background: #8b5cf6;
 }
-
-/* Responsive: hide image panel on small screens */
-@media (max-width: 768px) {
-  .login-card {
-    flex-direction: column;
-    max-width: 480px;
-  }
-
-  .login-image-panel {
-    display: none;
-  }
-
-  .login-form-panel {
-    padding: 2rem 1.5rem;
-  }
-
-  .quick-access-bar {
-    left: 1rem;
-    right: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-}
