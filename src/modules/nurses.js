@@ -380,6 +380,8 @@ export default function mountNurses(root, { bus, store, user, role }) {
     const items = state.nurses.slice(start, start + state.itemsPerPage);
 
     elements.nursesCount.textContent = `${state.nurses.length} Registros`;
+    const canManage = role === 'admin' || role === 'receptionist';
+
     elements.nursesList.innerHTML = items.map(nurse => {
       const area = store.find('areas', nurse.areaId);
       return `
@@ -402,13 +404,17 @@ export default function mountNurses(root, { bus, store, user, role }) {
                  <span class="badge ${nurse.isActive ? 'badge-success' : 'badge-danger'}">
                     ${nurse.status === 'vacation' ? 'Vacaciones' : (nurse.isActive ? 'Activo' : 'Inactivo')}
                  </span>
+                 ${canManage ? `
                  <button class="btn btn-xs btn-outline" onclick="window.nursesAction('status', '${nurse.id}')" title="Cambiar">${icons.status}</button>
+                 ` : ''}
               </div>
            </td>
            <td>
               <div class="flex gap-2">
                  <button class="btn btn-sm btn-outline" onclick="window.nursesAction('view', '${nurse.id}')" title="Ver Perfil">${icons.view}</button>
+                 ${canManage ? `
                  <button class="btn btn-sm btn-outline" onclick="window.nursesAction('edit', '${nurse.id}')" title="Editar">${icons.edit}</button>
+                 ` : ''}
               </div>
            </td>
          </tr>
@@ -457,10 +463,10 @@ export default function mountNurses(root, { bus, store, user, role }) {
            style="${state.currentPage === i + 1 ? 'background: transparent; color: var(--info);' : ''}"
            onclick="window.nursesPage(${i + 1})">${i + 1}</button>`
     ).join('');
-    
-    window.nursesPage = p => { 
-      state.currentPage = p; 
-      renderNursesList(); 
+
+    window.nursesPage = p => {
+      state.currentPage = p;
+      renderNursesList();
     };
   }
   function updateStats() {
@@ -538,12 +544,23 @@ export default function mountNurses(root, { bus, store, user, role }) {
     if (elements.btnSave) elements.btnSave.addEventListener('click', saveNurse);
 
     // Debounced search to prevent system overload
-    const debouncedLoad = debounce(() => { state.currentPage = 1; loadNurses(); }, 300);
+    const debouncedLoad = debounce(() => {
+      state.filters.search = elements.search ? elements.search.value : '';
+      state.currentPage = 1;
+      loadNurses();
+    }, 300);
     if (elements.search) elements.search.addEventListener('input', debouncedLoad);
 
     // Immediate update for selects
     [elements.area, elements.specialty, elements.status].forEach(el => {
-      if (el) el.addEventListener('change', () => { state.currentPage = 1; loadNurses(); });
+      if (el) el.addEventListener('change', () => {
+        state.filters.search = elements.search ? elements.search.value : '';
+        state.filters.specialty = elements.specialty ? elements.specialty.value : '';
+        state.filters.areaId = elements.area ? elements.area.value : '';
+        state.filters.status = elements.status ? elements.status.value : 'active';
+        state.currentPage = 1;
+        loadNurses();
+      });
     });
 
     // Status Modal Events
@@ -552,13 +569,13 @@ export default function mountNurses(root, { bus, store, user, role }) {
         if (elements.statusModal) elements.statusModal.classList.add('hidden');
       });
     }
-    
+
     if (elements.btnCloseStatus) {
       elements.btnCloseStatus.addEventListener('click', () => {
         if (elements.statusModal) elements.statusModal.classList.add('hidden');
       });
     }
-    
+
     if (elements.btnSaveStatus) {
       elements.btnSaveStatus.addEventListener('click', () => {
         if (!state.currentNurse) return;
@@ -577,7 +594,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
       if (elements.capacityValue) elements.capacityValue.value = e.target.value;
       if (elements.currentCapDisplay) elements.currentCapDisplay.textContent = e.target.value;
     };
-    
+
     const updateInput = (e) => {
       if (elements.capacitySlider) elements.capacitySlider.value = e.target.value;
       if (elements.currentCapDisplay) elements.currentCapDisplay.textContent = e.target.value;
@@ -591,13 +608,13 @@ export default function mountNurses(root, { bus, store, user, role }) {
         if (elements.capacityModal) elements.capacityModal.classList.add('hidden');
       });
     }
-    
+
     if (elements.btnCloseCapacity) {
       elements.btnCloseCapacity.addEventListener('click', () => {
         if (elements.capacityModal) elements.capacityModal.classList.add('hidden');
       });
     }
-    
+
     if (elements.btnSaveCapacity) {
       elements.btnSaveCapacity.addEventListener('click', () => {
         if (!state.currentNurse) return;
@@ -615,7 +632,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
     state.editingId = nurse?.id || null;
     if (elements.modal) elements.modal.classList.remove('hidden');
     if (elements.form) elements.form.reset();
-    
+
     if (nurse) {
       if (elements.fName) elements.fName.value = nurse.name;
       if (elements.fDni) elements.fDni.value = nurse.dni || '';
@@ -629,7 +646,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
       if (elements.fEnd) elements.fEnd.value = nurse.scheduleEnd || '15:00';
       if (elements.fCap) elements.fCap.value = nurse.dailyCapacity || 15;
       if (elements.fStatus) elements.fStatus.value = nurse.status || 'active';
-      
+
       // Para edición, no requerir contraseña
       if (elements.fPass) elements.fPass.required = false;
     } else {
@@ -644,14 +661,15 @@ export default function mountNurses(root, { bus, store, user, role }) {
   }
 
   function saveNurse() {
-    if (!elements.form.checkValidity()) { 
-      elements.form.reportValidity(); 
-      return; 
+    if (!elements.form.checkValidity()) {
+      elements.form.reportValidity();
+      return;
     }
 
-    // Validar permisos para crear
-    if (!state.editingId && role !== 'admin' && role !== 'receptionist') {
-      alert('No tienes permiso para registrar personal de enfermería');
+    // Validar permisos para crear y editar
+    const canManage = role === 'admin' || role === 'receptionist';
+    if (!canManage) {
+      alert('No tienes permiso para gestionar personal de enfermería');
       return;
     }
 
@@ -678,13 +696,13 @@ export default function mountNurses(root, { bus, store, user, role }) {
       const n = store.add('nurses', data);
       const username = elements.fUser ? elements.fUser.value || data.email.split('@')[0] : data.email.split('@')[0];
       const password = elements.fPass ? elements.fPass.value : 'demo123';
-      store.add('users', { 
-        username, 
-        password, 
-        name: data.name, 
-        role: 'nurse', 
-        email: data.email, 
-        staffId: n.id 
+      store.add('users', {
+        username,
+        password,
+        name: data.name,
+        role: 'nurse',
+        email: data.email,
+        staffId: n.id
       });
     }
     closeModal();

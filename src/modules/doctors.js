@@ -1176,7 +1176,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       search: elements.filterSearch?.value || '',
       specialty: elements.filterSpecialty?.value || '',
       areaId: elements.filterArea?.value || '',
-      status: elements.filterStatus?.value || 'active'
+      status: elements.filterStatus ? elements.filterStatus.value : 'active'
     };
 
     state.currentPage = 1;
@@ -1187,13 +1187,13 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (elements.filterSearch) elements.filterSearch.value = '';
     if (elements.filterSpecialty) elements.filterSpecialty.value = '';
     if (elements.filterArea) elements.filterArea.value = '';
-    if (elements.filterStatus) elements.filterStatus.value = 'active';
+    if (elements.filterStatus) elements.filterStatus.value = '';
 
     state.filters = {
       search: '',
       specialty: '',
       areaId: '',
-      status: 'active'
+      status: ''
     };
 
     state.currentPage = 1;
@@ -1265,6 +1265,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   }
 
   // Abrir modal principal
+  // Abrir modal principal
   function openModal(doctor = null) {
     state.editingId = doctor?.id || null;
     state.showModal = true;
@@ -1275,8 +1276,31 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
     if (doctor) {
       populateForm(doctor);
+
+      // Si es médico editando su perfil, restringir cambios sensibles
+      if (role === 'doctor') {
+        const restrictedFields = ['form-name', 'form-dni', 'form-license', 'form-specialty', 'form-area'];
+        restrictedFields.forEach(id => {
+          const el = root.querySelector(`#${id}`);
+          if (el) {
+            el.disabled = true;
+            el.title = "Solo administración puede modificar este campo";
+            el.style.backgroundColor = '#f3f4f6';
+          }
+        });
+      }
     } else {
       clearForm();
+      // Restaurar campos si es necesario
+      const allFields = ['form-name', 'form-dni', 'form-license', 'form-specialty', 'form-area'];
+      allFields.forEach(id => {
+        const el = root.querySelector(`#${id}`);
+        if (el) {
+          el.disabled = false;
+          el.style.backgroundColor = '';
+          el.title = "";
+        }
+      });
     }
   }
 
@@ -1656,6 +1680,16 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (!state.editingId && role !== 'admin' && role !== 'receptionist') {
       showNotification('No tienes permiso para registrar nuevos médicos', 'error');
       return;
+    }
+
+    // Validar permisos para editar: doctor solo puede editar su propio perfil
+    if (state.editingId) {
+      const canEditThis = role === 'admin' || role === 'receptionist' ||
+        (role === 'doctor' && user?.doctorId === state.editingId);
+      if (!canEditThis) {
+        showNotification('No tienes permiso para editar este perfil médico', 'error');
+        return;
+      }
     }
 
     state.isLoading = true;

@@ -362,6 +362,141 @@ export async function createStore(bus) {
       preventReuse: 3,
       sessionTimeoutMinutes: 480
     },
+
+    // ===== MÓDULO DE COMUNICACIÓN Y NOTIFICACIONES =====
+    messages: [
+      {
+        id: 'msg_1',
+        recipientId: 'p_1',
+        recipientName: 'María Gómez',
+        title: 'Confirmación de cita médica',
+        content: 'Estimada María, le confirmamos su cita de Medicina General con la Dra. Ana Ruiz. Por favor llegue 15 minutos antes de la hora programada y traiga su documento de identidad.',
+        channel: 'email',
+        priority: 'normal',
+        status: 'delivered',
+        type: 'appointment_confirmation',
+        createdBy: 'admin_1',
+        createdAt: Date.now() - 2 * 24 * 60 * 60 * 1000
+      },
+      {
+        id: 'msg_2',
+        recipientId: 'p_2',
+        recipientName: 'Juan López',
+        title: 'Resultados de laboratorio disponibles',
+        content: 'Sr. Juan López, sus resultados de laboratorio ya están disponibles. Puede consultarlos en su próxima visita o solicitar una copia digital a través de recepción.',
+        channel: 'sms',
+        priority: 'high',
+        status: 'sent',
+        type: 'lab_results',
+        createdBy: 'doctor_1',
+        createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000
+      },
+      {
+        id: 'msg_3',
+        recipientId: 'd_1',
+        recipientName: 'Dra. Ana Ruiz',
+        title: 'Reunión de personal médico',
+        content: 'Se le informa que la reunión mensual del personal médico se realizará el próximo viernes a las 10:00 AM en la sala de conferencias. Asistencia obligatoria.',
+        channel: 'internal',
+        priority: 'normal',
+        status: 'read',
+        type: 'administrative',
+        createdBy: 'admin_1',
+        createdAt: Date.now() - 3 * 24 * 60 * 60 * 1000
+      },
+      {
+        id: 'msg_test_badge',
+        recipientId: 'admin_1',
+        recipientName: 'Administrador',
+        title: 'Prueba de Notificación Pendiente',
+        content: 'Este es un mensaje de prueba para verificar que el punto rojo y el contador del menú de notificaciones funcionan correctamente.',
+        channel: 'internal',
+        priority: 'high',
+        status: 'pending',
+        type: 'test',
+        createdBy: 'doctor_1',
+        createdAt: Date.now()
+      }
+    ],
+
+    notifications: [
+      {
+        id: 'notif_1',
+        recipientId: 'p_1',
+        recipientName: 'María Gómez',
+        title: 'Recordatorio: Cita mañana',
+        content: 'Recuerde que tiene una cita de control con la Dra. Ana Ruiz mañana. No olvide traer sus exámenes previos.',
+        channel: 'push',
+        priority: 'normal',
+        status: 'delivered',
+        type: 'appointment_reminder',
+        createdBy: 'system',
+        createdAt: Date.now() - 12 * 60 * 60 * 1000
+      },
+      {
+        id: 'notif_2',
+        recipientId: 'admin_1',
+        recipientName: 'Administrador',
+        title: 'Alerta: Insumo con stock bajo',
+        content: 'El insumo "Oxígeno (Tanque)" está por debajo del nivel mínimo de stock. Se requiere reabastecimiento urgente.',
+        channel: 'system',
+        priority: 'critical',
+        status: 'pending',
+        type: 'stock_alert',
+        createdBy: 'system',
+        createdAt: Date.now() - 2 * 60 * 60 * 1000
+      }
+    ],
+
+    reminders: [
+      {
+        id: 'rem_1',
+        appointmentId: 'apt_1',
+        recipientId: 'p_1',
+        recipientName: 'María Gómez',
+        title: 'Recordatorio de cita médica',
+        content: 'Tiene una cita programada con la Dra. Ana Ruiz en Medicina General. Recuerde llevar su cédula de identidad y cualquier examen reciente.',
+        channel: 'internal',
+        priority: 'normal',
+        status: 'scheduled',
+        type: 'appointment_reminder',
+        scheduledAt: Date.now() + 24 * 60 * 60 * 1000,
+        createdBy: 'system',
+        createdAt: Date.now() - 48 * 60 * 60 * 1000
+      }
+    ],
+
+    communicationLogs: [
+      {
+        id: 'clog_1',
+        messageId: 'msg_1',
+        title: 'Mensaje enviado',
+        content: 'Confirmación de cita médica',
+        channel: 'email',
+        recipientId: 'p_1',
+        recipientName: 'María Gómez',
+        status: 'sent',
+        type: 'log',
+        priority: 'normal',
+        createdBy: 'admin_1',
+        createdAt: Date.now() - 2 * 24 * 60 * 60 * 1000
+      },
+      {
+        id: 'clog_2',
+        messageId: 'msg_1',
+        title: 'Mensaje entregado',
+        content: 'Confirmación de cita médica',
+        channel: 'email',
+        recipientId: 'p_1',
+        recipientName: 'María Gómez',
+        status: 'delivered',
+        type: 'log',
+        priority: 'normal',
+        createdBy: 'system',
+        createdAt: Date.now() - 2 * 24 * 60 * 60 * 1000 + 60000
+      }
+    ],
+
     loginHistory: [],
 
     // Personal de Enfermería
@@ -417,7 +552,7 @@ export async function createStore(bus) {
     const migrated = { ...newData };
 
     // Migrar colecciones existentes
-    ['users', 'patients', 'doctors', 'areas', 'appointments'].forEach(collection => {
+    ['users', 'patients', 'doctors', 'areas', 'appointments', 'messages', 'notifications', 'reminders', 'communicationLogs'].forEach(collection => {
       if (oldData[collection] && Array.isArray(oldData[collection])) {
         migrated[collection] = oldData[collection];
       }

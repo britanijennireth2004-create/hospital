@@ -1268,6 +1268,12 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
   // Guardar área
   async function saveArea() {
+    // Validar permisos: solo admin
+    if (role !== 'admin') {
+      showNotification('No tiene permisos para gestionar áreas', 'error');
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -1493,9 +1499,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
           type === 'warning' ? 'var(--warning)' : 'var(--info)'
       };
   color: white;
-  border - radius: var(--radius);
-  box - shadow: var(--shadow - lg);
-  z - index: 10000;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 10000;
   animation: slideIn 0.3s ease;
   `;
 

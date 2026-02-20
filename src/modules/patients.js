@@ -795,7 +795,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
             <button class="btn btn-outline btn-sm" data-action="history" data-id="${patient.id}" style="color: var(--modal-section-gold);">
               ${icons.clinical} Historial
             </button>
-            ${role === 'admin' || role === 'doctor' ? `
+            ${role === 'admin' || role === 'doctor' || role === 'receptionist' ? `
               <button class="btn btn-outline btn-sm" data-action="edit" data-id="${patient.id}">
                 ${icons.edit} Editar
               </button>
@@ -914,7 +914,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
             <button class="btn btn-outline btn-sm" style="flex: 1; color: var(--modal-section-gold);" data-action="history" data-id="${patient.id}">
               ${icons.clinical} Historial
             </button>
-            ${role === 'admin' || role === 'doctor' ? `
+            ${role === 'admin' || role === 'doctor' || role === 'receptionist' ? `
               <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="edit" data-id="${patient.id}">
                 ${icons.edit} Editar
               </button>
@@ -1503,6 +1503,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
   async function savePatient() {
     if (!validateForm()) {
       showNotification('Por favor, complete los campos requeridos correctamente.', 'warning');
+      return;
+    }
+
+    // Validar permisos: solo admin, doctor y receptionist pueden crear/editar pacientes
+    const canSave = role === 'admin' || role === 'doctor' || role === 'receptionist';
+    if (!canSave) {
+      showNotification('No tienes permiso para realizar esta acción', 'error');
       return;
     }
 

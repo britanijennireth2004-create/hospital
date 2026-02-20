@@ -24,6 +24,17 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
   // Inicializar
   function init() {
+    // Validación de acceso: solo admin
+    if (role !== 'admin') {
+      root.innerHTML = `
+        <div class="card" style="text-align: center; padding: 3rem;">
+          <h3 style="color: var(--danger);">Acceso Denegado</h3>
+          <p class="text-muted">No tienes permisos para acceder al módulo de Seguridad y Auditoría.</p>
+        </div>
+      `;
+      return;
+    }
+
     loadData();
     render();
     setupEventListeners();

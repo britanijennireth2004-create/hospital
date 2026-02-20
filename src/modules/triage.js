@@ -1873,13 +1873,13 @@ export default function mountTriage(root, { bus, store, user, role }) {
     const observations = modal.querySelector('#observations');
 
     if (!patientSelect.value || !symptoms.value || !state.selectedPriority) {
-      alert('Por favor complete todos los campos requeridos');
+      showNotification('Por favor complete todos los campos requeridos', 'warning');
       return;
     }
 
     const patient = store.find('patients', patientSelect.value);
     if (!patient) {
-      alert('Paciente no encontrado');
+      showNotification('Paciente no encontrado', 'error');
       return;
     }
 
@@ -1927,12 +1927,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!elements.quickName?.value || !elements.quickDni?.value ||
       !elements.quickBirthdate?.value || !elements.quickGender?.value ||
       !elements.quickPhone?.value) {
-      alert('Por favor complete los datos básicos requeridos del paciente');
+      showNotification('Por favor complete los datos básicos requeridos del paciente', 'warning');
       return;
     }
 
     if (!elements.quickSymptoms?.value || !state.selectedPriority) {
-      alert('Por favor complete los síntomas y seleccione una prioridad');
+      showNotification('Por favor complete los síntomas y seleccione una prioridad', 'warning');
       return;
     }
 
@@ -2984,7 +2984,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       })[0];
 
     if (!nextPatient) {
-      alert('No hay pacientes esperando atención');
+      showNotification('No hay pacientes esperando atención', 'info');
       return;
     }
 
@@ -3022,12 +3022,12 @@ export default function mountTriage(root, { bus, store, user, role }) {
       top: 20px;
       right: 20px;
       padding: 1rem 1.5rem;
-      background: ${type === 'success' ? '#38a169' :
-        type === 'error' ? '#e53e3e' :
-          type === 'warning' ? '#d69e2e' : '#3182ce'};
+      background: ${type === 'success' ? 'var(--success)' :
+        type === 'error' ? 'var(--danger)' :
+          type === 'warning' ? 'var(--warning)' : 'var(--info)'};
       color: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
       z-index: 10000;
       animation: slideIn 0.3s ease;
     `;

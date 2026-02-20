@@ -430,7 +430,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
               </select>
             </div>
             
-            ${role === 'admin' || role === 'doctor' ? `
+            ${role === 'admin' || role === 'doctor' || role === 'receptionist' ? `
               <div class="form-group">
                 <label class="form-label">Paciente</label>
                 <select class="input" id="filter-patient">
@@ -439,7 +439,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
               </div>
             ` : ''}
             
-            ${role === 'admin' || role === 'patient' ? `
+            ${role === 'admin' || role === 'patient' || role === 'receptionist' ? `
               <div class="form-group">
                 <label class="form-label">Médico</label>
                 <select class="input" id="filter-doctor">
@@ -775,6 +775,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     elements.appointmentsCount.textContent = `${state.appointments.length} ${state.appointments.length === 1 ? 'cita' : 'citas'}`;
 
     const canEditBase = role === 'admin' ||
+      role === 'receptionist' ||
       (role === 'doctor' && user?.doctorId) ||
       (role === 'patient' && user?.patientId);
 

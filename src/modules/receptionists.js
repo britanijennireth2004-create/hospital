@@ -424,11 +424,22 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     if (elements.btnCancel) elements.btnCancel.addEventListener('click', closeModal);
     if (elements.btnSave) elements.btnSave.addEventListener('click', saveItem);
 
-    const debouncedLoad = debounce(() => { state.currentPage = 1; loadItems(); }, 300);
+    const debouncedLoad = debounce(() => {
+      state.filters.search = elements.search ? elements.search.value : '';
+      state.currentPage = 1;
+      loadItems();
+    }, 300);
     if (elements.search) elements.search.addEventListener('input', debouncedLoad);
 
     [elements.area, elements.status, elements.spec].forEach(e => {
-      if (e) e.addEventListener('change', () => { state.currentPage = 1; loadItems(); });
+      if (e) e.addEventListener('change', () => {
+        state.filters.search = elements.search ? elements.search.value : '';
+        state.filters.specialty = elements.spec ? elements.spec.value : '';
+        state.filters.areaId = elements.area ? elements.area.value : '';
+        state.filters.status = elements.status ? elements.status.value : 'active';
+        state.currentPage = 1;
+        loadItems();
+      });
     });
 
     if (elements.btnCancelStatus) elements.btnCancelStatus.addEventListener('click', () => elements.statusModal && elements.statusModal.classList.add('hidden'));
@@ -468,6 +479,13 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
 
   function saveItem() {
     if (!elements.form.checkValidity()) { elements.form.reportValidity(); return; }
+
+    // Validar permisos: solo admin puede crear nuevos recepcionistas
+    if (!state.editingId && role !== 'admin') {
+      alert('No tienes permiso para registrar personal administrativo');
+      return;
+    }
+
     const data = {
       name: elements.fName.value,
       dni: elements.fDni.value,
