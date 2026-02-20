@@ -17,6 +17,12 @@ const APP_STATE = {
 
 // ===== SISTEMA DE ROUTING =====
 const ROUTES = {
+  landing: {
+    label: 'Inicio',
+    icon: ICONS.home,
+    module: () => import('../modules/landing.js'),
+    permission: () => true
+  },
   dashboard: {
     label: 'Dashboard',
     icon: ICONS.dashboard,
@@ -160,11 +166,10 @@ function mountLogin(root, { onSuccess }) {
     attempts: 0,
     lockedUntil: 0,
     lockInterval: null,
-    view: 'login', // login | recover-email | recover-verify | recover-reset | recover-success
+    view: 'login',
     recUser: null
   };
 
-  // Iconos del módulo de autenticación
   const ai = {
     eye: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
     eyeOff: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
@@ -217,7 +222,6 @@ function mountLogin(root, { onSuccess }) {
     onSuccess(user);
   }
 
-  // ====== RENDER PRINCIPAL (siempre muestra login) ======
   function render() {
     const isLocked = ls.lockedUntil > Date.now();
     root.innerHTML = `
@@ -248,6 +252,9 @@ function mountLogin(root, { onSuccess }) {
             <div class="login-recover">
               <a href="#" id="recover-link">¿Olvidó su contraseña? Recuperar acceso</a>
             </div>
+            <div class="login-recover" style="margin-top: 0.5rem;">
+              <a href="#" id="back-to-landing">← Volver a página de bienvenida</a>
+            </div>
           </form>
           <div class="login-footer-note">
             <strong>Prototipo de demostración:</strong> Los datos se almacenan localmente en tu navegador.
@@ -270,7 +277,6 @@ function mountLogin(root, { onSuccess }) {
         <button class="quick-access-btn login-btn" data-role="receptionist" title="Recepcionista">Recepción</button>
       </div>
     </div>
-    <!-- Modal de recuperación -->
     <div id="recover-modal-overlay" class="auth-modal-overlay" style="display:none;">
       <div class="auth-modal" id="recover-modal-box">
         <button class="auth-modal-close" id="recover-modal-close">${ai.back} Cerrar</button>
@@ -282,7 +288,6 @@ function mountLogin(root, { onSuccess }) {
     if (isLocked) startLockTimer();
   }
 
-  // ====== ABRIR / CERRAR MODAL DE RECUPERACIÓN ======
   function openRecoverModal() {
     ls.view = 'recover-email';
     ls.recUser = null;
@@ -298,7 +303,6 @@ function mountLogin(root, { onSuccess }) {
     if (overlay) { overlay.style.display = 'none'; }
   }
 
-  // ====== RENDERIZAR PASO ACTUAL DENTRO DEL MODAL ======
   function renderRecoverStep() {
     const body = root.querySelector('#recover-modal-body');
     if (!body) return;
@@ -385,7 +389,6 @@ function mountLogin(root, { onSuccess }) {
     return '';
   }
 
-  // ====== CSS ADICIONAL ======
   function authCSS() {
     return `<style>
     .auth-pw-wrap{position:relative;}
@@ -409,7 +412,6 @@ function mountLogin(root, { onSuccess }) {
     .auth-str-lbl{font-size:0.68rem;font-weight:600;white-space:nowrap;}
     @keyframes authShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
     .auth-shake{animation:authShake .4s ease;}
-    /* ====== MODAL DE RECUPERACIÓN ====== */
     .auth-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;animation:authModalFadeIn .25s ease;}
     @keyframes authModalFadeIn{from{opacity:0;}to{opacity:1;}}
     .auth-modal{background:#fff;border-radius:16px;width:100%;max-width:440px;padding:2rem;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.25);animation:authModalSlideUp .3s ease;}
@@ -426,20 +428,16 @@ function mountLogin(root, { onSuccess }) {
     </style>`;
   }
 
-  // ====== EVENTOS PRINCIPALES (login + apertura modal) ======
   function bindEvents() {
-    // --- Toggle password (login) ---
     const eyeBtn = root.querySelector('#eye-login');
     const passInput = root.querySelector('#login-pass');
     if (eyeBtn && passInput) eyeBtn.onclick = () => { const v = passInput.type === 'password'; passInput.type = v ? 'text' : 'password'; eyeBtn.innerHTML = v ? ai.eyeOff : ai.eye; };
 
-    // --- Mostrar error inline ---
     function showErr(id, msg) {
       const el = root.querySelector('#' + id) || document.querySelector('#' + id);
       if (el) { el.innerHTML = `${ai.warn} <span>${msg}</span>`; el.style.display = 'flex'; }
     }
 
-    // --- LOGIN FORM ---
     const loginForm = root.querySelector('#login-form');
     if (loginForm) {
       loginForm.addEventListener('submit', (e) => {
@@ -476,34 +474,37 @@ function mountLogin(root, { onSuccess }) {
       });
     }
 
-    // --- ABRIR MODAL RECUPERACIÓN ---
     const recLink = root.querySelector('#recover-link');
     if (recLink) recLink.onclick = (e) => { e.preventDefault(); openRecoverModal(); };
 
-    // --- CERRAR MODAL ---
+    const backToLanding = root.querySelector('#back-to-landing');
+    if (backToLanding) {
+      backToLanding.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('hospital_landing_seen');
+        location.reload();
+      });
+    }
+
     const closeBtn = root.querySelector('#recover-modal-close');
     if (closeBtn) closeBtn.onclick = () => closeRecoverModal();
 
-    // --- Cerrar modal al hacer click en el backdrop ---
     const overlay = root.querySelector('#recover-modal-overlay');
     if (overlay) overlay.addEventListener('click', (e) => {
       if (e.target === overlay) closeRecoverModal();
     });
 
-    // --- QUICK ACCESS ---
     root.querySelectorAll('.login-btn').forEach(btn => {
       btn.addEventListener('click', () => { const r = btn.dataset.role; if (r) loginAs(r); });
     });
   }
 
-  // ====== EVENTOS DEL MODAL DE RECUPERACIÓN (se re-bindean en cada paso) ======
   function bindRecoverEvents() {
     function showErr(id, msg) {
       const el = document.querySelector('#' + id);
       if (el) { el.innerHTML = `${ai.warn} <span>${msg}</span>`; el.style.display = 'flex'; }
     }
 
-    // Toggle eyes dentro del modal
     function bindEye(eyeId, inputId) {
       const btn = document.querySelector('#' + eyeId);
       const inp = document.querySelector('#' + inputId);
@@ -512,7 +513,6 @@ function mountLogin(root, { onSuccess }) {
     bindEye('eye-new', 'new-pass');
     bindEye('eye-confirm', 'confirm-pass');
 
-    // PASO 1 — Buscar email
     const emailForm = document.querySelector('#rec-email-form');
     if (emailForm) {
       emailForm.addEventListener('submit', (e) => {
@@ -528,7 +528,6 @@ function mountLogin(root, { onSuccess }) {
       });
     }
 
-    // PASO 2 — Verificar username
     const verifyForm = document.querySelector('#rec-verify-form');
     if (verifyForm) {
       verifyForm.addEventListener('submit', (e) => {
@@ -540,7 +539,6 @@ function mountLogin(root, { onSuccess }) {
       });
     }
 
-    // PASO 3 — Nueva contraseña
     const resetForm = document.querySelector('#rec-reset-form');
     if (resetForm) {
       const newPw = document.querySelector('#new-pass');
@@ -567,12 +565,10 @@ function mountLogin(root, { onSuccess }) {
       });
     }
 
-    // Éxito — cerrar modal
     const closeSuccess = document.querySelector('#close-success-btn');
     if (closeSuccess) closeSuccess.onclick = () => closeRecoverModal();
   }
 
-  // ====== LOCK COUNTDOWN ======
   function startLockTimer() {
     if (ls.lockInterval) clearInterval(ls.lockInterval);
     ls.lockInterval = setInterval(() => {
@@ -583,7 +579,6 @@ function mountLogin(root, { onSuccess }) {
     }, 1000);
   }
 
-  // Render inicial
   render();
 }
 
@@ -593,11 +588,9 @@ async function mountAppShell(root, { user, bus, store }) {
     currentRoute: 'dashboard'
   };
 
-  // Renderizar shell
   function render() {
     root.innerHTML = `
       <div class="app-shell">
-        <!-- Header -->
         <header class="app-header">
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: 1rem;">
             <div style="font-weight: bold;">Hospital Universitario Manuel Núñez Tovar</div>
@@ -614,10 +607,8 @@ async function mountAppShell(root, { user, bus, store }) {
               </div>
             </div>
             <button class="btn btn-sm" id="btn-logout" title="Cerrar Sesión" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: none; background: transparent;">
-              <!-- Span que aplica el color mediante la variable CSS --danger -->
               <span style="display: flex; align-items: center; justify-content: center; color: var(--danger);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <!-- Icono de logout (salida) -->
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
                   <line x1="21" y1="12" x2="9" y2="12"/>
@@ -627,9 +618,7 @@ async function mountAppShell(root, { user, bus, store }) {
           </div>
         </header>
 
-        <!-- Main content -->
         <main class="app-main">
-          <!-- Sidebar siempre visible -->
           <nav class="app-sidebar">
             <div class="nav-menu">
               <div style="font-weight: bold; font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--muted); padding: 0 0.75rem; letter-spacing: 0.05em;">MENÚ PRINCIPAL</div>
@@ -670,7 +659,7 @@ async function mountAppShell(root, { user, bus, store }) {
                     `;
         };
 
-        const mainRoutes = Object.entries(ROUTES).filter(([_, r]) => !r.parent && r.permission(user.role));
+        const mainRoutes = Object.entries(ROUTES).filter(([_, r]) => !r.parent && r.permission(user.role) && r.label !== 'Landing');
 
         mainRoutes.forEach(([id, r]) => {
           items.push(renderRoute(id, r));
@@ -695,7 +684,6 @@ async function mountAppShell(root, { user, bus, store }) {
             </div>
           </nav>
 
-          <!-- Content area -->
           <div class="app-content">
             <div id="module-container"></div>
           </div>
@@ -742,7 +730,6 @@ async function mountAppShell(root, { user, bus, store }) {
       </style>
     `;
 
-    // Configurar navegación
     root.querySelectorAll('.nav-btn').forEach(btn => {
       if (btn.classList.contains('dropdown-trigger')) {
         btn.addEventListener('click', (e) => {
@@ -759,14 +746,12 @@ async function mountAppShell(root, { user, bus, store }) {
       });
     });
 
-    // === Sistema de badges de notificaciones ===
     function getUnreadCounts() {
       const msgs = store.get('messages') || [];
       const notifs = store.get('notifications') || [];
       const rems = store.get('reminders') || [];
       const all = [...msgs, ...notifs, ...rems].filter(i => !i.deleted);
       const isUnread = i => i.status === 'pending' || i.status === 'sent' || i.status === 'scheduled';
-      // Filtrar por rol
       let visible = all;
       if (user.role === 'patient') visible = all.filter(i => i.recipientId === user.patientId || i.recipientId === user.id || i.createdBy === user.id);
       else if (user.role === 'doctor') visible = all.filter(i => i.recipientId === user.doctorId || i.recipientId === user.id || i.createdBy === user.id);
@@ -779,7 +764,6 @@ async function mountAppShell(root, { user, bus, store }) {
 
     function updateNotifBadges() {
       const counts = getUnreadCounts();
-      // Badge total en Comunicaciones
       const totalBadge = document.getElementById('comunicaciones-badge-total');
       if (totalBadge) {
         if (counts.total > 0) {
@@ -789,7 +773,6 @@ async function mountAppShell(root, { user, bus, store }) {
           totalBadge.classList.remove('visible');
         }
       }
-      // Badges por sub-ruta
       const badgeMap = { notif_inbox: counts.inbox, notif_sent: counts.sent, notif_reminders: counts.reminders, notif_alerts: counts.alerts };
       Object.entries(badgeMap).forEach(([routeId, count]) => {
         const el = document.getElementById(`nav-badge-${routeId}`);
@@ -804,13 +787,11 @@ async function mountAppShell(root, { user, bus, store }) {
       });
     }
 
-    // Actualizar badges inicialmente y al cambiar datos
     updateNotifBadges();
     store.subscribe('messages', updateNotifBadges);
     store.subscribe('notifications', updateNotifBadges);
     store.subscribe('reminders', updateNotifBadges);
 
-    // Configurar logout
     root.querySelector('#btn-logout').addEventListener('click', () => {
       if (confirm('¿Estás seguro de cerrar sesión?')) {
         Logger.log(store, user, {
@@ -820,17 +801,16 @@ async function mountAppShell(root, { user, bus, store }) {
           details: { userId: user.id }
         });
         localStorage.removeItem('hospital_user');
+        localStorage.removeItem('hospital_landing_seen');
         APP_STATE.user = null;
         APP_STATE.role = null;
         initApp();
       }
     });
 
-    // Cargar módulo inicial
     navigateTo(state.currentRoute);
   }
 
-  // Navegar a una ruta
   async function navigateTo(routeId) {
     if (!ROUTES[routeId] || !ROUTES[routeId].permission(user.role)) {
       routeId = 'dashboard';
@@ -838,7 +818,6 @@ async function mountAppShell(root, { user, bus, store }) {
 
     state.currentRoute = routeId;
 
-    // Actualizar UI
     root.querySelectorAll('.nav-btn').forEach(btn => {
       const isActive = btn.dataset.route === routeId;
       btn.classList.toggle('active', isActive);
@@ -846,25 +825,19 @@ async function mountAppShell(root, { user, bus, store }) {
       btn.style.color = isActive ? 'var(--accent)' : 'var(--text)';
     });
 
-    // Asegurar que el dropdown esté abierto si se navega a un sub-item
     const subRoute = ROUTES[routeId];
     if (subRoute && subRoute.parent) {
       const container = document.getElementById(`${subRoute.parent}-dropdown-container`);
       if (container) container.classList.add('open');
     }
 
-    // Cargar módulo
     await loadModule(routeId);
-
-    // Ya no se cierra con re-render aquí, se cierra en el event listener de nav-btn
   }
 
-  // Cargar módulo
   async function loadModule(routeId) {
     const moduleContainer = root.querySelector('#module-container');
     if (!moduleContainer) return;
 
-    // Limpiar módulo anterior
     if (APP_STATE.currentModule && APP_STATE.currentModule.destroy) {
       try {
         await APP_STATE.currentModule.destroy();
@@ -876,7 +849,6 @@ async function mountAppShell(root, { user, bus, store }) {
     moduleContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';
 
     try {
-      // Cargar módulo dinámicamente
       const moduleFactory = await ROUTES[routeId].module();
       APP_STATE.currentModule = moduleFactory.default(moduleContainer, {
         bus,
@@ -886,7 +858,6 @@ async function mountAppShell(root, { user, bus, store }) {
         routeId
       });
 
-      // Actualizar URL
       window.history.pushState({}, '', `#${routeId}`);
 
     } catch (error) {
@@ -903,16 +874,13 @@ async function mountAppShell(root, { user, bus, store }) {
     }
   }
 
-  // Manejar navegación del navegador
   window.addEventListener('popstate', () => {
     const route = window.location.hash.slice(1) || 'dashboard';
     navigateTo(route);
   });
 
-  // Inicializar
   render();
 
-  // Cargar ruta desde URL
   const initialRoute = window.location.hash.slice(1) || 'dashboard';
   if (initialRoute !== state.currentRoute) {
     navigateTo(initialRoute);
@@ -933,22 +901,20 @@ async function initApp() {
   try {
     showLoading(true);
 
-    // 1. Inicializar core
     APP_STATE.bus = createBus();
     APP_STATE.store = await createStore(APP_STATE.bus);
 
-    // 2. Verificar usuario guardado
     const savedUser = localStorage.getItem('hospital_user');
+    const hasSeenLanding = localStorage.getItem('hospital_landing_seen');
 
     if (savedUser) {
       const user = JSON.parse(savedUser);
       APP_STATE.user = user;
       APP_STATE.role = user.role;
-
-      // 3. Montar aplicación autenticada
       await mountAuthenticatedApp(user);
+    } else if (!hasSeenLanding) {
+      await mountLandingScreen();
     } else {
-      // 4. Montar login
       await mountLoginScreen();
     }
 
@@ -960,18 +926,36 @@ async function initApp() {
   }
 }
 
+async function mountLandingScreen() {
+  const appElement = document.getElementById('app');
+  appElement.innerHTML = '';
+
+  try {
+    const landingModule = await ROUTES.landing.module();
+    // Pasar store al módulo de landing
+    APP_STATE.currentModule = landingModule.default(appElement, {
+      onGetStarted: () => {
+        localStorage.setItem('hospital_landing_seen', 'true');
+        mountLoginScreen();
+      },
+      store: APP_STATE.store  // <-- IMPORTANTE: pasar el store
+    });
+  } catch (error) {
+    console.error('Error cargando landing page:', error);
+    showError('No se pudo cargar la página de bienvenida');
+  }
+}
+
 async function mountLoginScreen() {
   const appElement = document.getElementById('app');
   appElement.innerHTML = '';
 
   mountLogin(appElement, {
     onSuccess: (user) => {
-      // Guardar usuario
       localStorage.setItem('hospital_user', JSON.stringify(user));
+      localStorage.setItem('hospital_landing_seen', 'true');
       APP_STATE.user = user;
       APP_STATE.role = user.role;
-
-      // Recargar para montar app autenticada
       location.reload();
     }
   });
@@ -987,11 +971,9 @@ async function mountAuthenticatedApp(user) {
     store: APP_STATE.store
   });
 
-  // Configurar temporizador de inactividad (Seguridad)
   setupAutoLogout(APP_STATE.store);
 }
 
-// Lógica de Logout por Inactividad
 function setupAutoLogout(store) {
   let lastActivity = Date.now();
   const policies = store.get('passwordPolicies') || { sessionTimeoutMinutes: 480 };
@@ -1001,12 +983,10 @@ function setupAutoLogout(store) {
     lastActivity = Date.now();
   };
 
-  // Eventos que cuentan como actividad
   ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(name => {
     document.addEventListener(name, updateActivity, { passive: true });
   });
 
-  // Verificación periódica
   const checkInterval = setInterval(() => {
     const elapsed = Date.now() - lastActivity;
 
@@ -1014,22 +994,21 @@ function setupAutoLogout(store) {
       clearInterval(checkInterval);
       handleAutomaticLogout();
     }
-  }, 30000); // Revisar cada 30 segundos
+  }, 30000);
 }
 
 function handleAutomaticLogout() {
   localStorage.removeItem('hospital_user');
+  localStorage.removeItem('hospital_landing_seen');
   alert('Su sesión ha expirado por inactividad por motivos de seguridad.');
   location.reload();
 }
 
-// ===== INICIAR APLICACIÓN =====
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
   initApp();
 }
 
-// Exportar para debugging
 window.APP_STATE = APP_STATE;
 window.APP_ROUTES = ROUTES;
