@@ -59,7 +59,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
       status: 'active',
       ageRange: '',
       hasAllergies: '',
-      bloodType: ''
+      bloodType: '',
+      recordCount: ''
     },
     sortBy: 'name',
     currentPage: 1,
@@ -118,6 +119,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       const searchTerm = state.filters.search.toLowerCase();
       filteredPatients = filteredPatients.filter(patient =>
         patient.name.toLowerCase().includes(searchTerm) ||
+        (patient.docType + '-' + patient.dni)?.toLowerCase().includes(searchTerm) ||
         patient.dni?.toLowerCase().includes(searchTerm) ||
         patient.email?.toLowerCase().includes(searchTerm) ||
         patient.phone?.includes(searchTerm)
@@ -165,6 +167,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
       filteredPatients = filteredPatients.filter(patient =>
         patient.bloodType === state.filters.bloodType
       );
+    }
+
+    if (state.filters.recordCount) {
+      filteredPatients = filteredPatients.filter(patient => {
+        const count = state.clinicalRecords.filter(r => r.patientId === patient.id).length;
+        switch (state.filters.recordCount) {
+          case 'none': return count === 0;
+          case 'some': return count > 0 && count <= 5;
+          case 'many': return count > 5;
+          default: return true;
+        }
+      });
     }
 
     filteredPatients.sort((a, b) => {
@@ -231,25 +245,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
         <div class="card">
           <div class="flex justify-between items-center mb-3">
             <h3 style="margin: 0;">${icons.filter} Filtros</h3>
-            <div class="flex gap-2">
-              <button class="btn btn-outline btn-sm" id="btn-reset-filters">
-                Limpiar filtros
-              </button>
-              <button class="btn btn-outline btn-sm" id="btn-toggle-view">
-                ${state.viewMode === 'list' ? `${icons.cardView} Vista Tarjetas` : `${icons.listView} Vista Lista`}
-              </button>
-            </div>
           </div>
           
-          <div class="grid" style="grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1rem;">
+          <div class="grid grid-4">
             <!-- Búsqueda -->
-            <div class="form-group">
+            <div class="form-group" style="grid-column: span 2;">
               <label class="form-label">Buscar</label>
               <div class="flex gap-2">
                 <input type="text" class="input" id="filter-search" 
-                       placeholder="Nombre, DNI, teléfono..." 
+                       placeholder="Nombre, Cédula, teléfono..." 
                        value="${state.filters.search}">
-                <button class="btn btn-outline" id="btn-search">${icons.search}</button>
+                <button class="btn btn-outline" id="btn-search" style="min-width: 45px;">${icons.search}</button>
               </div>
             </div>
             
@@ -272,19 +278,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 <option value="all" ${state.filters.status === 'all' ? 'selected' : ''}>Todos</option>
               </select>
             </div>
-            
-            <div class="form-group">
-              <label class="form-label">${icons.sort} Ordenar por</label>
-              <select class="input" id="sort-by">
-                <option value="name" ${state.sortBy === 'name' ? 'selected' : ''}>Nombre</option>
-                <option value="age" ${state.sortBy === 'age' ? 'selected' : ''}>Edad</option>
-                <option value="recent" ${state.sortBy === 'recent' ? 'selected' : ''}>Más recientes</option>
-              </select>
-            </div>
           </div>
           
           <!-- Filtros avanzados -->
-          <div class="grid grid-3 mt-3" id="advanced-filters" style="display: none;">
+          <div class="grid grid-5 mt-3" id="advanced-filters" style="display: none;">
             <div class="form-group">
               <label class="form-label">Rango de edad</label>
               <select class="input" id="filter-age">
@@ -319,12 +316,49 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 <option value="AB-" ${state.filters.bloodType === 'AB-' ? 'selected' : ''}>AB-</option>
               </select>
             </div>
+
+            <div class="form-group">
+              <label class="form-label">Cant. de registros</label>
+              <select class="input" id="filter-records">
+                <option value="">Todos</option>
+                <option value="none" ${state.filters.recordCount === 'none' ? 'selected' : ''}>Sin registros</option>
+                <option value="some" ${state.filters.recordCount === 'some' ? 'selected' : ''}>1 a 5 registros</option>
+                <option value="many" ${state.filters.recordCount === 'many' ? 'selected' : ''}>Más de 5</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Pacientes por página</label>
+              <select class="input" id="items-per-page">
+                <option value="5" ${state.itemsPerPage === 5 ? 'selected' : ''}>Ver 5</option>
+                <option value="10" ${state.itemsPerPage === 10 ? 'selected' : ''}>Ver 10</option>
+                <option value="25" ${state.itemsPerPage === 25 ? 'selected' : ''}>Ver 25</option>
+                <option value="50" ${state.itemsPerPage === 50 ? 'selected' : ''}>Ver 50</option>
+              </select>
+            </div>
           </div>
           
-          <div class="flex justify-between mt-3">
-            <button class="btn btn-outline btn-sm" id="btn-toggle-advanced">
-              <span id="advanced-icon">▼</span> Filtros avanzados
-            </button>
+          <div class="flex justify-between mt-3 items-center">
+            <div class="flex gap-2 items-center">
+              <button class="btn btn-outline btn-sm" id="btn-toggle-advanced">
+                <span id="advanced-icon">▼</span> Filtros avanzados
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-reset-filters">
+                ${icons.cancel} Limpiar
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-toggle-view">
+                ${state.viewMode === 'list' ? `${icons.cardView} Tarjetas` : `${icons.listView} Tabla`}
+              </button>
+              
+              <div class="flex items-center gap-2 ml-2" style="border-left: 1px solid var(--border); padding-left: 1rem;">
+                <label class="text-xs font-bold text-muted" style="text-transform: uppercase;">${icons.sort} Ordenar:</label>
+                <select class="input" id="sort-by" style="padding: 0.25rem 2rem 0.25rem 0.75rem; font-size: 0.8rem; width: auto; height: 32px;">
+                  <option value="name" ${state.sortBy === 'name' ? 'selected' : ''}>Nombre</option>
+                  <option value="age" ${state.sortBy === 'age' ? 'selected' : ''}>Edad</option>
+                  <option value="recent" ${state.sortBy === 'recent' ? 'selected' : ''}>Más recientes</option>
+                </select>
+              </div>
+            </div>
             <div class="text-sm text-muted" id="filter-count">
               Mostrando 0 de 0 pacientes
             </div>
@@ -335,25 +369,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
         <div id="content-container"></div>
 
         <!-- Paginación -->
-        <div class="card hidden" id="pagination-container">
+        <div class="card hidden" id="pagination-container" style="padding: 1rem;">
           <div class="flex justify-between items-center">
             <div class="text-sm text-muted" id="page-info">
               Página 1 de 1
             </div>
             <div class="flex gap-1" id="pagination-controls"></div>
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-muted">Mostrar:</span>
-              <select class="input input-sm" id="items-per-page" style="width: 80px;">
-                <option value="5">5</option>
-                <option value="10" selected>10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
-            </div>
           </div>
         </div>
 
-        <!-- Modal para nuevo/editar paciente -->
+        <!-- Modal para nuevo / editar paciente -->
         <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="patient-modal">
           <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
             <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
@@ -386,9 +411,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       </div>
                       
                       <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DNI/NIE *</label>
-                        <input type="text" class="input" id="form-dni" required 
-                               pattern="[0-9]{8}[A-Za-z]|[XYZ][0-9]{7}[A-Za-z]" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
+                        <div class="doc-group">
+                          <select class="input" id="form-doc-type" required style="border-color: var(--modal-border); background-color: var(--modal-bg);">
+                            <option value="V">V</option>
+                            <option value="E">E</option>
+                            <option value="J">J</option>
+                            <option value="P">P</option>
+                          </select>
+                          <input type="text" class="input" id="form-dni" required 
+                                 placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                        </div>
                       </div>
                     </div>
                     
@@ -600,29 +633,29 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </div>
 
         <!-- Modal para historial clínico -->
-        <div class="modal-overlay ${state.showClinicalHistory ? '' : 'hidden'}" id="clinical-history-modal">
-          <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-            <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-              <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-                ${icons.clinical} HISTORIAL CLÍNICO: <span id="patient-history-name"></span>
-              </div>
-              <button class="btn-close-modal" id="btn-close-history" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                ${icons.close}
-              </button>
+      <div class="modal-overlay ${state.showClinicalHistory ? '' : 'hidden'}" id="clinical-history-modal">
+        <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+          <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
+            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
+              ${icons.clinical} HISTORIAL CLÍNICO: <span id="patient-history-name"></span>
             </div>
-            
-            <div class="modal-body" id="clinical-history-content" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;"></div>
-            
-            <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; border: none;">
-              <button class="btn" id="btn-close-history-footer" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.6rem 1.5rem; font-weight: 600;">
-                ${icons.close} CERRAR
-              </button>
-            </div>
+            <button class="btn-close-modal" id="btn-close-history" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              ${icons.close}
+            </button>
+          </div>
+
+          <div class="modal-body" id="clinical-history-content" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;"></div>
+
+          <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; border: none;">
+            <button class="btn" id="btn-close-history-footer" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.6rem 1.5rem; font-weight: 600;">
+              ${icons.close} CERRAR
+            </button>
           </div>
         </div>
       </div>
-    `;
+      </div>
+      `;
 
     // Guardar referencias
     elements = {
@@ -643,12 +676,14 @@ export default function mountPatients(root, { bus, store, user, role }) {
       filterAge: root.querySelector('#filter-age'),
       filterAllergies: root.querySelector('#filter-allergies'),
       filterBlood: root.querySelector('#filter-blood'),
+      filterRecords: root.querySelector('#filter-records'),
       btnToggleAdvanced: root.querySelector('#btn-toggle-advanced'),
       advancedIcon: root.querySelector('#advanced-icon'),
       itemsPerPage: root.querySelector('#items-per-page'),
       modal: root.querySelector('#patient-modal'),
       form: root.querySelector('#patient-form'),
       formName: root.querySelector('#form-name'),
+      formDocType: root.querySelector('#form-doc-type'),
       formDni: root.querySelector('#form-dni'),
       formBirthdate: root.querySelector('#form-birthdate'),
       formGender: root.querySelector('#form-gender'),
@@ -715,13 +750,13 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Renderizar vista de lista
   function renderListView() {
     elements.contentContainer.innerHTML = `
-      <div class="card">
+      <div class="card" >
         <div class="table-responsive">
           <table class="table">
             <thead>
               <tr>
                 <th>Paciente</th>
-                <th>DNI</th>
+                <th>CÉDULA</th>
                 <th>Edad</th>
                 <th>Género</th>
                 <th>Contacto</th>
@@ -736,7 +771,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </table>
         </div>
       </div>
-    `;
+      `;
   }
 
   // Renderizar fila de paciente - CON BOTÓN DE HISTORIAL
@@ -749,19 +784,19 @@ export default function mountPatients(root, { bus, store, user, role }) {
     return `
       <tr>
         <td data-label="Paciente">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
               ${icons.user}
             </div>
             <div>
-              <div style="font-weight: 500;">${patient.name}</div>
-              <div style="font-size: 0.75rem; color: var(--muted);">
-                ${icons.clinical} ${clinicalCount} registros • ${icons.calendar} ${appointmentCount} citas
+              <div style="font-weight: 600; font-size: 0.85rem;">${patient.name}</div>
+              <div style="font-size: 0.7rem; color: var(--muted); display: flex; gap: 0.4rem;">
+                <span>${clinicalCount} reg.</span> • <span>${appointmentCount} citas</span>
               </div>
             </div>
           </div>
         </td>
-        <td data-label="DNI">${patient.dni || '-'}</td>
+        <td data-label="CÉDULA">${patient.docType || 'V'}-${patient.dni || '-'}</td>
         <td data-label="Edad">${age || '?'} años</td>
         <td data-label="Género">
           <span class="badge ${patient.gender === 'M' ? 'badge-info' : patient.gender === 'F' ? 'badge-warning' : 'badge-secondary'}">
@@ -769,18 +804,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </span>
         </td>
         <td data-label="Contacto">
-          <div style="font-size: 0.875rem;">
-            <div>${icons.phone} ${patient.phone || '-'}</div>
-            <div class="text-muted text-xs">${icons.email} ${patient.email || ''}</div>
+          <div style="font-size: 0.8rem;">
+            <div style="font-weight: 500;">${patient.phone || '-'}</div>
+            <div class="text-muted" style="font-size: 0.7rem;">${patient.email || ''}</div>
           </div>
         </td>
         <td data-label="Última visita">
           ${lastVisit ? `
-            <div style="font-size: 0.875rem;">
-              <div>${icons.calendar} ${lastVisit.toLocaleDateString('es-ES')}</div>
-              <div class="text-muted text-xs">${icons.clock} ${lastVisit.toLocaleDateString('es-ES', { weekday: 'short' })}</div>
+            <div style="font-size: 0.8rem;">
+              <div style="font-weight: 500;">${lastVisit.toLocaleDateString('es-ES')}</div>
+              <div class="text-muted" style="font-size: 0.7rem;">${lastVisit.toLocaleDateString('es-ES', { weekday: 'short' })}</div>
             </div>
-          ` : 'Sin visitas'}
+          ` : '<span class="text-muted" style="font-size: 0.75rem;">-</span>'}
         </td>
         <td data-label="Estado">
           <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}">
@@ -803,16 +838,16 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </div>
         </td>
       </tr>
-    `;
+      `;
   }
 
   // Renderizar vista de tarjetas - CON BOTÓN DE HISTORIAL
   function renderCardsView() {
     elements.contentContainer.innerHTML = `
-      <div class="grid grid-3">
+      <div class="grid grid-3" >
         ${state.paginatedPatients.map(patient => renderPatientCard(patient)).join('')}
       </div>
-    `;
+      `;
 
     state.paginatedPatients.forEach(patient => {
       const card = elements.contentContainer.querySelector(`.patient-card[data-id="${patient.id}"]`);
@@ -845,8 +880,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
             <div style="flex: 1;">
               <div style="font-weight: 600; font-size: 1.125rem;">${patient.name}</div>
-              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--muted);">
-                <span>${patient.dni || 'Sin DNI'}</span>
+                <span class="text-xs text-muted font-bold" style="letter-spacing: 0.1em; opacity: 0.8;">CÉDULA / ID</span>
+                <span style="font-weight: 700; color: var(--modal-text);">${patient.docType || 'V'}-${patient.dni || '0'}</span>
                 •
                 <span style="color: ${genderColor};">
                   ${patient.gender === 'M' ? icons.male : patient.gender === 'F' ? icons.female : '⚧'} 
@@ -855,7 +890,6 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </div>
             </div>
           </div>
-        </div>
         
         <div style="margin-bottom: 1rem;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -922,7 +956,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </div>
         </div>
       </div>
-    `;
+      `;
   }
 
   // Renderizar estado vacío
@@ -944,7 +978,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           ` : ''}
         </div>
       </div>
-    `;
+      `;
 
     const btn = elements.contentContainer.querySelector('#btn-create-first-patient');
     if (btn) {
@@ -959,23 +993,23 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Renderizar paginación
   function renderPagination() {
-    if (state.filteredPatients.length <= state.itemsPerPage) {
+    const start = (state.currentPage - 1) * state.itemsPerPage + 1;
+    const end = Math.min(state.currentPage * state.itemsPerPage, state.filteredPatients.length);
+    const total = state.filteredPatients.length;
+
+    if (elements.filterCount) {
+      elements.filterCount.textContent = total > 0 ? `Mostrando ${start}-${end} de ${total} pacientes` : `Mostrando 0 de 0 pacientes`;
+    }
+
+    if (state.filteredPatients.length <= state.itemsPerPage && state.currentPage === 1) {
       elements.paginationContainer.classList.add('hidden');
       return;
     }
 
     elements.paginationContainer.classList.remove('hidden');
 
-    const start = (state.currentPage - 1) * state.itemsPerPage + 1;
-    const end = Math.min(state.currentPage * state.itemsPerPage, state.filteredPatients.length);
-    const total = state.filteredPatients.length;
-
     if (elements.pageInfo) {
       elements.pageInfo.textContent = `Página ${state.currentPage} de ${state.totalPages}`;
-    }
-
-    if (elements.filterCount) {
-      elements.filterCount.textContent = `Mostrando ${start}-${end} de ${total} pacientes`;
     }
 
     let paginationHTML = '';
@@ -985,7 +1019,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
               id="btn-prev" ${state.currentPage === 1 ? 'disabled' : ''}>
         ${icons.arrowLeft}
       </button>
-    `;
+      `;
 
     const maxPagesToShow = 5;
     let startPage = Math.max(1, state.currentPage - Math.floor(maxPagesToShow / 2));
@@ -997,19 +1031,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
     for (let i = startPage; i <= endPage; i++) {
       paginationHTML += `
-        <button class="btn btn-outline btn-sm ${state.currentPage === i ? 'active' : ''}" 
-                data-page="${i}">
-          ${i}
-        </button>
+      <button class="btn btn-outline btn-sm ${state.currentPage === i ? 'active' : ''}"
+              data-page="${i}">${i}</button>
       `;
     }
 
     paginationHTML += `
-      <button class="btn btn-outline btn-sm ${state.currentPage === state.totalPages ? 'disabled' : ''}" 
-              id="btn-next" ${state.currentPage === state.totalPages ? 'disabled' : ''}>
-        ${icons.arrowRight}
+      <button class="btn btn-outline btn-sm ${state.currentPage === state.totalPages ? 'disabled' : ''}"
+    id="btn-next" ${state.currentPage === state.totalPages ? 'disabled' : ''}>
+      ${icons.arrowRight}
       </button>
-    `;
+      `;
 
     if (elements.paginationControls) {
       elements.paginationControls.innerHTML = paginationHTML;
@@ -1036,7 +1068,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     };
 
     elements.statsContainer.innerHTML = `
-      <div class="card">
+      <div class="card" >
         <div class="text-muted text-sm">Total de pacientes</div>
         <div class="text-2xl font-bold" style="color: var(--accent);">${totalPatients}</div>
         <div class="text-xs text-muted mt-1">${icons.user} ${activePatients} activos</div>
@@ -1122,7 +1154,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
     // Apply filters on change for other filter elements
     [elements.filterGender, elements.filterStatus, elements.sortBy,
-    elements.filterAge, elements.filterAllergies, elements.filterBlood, elements.itemsPerPage].forEach(el => {
+    elements.filterAge, elements.filterAllergies, elements.filterBlood, elements.filterRecords, elements.itemsPerPage].forEach(el => {
       if (el) el.addEventListener('change', () => {
         state.filters = {
           search: elements.filterSearch?.value || '',
@@ -1130,7 +1162,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
           status: elements.filterStatus?.value || 'active',
           ageRange: elements.filterAge?.value || '',
           hasAllergies: elements.filterAllergies?.value || '',
-          bloodType: elements.filterBlood?.value || ''
+          bloodType: elements.filterBlood?.value || '',
+          recordCount: elements.filterRecords?.value || ''
         };
         if (el === elements.sortBy) {
           state.sortBy = elements.sortBy.value;
@@ -1309,7 +1342,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
       status: elements.filterStatus?.value || 'active',
       ageRange: elements.filterAge?.value || '',
       hasAllergies: elements.filterAllergies?.value || '',
-      bloodType: elements.filterBlood?.value || ''
+      bloodType: elements.filterBlood?.value || '',
+      recordCount: elements.filterRecords?.value || ''
     };
 
     state.currentPage = 1;
@@ -1325,7 +1359,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
       status: 'active',
       ageRange: '',
       hasAllergies: '',
-      bloodType: ''
+      bloodType: '',
+      recordCount: ''
     };
 
     state.sortBy = 'name';
@@ -1337,6 +1372,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.filterAge) elements.filterAge.value = '';
     if (elements.filterAllergies) elements.filterAllergies.value = '';
     if (elements.filterBlood) elements.filterBlood.value = '';
+    if (elements.filterRecords) elements.filterRecords.value = '';
     if (elements.sortBy) elements.sortBy.value = 'name';
 
     if (elements.btnToggleView) {
@@ -1393,8 +1429,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const allergyDiv = document.createElement('div');
     allergyDiv.className = 'flex items-center gap-2 mb-2';
     allergyDiv.innerHTML = `
-      <input type="text" class="input" id="${allergyId}" 
-             placeholder="Ej: Penicilina" 
+      <input type="text" class="input" id="${allergyId}"
+             placeholder="Ej: Penicilina"
              value="${value}"
              style="flex: 1;">
       <select class="input" style="width: 120px;">
@@ -1420,7 +1456,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Abrir modal
   function openModal(patient = null) {
-    state.editingId = patient?.id || null;
+    state.editingid = patient?.id || null;
     state.showModal = true;
 
     if (elements.modal) {
@@ -1439,7 +1475,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Cerrar modal
   function closeModal() {
     state.showModal = false;
-    state.editingId = null;
+    state.editingid = null;
 
     if (elements.modal) {
       elements.modal.classList.add('hidden');
@@ -1451,6 +1487,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Rellenar formulario
   function populateForm(patient) {
     if (elements.formName) elements.formName.value = patient.name || '';
+    if (elements.formDocType) elements.formDocType.value = patient.docType || 'V';
     if (elements.formDni) elements.formDni.value = patient.dni || '';
     if (elements.formBirthdate) elements.formBirthdate.value = patient.birthDate || '';
     if (elements.formGender) elements.formGender.value = patient.gender || '';
@@ -1501,8 +1538,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Guardar paciente
   async function savePatient() {
-    if (!validateForm()) {
-      showNotification('Por favor, complete los campos requeridos correctamente.', 'warning');
+    if (!await validateForm()) {
       return;
     }
 
@@ -1521,7 +1557,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         Logger.log(store, user, {
           action: Logger.Actions.UPDATE,
           module: Logger.Modules.PATIENTS,
-          description: `Paciente actualizado: ${formData.name}`,
+          description: `Paciente actualizado: ${formData.name} `,
           details: { patientId: state.editingId, ...formData }
         });
         showNotification('Paciente actualizado correctamente', 'success');
@@ -1529,7 +1565,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         const result = await store.add('patients', formData);
 
         // Crear usuario asociado
-        const username = (elements.formUsername && elements.formUsername.value) || formData.email.split('@')[0] || `paciente_${result.id.split('_').pop()}`;
+        const username = (elements.formUsername && elements.formUsername.value) || formData.email.split('@')[0] || `paciente_${result.id.split('_').pop()} `;
         const password = (elements.formPassword && elements.formPassword.value) || 'demo123';
 
         store.add('users', {
@@ -1545,7 +1581,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         Logger.log(store, user, {
           action: Logger.Actions.CREATE,
           module: Logger.Modules.PATIENTS,
-          description: `Paciente creado con acceso: ${formData.name}`,
+          description: `Paciente creado con acceso: ${formData.name} `,
           details: { patientId: result.id, ...formData }
         });
         showNotification('Paciente y usuario creados correctamente', 'success');
@@ -1561,39 +1597,44 @@ export default function mountPatients(root, { bus, store, user, role }) {
   }
 
   // Validar formulario
-  function validateForm() {
+  async function validateForm() {
     let isValid = true;
+    window.hospitalFieldValidation.clearAll(elements.form);
 
     const requiredFields = [
-      elements.formName,
-      elements.formDni,
-      elements.formBirthdate,
-      elements.formGender,
-      elements.formPhone
+      { field: elements.formName, label: 'Este campo es obligatorio' },
+      { field: elements.formDni, label: 'Cédula requerida' },
+      { field: elements.formBirthdate, label: 'Fecha requerida' },
+      { field: elements.formGender, label: 'Debe seleccionar género' },
+      { field: elements.formPhone, label: 'Teléfono requerido' }
     ];
 
-    requiredFields.forEach(field => {
-      if (field && !field.value.trim()) {
-        field.classList.add('error');
-        isValid = false;
-      } else if (field) {
-        field.classList.remove('error');
+    requiredFields.forEach(({ field, label }) => {
+      if (field) {
+        if (!field.value.trim()) {
+          window.hospitalFieldValidation.show(field, label);
+          isValid = false;
+        }
       }
     });
 
-    if (elements.formDni && !validateDNI(elements.formDni.value)) {
-      elements.formDni.classList.add('error');
+    if (elements.formDni && elements.formDni.value.trim() && !/^\d+$/.test(elements.formDni.value.trim())) {
+      window.hospitalFieldValidation.show(elements.formDni, 'Solo números permitidos');
       isValid = false;
     }
 
-    if (elements.formBirthdate) {
+    if (elements.formBirthdate && elements.formBirthdate.value) {
       const birthDate = new Date(elements.formBirthdate.value);
       const today = new Date();
       if (birthDate > today) {
-        elements.formBirthdate.classList.add('error');
-        showNotification('La fecha de nacimiento no puede ser en el futuro.', 'warning');
+        window.hospitalFieldValidation.show(elements.formBirthdate, 'No puede ser fecha futura');
         isValid = false;
       }
+    }
+
+    if (!isValid) {
+      const firstError = elements.form.querySelector('.error-field');
+      if (firstError) firstError.focus();
     }
 
     return isValid;
@@ -1622,8 +1663,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
     }
 
     return {
-      name: elements.formName?.value || '',
-      dni: elements.formDni?.value.toUpperCase() || '',
+      name: elements.formName?.value.trim() || '',
+      docType: elements.formDocType?.value || 'V',
+      dni: elements.formDni?.value.trim() || '',
       birthDate: elements.formBirthdate?.value || '',
       gender: elements.formGender?.value || '',
       bloodType: elements.formBloodType?.value || null,
@@ -1674,17 +1716,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-patient-modal';
     modalContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
     `;
 
     modalContainer.innerHTML = `
@@ -1707,7 +1749,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
               <div style="font-size: 0.75rem; font-weight: 700; color: #666; letter-spacing: 0.05em;">PACIENTE REGISTRADO</div>
               <h3 style="margin: 0; color: var(--modal-header); font-size: 1.75rem; font-weight: 800;">${patient.name}</h3>
               <div style="font-size: 0.9rem; color: #555; margin-top: 0.25rem;">
-                <span style="font-weight: 700;">DNI:</span> ${patient.dni || 'Sin especificar'} • 
+                <span style="font-weight: 700;">C.I.:</span> ${patient.docType || 'V'}-${patient.dni || 'Sin especificar'} • 
                 <span style="font-weight: 700;">HC:</span> ${patient.id.split('_').pop()}
               </div>
             </div>
@@ -1937,7 +1979,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </div>
         </div>
       </div>
-    `;
+      `;
 
     document.body.appendChild(modalContainer);
 
@@ -2022,7 +2064,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
     if (patientRecords.length === 0) {
       elements.clinicalHistoryContent.innerHTML = `
-        <div class="text-center" style="padding: 3rem;">
+      <div class="text-center" style = "padding: 3rem;" >
           <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">${icons.clinical}</div>
           <h3>No hay historial clínico</h3>
           <p class="text-muted">Este paciente no tiene registros clínicos</p>
@@ -2032,7 +2074,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     }
 
     elements.clinicalHistoryContent.innerHTML = `
-      <div class="timeline">
+      <div class="timeline" >
         ${patientRecords.map(record => {
       const doctor = store.find('doctors', record.doctorId);
       const date = new Date(record.date);
@@ -2142,9 +2184,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </div>
             </div>
           `;
-    }).join('')}
+    }).join('')
+      }
       </div>
-    `;
+      `;
   }
 
   // Ver registro clínico completo
@@ -2209,22 +2252,22 @@ export default function mountPatients(root, { bus, store, user, role }) {
     }
 
     notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 1rem 1.5rem;
-      background: ${bgColor};
-      color: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      z-index: 10000;
-      animation: slideIn 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    background: ${bgColor};
+    color: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     `;
 
-    notification.innerHTML = `${icon} ${message}`;
+    notification.innerHTML = `${icon} ${message} `;
     document.body.appendChild(notification);
 
     setTimeout(() => {
@@ -2236,9 +2279,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
       const style = document.createElement('style');
       style.id = 'notification-styles';
       style.textContent = `
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-      `;
+    @keyframes slideIn { from { transform: translateX(100 %); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100 %); opacity: 0; } }
+    `;
       document.head.appendChild(style);
     }
   }

@@ -56,6 +56,16 @@ const CSS = `
 .notif-row.unread .msg-date { color:var(--text); font-weight:600; }
 .notif-row .row-actions { display:flex; gap:2px; flex-shrink:0; padding-right:0.5rem; }
 .notif-row .row-actions .notif-toolbar-btn { width:28px; height:28px; }
+
+/* Modal de Confirmación */
+.notif-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:10000; backdrop-filter:blur(2px); }
+.notif-modal { background:white; width:90%; max-width:400px; border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-xl); animation:notif-modal-in 0.3s ease; }
+@keyframes notif-modal-in { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.notif-modal-header { padding:1.25rem; background:#fee2e2; color:#b91c1c; display:flex; align-items:center; gap:12px; }
+.notif-modal-header h3 { margin:0; font-size:1.1rem; }
+.notif-modal-body { padding:1.5rem; font-size:0.9rem; line-height:1.5; color:var(--text); }
+.notif-modal-footer { padding:1rem; background:var(--bg-light); display:flex; justify-content:flex-end; gap:0.75rem; border-top:1px solid var(--border); }
+
 .notif-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; color:var(--muted); flex:1; }
 .notif-empty svg { opacity:0.15; margin-bottom:1rem; transform:scale(3); }
 .notif-detail { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
@@ -81,7 +91,7 @@ const CSS = `
 </style>
 `;
 
-const ROUTE_MAP = { notif_inbox: 'inbox', notif_sent: 'sent', notif_reminders: 'reminders', notif_alerts: 'alerts' };
+const ROUTE_MAP = { notif_inbox: 'inbox', notif_sent: 'sent', notif_reminders: 'reminders', notif_alerts: 'alerts', notif_trash: 'trash' };
 
 export default function mountNotifications(root, { bus, store, user, role, routeId }) {
   const state = {
@@ -93,7 +103,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
     replyTo: null
   };
 
-  const canSend = ['admin', 'receptionist', 'doctor', 'nurse'].includes(role);
+  const canSend = ['admin', 'receptionist', 'doctor', 'nurse', 'patient'].includes(role);
   const canManage = ['admin', 'receptionist'].includes(role);
   let allData = { messages: [], notifications: [], reminders: [] };
   let subs = [];
@@ -117,6 +127,10 @@ export default function mountNotifications(root, { bus, store, user, role, route
 
   function getActorName(id) {
     if (!id || id === 'system') return 'Sistema';
+    if (id.startsWith('role_')) {
+      const roleMap = { role_doctor: 'Gremio Médico', role_nurse: 'Personal de Enfermería', role_receptionist: 'Recepción' };
+      return roleMap[id] || id;
+    }
     const u = store.find('users', id); if (u) return u.name;
     const d = store.find('doctors', id); if (d) return d.name;
     const p = store.find('patients', id); if (p) return p.name;
@@ -127,6 +141,13 @@ export default function mountNotifications(root, { bus, store, user, role, route
     const colors = ['#0f8d3a', '#3b82f6', '#8b5cf6', '#ef4444', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1'];
     let h = 0; for (let i = 0; i < (name || '').length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
     return colors[Math.abs(h) % colors.length];
+  }
+
+  function getEntityIdByUser(userId) {
+    if (!userId) return null;
+    const u = store.find('users', userId);
+    if (!u) return userId;
+    return u.patientId || u.doctorId || u.nurseId || u.receptionistId || u.id;
   }
 
   function chBadge(ch) {
@@ -171,9 +192,18 @@ export default function mountNotifications(root, { bus, store, user, role, route
       ...allData.notifications.map(n => ({ ...n, _src: 'notifications' })),
       ...allData.reminders.map(r => ({ ...r, _src: 'reminders' }))
     ];
-    if (role === 'patient') return all.filter(i => i.recipientId === user.patientId || i.recipientId === user.id || i.createdBy === user.id);
-    if (role === 'doctor') return all.filter(i => i.recipientId === user.doctorId || i.recipientId === user.id || i.createdBy === user.id);
-    return all;
+
+    return all.filter(i => {
+      if (role === 'admin') return true;
+      if (i.createdBy === user.id) return true;
+      if (i.recipientId === user.id ||
+        (user.patientId && i.recipientId === user.patientId) ||
+        (user.doctorId && i.recipientId === user.doctorId) ||
+        (user.nurseId && i.recipientId === user.nurseId) ||
+        (user.receptionistId && i.recipientId === user.receptionistId)) return true;
+      if (i.recipientRole === role) return true;
+      return false;
+    });
   }
 
   function getFolderItems() {
@@ -182,6 +212,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
     else if (state.folder === 'sent') items = items.filter(i => i.createdBy === user.id && !i.deleted);
     else if (state.folder === 'reminders') items = items.filter(i => i._src === 'reminders' && !i.deleted);
     else if (state.folder === 'alerts') items = items.filter(i => (i.priority === 'critical' || i.priority === 'high' || i._src === 'notifications') && !i.deleted);
+    else if (state.folder === 'trash') items = items.filter(i => i.deleted);
     if (state.search) {
       const s = state.search.toLowerCase();
       items = items.filter(i => (i.title || '').toLowerCase().includes(s) || (i.content || '').toLowerCase().includes(s) || (i.recipientName || '').toLowerCase().includes(s) || getActorName(i.createdBy).toLowerCase().includes(s));
@@ -191,7 +222,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
   }
 
   function folderTitle() {
-    const map = { inbox: 'Bandeja de entrada', sent: 'Enviados', reminders: 'Recordatorios', alerts: 'Alertas' };
+    const map = { inbox: 'Bandeja de entrada', sent: 'Enviados', reminders: 'Recordatorios', alerts: 'Alertas', trash: 'Papelera' };
     return map[state.folder] || 'Bandeja de entrada';
   }
 
@@ -215,8 +246,11 @@ export default function mountNotifications(root, { bus, store, user, role, route
         <button class="notif-toolbar-btn" id="tb-refresh" title="Actualizar">${ico.refresh}</button>
         ${state.selectedIds.size > 0 ? `
           <button class="notif-toolbar-btn" id="tb-markread" title="Marcar como leído" style="color:var(--accent);">${ico.markRead}</button>
-          <button class="notif-toolbar-btn" id="tb-delete" title="Eliminar" style="color:var(--danger);">${ico.trash}</button>
+          <button class="notif-toolbar-btn" id="tb-delete" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Mover a papelera'}" style="color:var(--danger);">${ico.trash}</button>
           <span style="font-size:0.75rem;color:var(--muted);font-weight:500;">${state.selectedIds.size} seleccionados</span>
+        ` : ''}
+        ${state.folder === 'trash' && items.length > 0 ? `
+          <button class="btn btn-outline-danger btn-sm" id="btn-empty-trash" style="margin-left:8px; font-size:0.7rem; padding:2px 8px;">Vaciar Papelera</button>
         ` : ''}
         <div class="notif-search">
           <span class="notif-search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
@@ -231,7 +265,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
 
   function renderRow(item) {
     const sender = state.folder === 'sent' ? `Para: ${item.recipientName || '—'}` : getActorName(item.createdBy);
-    const isUnread = item.status === 'pending' || item.status === 'sent';
+    const isUnread = item.status !== 'read' && item.status !== 'finalized';
     const isSelected = state.selectedIds.has(item.id);
     return `
     <div class="notif-row ${isUnread ? 'unread' : ''} ${isSelected ? 'selected' : ''}" data-id="${item.id}">
@@ -249,33 +283,63 @@ export default function mountNotifications(root, { bus, store, user, role, route
       </div>
       <div class="msg-date">${fmtDate(item.createdAt)}</div>
       <div class="row-actions">
-        <button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar leído">${ico.markRead}</button>
-        <button class="notif-toolbar-btn" data-action="delete" data-aid="${item.id}" title="Eliminar">${ico.trash}</button>
+        ${state.folder !== 'trash' ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar leído">${ico.markRead}</button>` : ''}
+        <button class="notif-toolbar-btn" data-action="delete" data-aid="${item.id}" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Eliminar'}">${ico.trash}</button>
       </div>
     </div>`;
   }
 
   function renderEmpty() {
-    const folderIco = { inbox: ico.inbox, sent: ico.sent, reminders: ico.clock, alerts: ico.alert };
+    const folderIco = { inbox: ico.inbox, sent: ico.sent, reminders: ico.clock, alerts: ico.alert, trash: ico.trash };
     return `<div class="notif-empty">
       ${folderIco[state.folder] || ico.inbox}
       <p style="font-size:0.95rem;margin:0.75rem 0 0.25rem;">No hay mensajes en <strong>${folderTitle()}</strong></p>
-      <p style="font-size:0.78rem;margin:0;">Los mensajes que reciba aparecerán aquí</p>
+      <p style="font-size:0.78rem;margin:0;">${state.folder === 'trash' ? 'La papelera está vacía' : 'Los mensajes aparecerán aquí'}</p>
     </div>`;
   }
 
-  // === VISTA DETALLE ===
+  function renderConfirmModal(onConfirm, count = 1) {
+    const overlay = document.createElement('div');
+    overlay.className = 'notif-modal-overlay';
+    overlay.innerHTML = `
+      <div class="notif-modal">
+        <div class="notif-modal-header">
+          ${ico.trash}
+          <h3>Eliminar permanentemente</h3>
+        </div>
+        <div class="notif-modal-body">
+          <p>¿Estás seguro de que deseas eliminar permanentemente ${count === 1 ? 'este mensaje' : `estos ${count} mensajes`}?</p>
+          <p style="margin-top:8px; color:#b91c1c; font-weight:600;">Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="notif-modal-footer">
+          <button class="btn btn-light" id="modal-cancel">Cancelar</button>
+          <button class="btn btn-danger" id="modal-confirm">Eliminar para siempre</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#modal-confirm').onclick = () => {
+      onConfirm();
+      overlay.remove();
+    };
+  }
+
   function renderDetail() {
     const item = findItem(state.viewingId);
     if (!item) return `<div class="notif-empty"><p>Mensaje no encontrado</p></div>`;
     const senderName = getActorName(item.createdBy);
     const ac = avatarColor(senderName);
+    const isSent = item.createdBy === user.id;
+
     return `
       <div class="notif-toolbar">
         <button class="notif-toolbar-btn" id="detail-back" title="Volver">${ico.back}</button>
         <div style="width:1px;height:24px;background:var(--border);margin:0 0.25rem;"></div>
-        <button class="notif-toolbar-btn" data-action="delete" data-aid="${item.id}" title="Eliminar">${ico.trash}</button>
-        <button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar como leído">${ico.markRead}</button>
+        <button class="notif-toolbar-btn" data-action="delete" data-aid="${item.id}" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Eliminar'}">${ico.trash}</button>
+        ${state.folder !== 'trash' ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar como leído">${ico.markRead}</button>` : ''}
+        ${canSend ? `<button class="notif-toolbar-btn" id="toolbar-reply" title="Responder">${ico.reply}</button>` : ''}
         <button class="notif-toolbar-btn" data-star="${item.id}" title="Destacar">${item.starred ? ico.starFill : ico.star}</button>
         <span class="notif-info">${fmtFull(item.createdAt)}</span>
       </div>
@@ -306,24 +370,70 @@ export default function mountNotifications(root, { bus, store, user, role, route
       </div>`;
   }
 
-  // === VISTA COMPOSICIÓN (pantalla completa dentro del módulo) ===
   function renderCompose() {
     const replyTo = state.replyTo;
     const patients = store.get('patients') || [];
     const doctors = store.get('doctors') || [];
+    const nurses = store.get('nurses') || [];
+    const receptionists = store.get('receptionists') || [];
+    const admins = (store.get('users') || []).filter(u => u.role === 'admin');
+
+    // Determinar destinatario predeterminado y nombre para mostrar
+    let replyId = null;
+    let replyName = '';
+    if (replyTo) {
+      if (replyTo.createdBy === user.id) {
+        replyId = replyTo.recipientId || (replyTo.recipientRole ? `role_${replyTo.recipientRole}` : null);
+        replyName = replyTo.recipientName || 'Destinatario original';
+      } else {
+        replyId = getEntityIdByUser(replyTo.createdBy);
+        replyName = getActorName(replyTo.createdBy);
+      }
+    }
+
+    const showAdminOption = role === 'receptionist' || role === 'admin';
+
     return `
       <div class="notif-compose-header">
-        <h3 style="margin:0;font-size:1rem;color:var(--text);font-weight:600;display:flex;align-items:center;gap:8px;">${ico.compose} ${replyTo ? 'Responder mensaje' : 'Nuevo mensaje'}</h3>
+        <h3 style="margin:0;font-size:1rem;color:var(--text);font-weight:600;display:flex;align-items:center;gap:8px;">${ico.compose} ${replyTo ? 'Responder' : 'Nuevo mensaje'}</h3>
         <button class="notif-toolbar-btn" id="compose-cancel" title="Cancelar">${ico.close}</button>
       </div>
       <form id="compose-form" class="notif-compose-form">
-        <div class="notif-compose-field">
+        <div class="notif-compose-field" ${replyTo ? 'style="background:rgba(16, 185, 129, 0.05);"' : ''}>
           <label>Para</label>
-          <select id="cmp-to" required>
-            <option value="">Seleccionar destinatario...</option>
-            <optgroup label="Pacientes">${patients.map(p => `<option value="${p.id}" data-name="${p.name}" ${replyTo && replyTo.createdBy === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}</optgroup>
-            <optgroup label="Doctores">${doctors.map(d => `<option value="${d.id}" data-name="${d.name}" ${replyTo && replyTo.createdBy === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}</optgroup>
-          </select>
+          ${replyTo ? `
+            <div style="flex:1; padding:0.6rem 0; font-size:0.85rem; font-weight:600; color:var(--accent-dark); display:flex; align-items:center; gap:6px;">
+              ${ico.check} ${replyName}
+              <input type="hidden" id="cmp-to" value="${replyId}">
+            </div>
+          ` : `
+            <select id="cmp-to" required>
+              <option value="">Seleccionar destinatario...</option>
+              <optgroup label="Roles de Personal">
+                ${showAdminOption ? `<option value="role_admin" ${replyId === 'role_admin' ? 'selected' : ''}>Alta Administración</option>` : ''}
+                <option value="role_doctor" ${replyId === 'role_doctor' ? 'selected' : ''}>Todo el Gremio Médico</option>
+                <option value="role_nurse" ${replyId === 'role_nurse' ? 'selected' : ''}>Todo el Personal de Enfermería</option>
+                <option value="role_receptionist" ${replyId === 'role_receptionist' ? 'selected' : ''}>Toda la Recepción</option>
+              </optgroup>
+              ${showAdminOption && admins.length > 0 ? `
+              <optgroup label="Administración">
+                ${admins.map(a => `<option value="${a.id}" data-name="${a.name}" ${replyId === a.id ? 'selected' : ''}>${a.name} (Admin)</option>`).join('')}
+              </optgroup>
+              ` : ''}
+              <optgroup label="Pacientes">
+                ${patients.map(p => `<option value="${p.id}" data-name="${p.name}" ${replyId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+              </optgroup>
+              <optgroup label="Médicos">
+                ${doctors.map(d => `<option value="${d.id}" data-name="${d.name}" ${replyId === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
+              </optgroup>
+              <optgroup label="Enfermería">
+                ${nurses.map(n => `<option value="${n.id}" data-name="${n.name}" ${replyId === n.id ? 'selected' : ''}>${n.name}</option>`).join('')}
+              </optgroup>
+              <optgroup label="Recepción">
+                ${receptionists.map(r => `<option value="${r.id}" data-name="${r.name}" ${replyId === r.id ? 'selected' : ''}>${r.name}</option>`).join('')}
+              </optgroup>
+            </select>
+          `}
         </div>
         <div class="notif-compose-field">
           <label>Asunto</label>
@@ -355,22 +465,110 @@ export default function mountNotifications(root, { bus, store, user, role, route
       </form>`;
   }
 
-  // === ACCIONES ===
   function findItem(id) { return [...allData.messages, ...allData.notifications, ...allData.reminders].find(i => i.id === id); }
   function findSrc(id) { for (const src of ['messages', 'notifications', 'reminders']) { if ((allData[src] || []).find(i => i.id === id)) return src; } return null; }
 
-  function markRead(id) { const src = findSrc(id); if (src) store.update(src, id, { status: 'read' }); loadData(); }
+  function markRead(id) {
+    const src = findSrc(id);
+    const item = findItem(id);
+    if (!src || !item) return;
+    const isRecipient = item.recipientId === user.id ||
+      (user.patientId && item.recipientId === user.patientId) ||
+      (user.doctorId && item.recipientId === user.doctorId) ||
+      (user.nurseId && item.recipientId === user.nurseId) ||
+      (user.receptionistId && item.recipientId === user.receptionistId) ||
+      (item.recipientRole === role);
+
+    if (isRecipient && item.status !== 'read') {
+      store.update(src, id, { status: 'read' });
+      loadData();
+    }
+  }
   function toggleStar(id) { const src = findSrc(id); const item = findItem(id); if (src && item) store.update(src, id, { starred: !item.starred }); loadData(); }
-  function deleteItem(id) { const src = findSrc(id); if (src) store.update(src, id, { deleted: true }); loadData(); }
+  function deleteItem(id) {
+    const src = findSrc(id);
+    if (!src) return;
+    if (state.folder === 'trash') {
+      renderConfirmModal(() => {
+        store.remove(src, id);
+        loadData();
+        if (state.view === 'detail') { state.view = 'list'; state.viewingId = null; }
+        render();
+        showToast('Mensaje eliminado permanentemente');
+      }, 1);
+    } else {
+      store.update(src, id, { deleted: true });
+      loadData();
+      if (state.view === 'detail') { state.view = 'list'; state.viewingId = null; }
+      render();
+      showToast('Movido a papelera');
+    }
+  }
 
   function bulkMarkRead() { state.selectedIds.forEach(id => markRead(id)); state.selectedIds.clear(); }
-  function bulkDelete() { if (!confirm(`¿Eliminar ${state.selectedIds.size} mensajes?`)) return; state.selectedIds.forEach(id => deleteItem(id)); state.selectedIds.clear(); }
+  function bulkDelete() {
+    const ids = Array.from(state.selectedIds);
+    if (ids.length === 0) return;
+
+    if (state.folder === 'trash') {
+      renderConfirmModal(() => {
+        ids.forEach(id => {
+          const src = findSrc(id);
+          if (src) store.remove(src, id);
+        });
+        state.selectedIds.clear();
+        loadData();
+        render();
+        showToast(`${ids.length} mensajes eliminados para siempre`);
+      }, ids.length);
+    } else {
+      ids.forEach(id => {
+        const src = findSrc(id);
+        if (src) store.update(src, id, { deleted: true });
+      });
+      state.selectedIds.clear();
+      loadData();
+      render();
+      showToast(`${ids.length} mensajes movidos a papelera`);
+    }
+  }
+
+  function emptyTrash() {
+    const items = getFolderItems();
+    if (items.length === 0) return;
+    renderConfirmModal(() => {
+      items.forEach(i => {
+        const src = findSrc(i.id);
+        if (src) store.remove(src, i.id);
+      });
+      loadData();
+      render();
+      showToast('Papelera vaciada');
+    }, items.length);
+  }
 
   function sendMessage(form) {
     const toSel = form.querySelector('#cmp-to');
-    const rName = toSel.options[toSel.selectedIndex]?.dataset?.name || '';
+    const val = toSel.value;
+    const isRole = val.startsWith('role_');
+
+    let rName = '';
+    if (toSel.tagName === 'SELECT') {
+      rName = isRole ? toSel.options[toSel.selectedIndex].text : (toSel.options[toSel.selectedIndex]?.dataset?.name || '');
+    } else {
+      // Si es una respuesta automática (input hidden)
+      if (state.replyTo) {
+        if (state.replyTo.createdBy === user.id) {
+          rName = state.replyTo.recipientName || 'Destinatario';
+        } else {
+          rName = getActorName(state.replyTo.createdBy);
+        }
+      }
+    }
+
     const msg = {
-      recipientId: toSel.value,
+      recipientId: isRole ? null : val,
+      recipientRole: isRole ? val.replace('role_', '') : null,
       recipientName: rName,
       title: form.querySelector('#cmp-subj').value.trim(),
       content: form.querySelector('#cmp-body').value.trim(),
@@ -390,7 +588,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
     Logger.log(store, user, {
       action: Logger.Actions.CREATE, module: 'notifications',
       description: `Mensaje enviado a ${rName}: ${msg.title}`,
-      details: { channel: msg.channel }
+      details: { channel: msg.channel, recipientRole: msg.recipientRole }
     });
     showToast('Mensaje enviado correctamente');
     state.view = 'list';
@@ -407,74 +605,65 @@ export default function mountNotifications(root, { bus, store, user, role, route
     setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2500);
   }
 
-  // === EVENTOS ===
   function setupEvents() {
-    // --- Vista Lista ---
     const btnNew = root.querySelector('#btn-new');
     if (btnNew) btnNew.onclick = () => { state.view = 'compose'; state.replyTo = null; render(); };
-
     const search = root.querySelector('#notif-search');
     if (search) search.addEventListener('input', debounce(() => { state.search = search.value; render(); }, 300));
-
     const tbSel = root.querySelector('#tb-selectall');
     if (tbSel) tbSel.onclick = () => { const items = getFolderItems(); if (state.selectedIds.size === items.length) { state.selectedIds.clear(); } else { items.forEach(i => state.selectedIds.add(i.id)); } render(); };
-
     const tbRef = root.querySelector('#tb-refresh');
     if (tbRef) tbRef.onclick = () => { loadData(); render(); showToast('Actualizado'); };
-
     const tbMr = root.querySelector('#tb-markread');
     if (tbMr) tbMr.onclick = () => { bulkMarkRead(); render(); showToast('Marcados como leídos'); };
-
     const tbDel = root.querySelector('#tb-delete');
     if (tbDel) tbDel.onclick = () => { bulkDelete(); render(); };
-
-    // Filas
     root.querySelectorAll('.notif-row').forEach(row => {
       const id = row.dataset.id;
       const chk = row.querySelector(`[data-check="${id}"]`);
       if (chk) chk.addEventListener('change', e => { e.stopPropagation(); if (e.target.checked) state.selectedIds.add(id); else state.selectedIds.delete(id); render(); });
-
       const starBtn = row.querySelector(`[data-star="${id}"]`);
       if (starBtn) starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStar(id); render(); });
-
       row.addEventListener('click', e => {
         if (e.target.closest('[data-check]') || e.target.closest('[data-star]') || e.target.closest('.row-actions')) return;
         markRead(id); state.view = 'detail'; state.viewingId = id; render();
       });
     });
-
-    // Acciones en filas (estáticas, siempre visibles)
     root.querySelectorAll('[data-action="delete"]').forEach(b => {
-      b.onclick = e => { e.stopPropagation(); deleteItem(b.dataset.aid); render(); showToast('Movido a papelera'); };
+      b.onclick = e => { e.stopPropagation(); deleteItem(b.dataset.aid); };
     });
+    const btnEmpty = root.querySelector('#btn-empty-trash');
+    if (btnEmpty) btnEmpty.onclick = () => emptyTrash();
     root.querySelectorAll('[data-action="read"]').forEach(b => {
       b.onclick = e => { e.stopPropagation(); markRead(b.dataset.aid); render(); showToast('Marcado como leído'); };
     });
-
-    // --- Vista Detalle ---
     const back = root.querySelector('#detail-back');
     if (back) back.onclick = () => { state.view = 'list'; state.viewingId = null; render(); };
-
     const detReply = root.querySelector('#detail-reply');
     if (detReply) detReply.onclick = () => { const item = findItem(state.viewingId); state.replyTo = item || null; state.view = 'compose'; render(); };
-
-    // Star en detalle
+    const toolReply = root.querySelector('#toolbar-reply');
+    if (toolReply) toolReply.onclick = () => { const item = findItem(state.viewingId); state.replyTo = item || null; state.view = 'compose'; render(); };
     root.querySelectorAll('.notif-toolbar [data-star]').forEach(b => {
       b.onclick = e => { e.stopPropagation(); toggleStar(b.dataset.star); render(); };
     });
-
-    // --- Vista Composición ---
     const compForm = root.querySelector('#compose-form');
     if (compForm) compForm.onsubmit = e => { e.preventDefault(); sendMessage(compForm); };
-
     const compCancel = root.querySelector('#compose-cancel');
     if (compCancel) compCancel.onclick = () => { state.view = 'list'; state.replyTo = null; render(); };
-
     const compDiscard = root.querySelector('#compose-discard');
     if (compDiscard) compDiscard.onclick = () => { state.view = 'list'; state.replyTo = null; render(); };
+
+    // Auto-focus en el cuerpo del mensaje si estamos redactando
+    if (state.view === 'compose') {
+      const body = root.querySelector('#cmp-body');
+      if (body) {
+        body.focus();
+        // Mover cursor al final si hay texto (aunque suele estar vacío en respuestas)
+        body.setSelectionRange(body.value.length, body.value.length);
+      }
+    }
   }
 
-  // === INIT ===
   function init() {
     loadData();
     render();

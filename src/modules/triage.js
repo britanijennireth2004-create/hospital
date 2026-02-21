@@ -708,8 +708,16 @@ export default function mountTriage(root, { bus, store, user, role }) {
                         <input type="text" class="input" id="quick-name" required>
                       </div>
                       <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DNI/NIE *</label>
-                        <input type="text" class="input" id="quick-dni" required>
+                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
+                        <div class="doc-group">
+                          <select class="input" id="quick-doc-type" required>
+                            <option value="V">V</option>
+                            <option value="E">E</option>
+                            <option value="J">J</option>
+                            <option value="P">P</option>
+                          </select>
+                          <input type="text" class="input" id="quick-dni" placeholder="Número de cédula" required>
+                        </div>
                       </div>
                     </div>
                     
@@ -1000,6 +1008,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
       // Formulario paciente nuevo
       quickName: root.querySelector('#quick-name'),
+      quickDocType: root.querySelector('#quick-doc-type'),
       quickDni: root.querySelector('#quick-dni'),
       quickBirthdate: root.querySelector('#quick-birthdate'),
       quickGender: root.querySelector('#quick-gender'),
@@ -1798,7 +1807,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         <option value="">Seleccione un paciente</option>
         ${patients.map(patient => `
           <option value="${patient.id}">
-            ${patient.name} (${patient.dni || 'Sin DNI'}) - ${calculateAge(patient.birthDate)} años
+            ${patient.name} (${patient.docType || 'V'}-${patient.dni || '0'}) - ${calculateAge(patient.birthDate)} años
           </option>
         `).join('')}
       `;
@@ -1924,22 +1933,51 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!modal) return;
 
     // Validar datos básicos del paciente
-    if (!elements.quickName?.value || !elements.quickDni?.value ||
-      !elements.quickBirthdate?.value || !elements.quickGender?.value ||
-      !elements.quickPhone?.value) {
-      showNotification('Por favor complete los datos básicos requeridos del paciente', 'warning');
+    const patientFields = [
+      { field: elements.quickName, label: 'Nombre requerido' },
+      { field: elements.quickDni, label: 'Cédula requerida' },
+      { field: elements.quickBirthdate, label: 'Fecha requerida' },
+      { field: elements.quickGender, label: 'Género requerido' },
+      { field: elements.quickPhone, label: 'Teléfono requerido' }
+    ];
+
+    let isValid = true;
+    window.hospitalFieldValidation.clearAll(modal);
+
+    patientFields.forEach(({ field, label }) => {
+      if (field && !field.value.trim()) {
+        window.hospitalFieldValidation.show(field, label);
+        isValid = false;
+      }
+    });
+
+    if (!elements.quickSymptoms?.value.trim()) {
+      window.hospitalFieldValidation.show(elements.quickSymptoms, 'Debe describir los síntomas');
+      isValid = false;
+    }
+
+    if (!state.selectedPriority) {
+      // Para la prioridad que es un conjunto de botones, podemos mostrar un mensaje general debajo del contenedor
+      const priorityContainer = modal.querySelector('.priority-grid');
+      if (priorityContainer) {
+        window.hospitalFieldValidation.show(priorityContainer, 'Debe seleccionar un nivel de prioridad');
+      }
+      isValid = false;
+    }
+
+    if (!isValid) {
+      const firstError = modal.querySelector('.error-field, .error-field-msg');
+      if (firstError && firstError.focus) firstError.focus();
       return;
     }
 
-    if (!elements.quickSymptoms?.value || !state.selectedPriority) {
-      showNotification('Por favor complete los síntomas y seleccione una prioridad', 'warning');
-      return;
-    }
-
-    // Verificar si el DNI ya existe
-    const existingPatient = store.get('patients').find(p => p.dni === elements.quickDni.value.toUpperCase());
+    // Verificar si el paciente ya existe por cédula
+    const existingPatient = store.get('patients').find(p =>
+      p.dni === elements.quickDni.value.trim() &&
+      p.docType === elements.quickDocType.value
+    );
     if (existingPatient) {
-      if (confirm(`Ya existe un paciente con DNI ${elements.quickDni.value}. ¿Desea usar el paciente existente?`)) {
+      if (await hospitalConfirm(`Ya existe un paciente con C.I. ${elements.quickDocType.value}-${elements.quickDni.value}. ¿Desea usar el paciente existente?`, 'question')) {
         // Cambiar a formulario de paciente existente
         state.isCreatingPatient = false;
         elements.tabExistingPatient.click();
@@ -1964,8 +2002,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
       // Crear paciente con todos los campos del módulo de pacientes
       const patientData = {
-        name: elements.quickName.value,
-        dni: elements.quickDni.value.toUpperCase(),
+        name: elements.quickName.value.trim(),
+        docType: elements.quickDocType.value,
+        dni: elements.quickDni.value.trim(),
         birthDate: elements.quickBirthdate.value,
         gender: elements.quickGender.value,
         bloodType: elements.quickBloodType.value || null,
@@ -2031,7 +2070,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
   // Iniciar atención de triage
   async function startTriage(triageRecord) {
-    if (!confirm(`¿Iniciar atención de ${triageRecord.fullName}?`)) return;
+    if (!await hospitalConfirm(`¿Iniciar atención de ${triageRecord.fullName}?`, 'question')) return;
 
     try {
       await store.update('triage', triageRecord.id, {
@@ -2049,7 +2088,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
   // Completar triage
   async function completeTriage(triageRecord) {
-    if (!confirm(`¿Marcar como completada la atención de ${triageRecord.fullName}?`)) return;
+    if (!await hospitalConfirm(`¿Marcar como completada la atención de ${triageRecord.fullName}?`, 'question')) return;
 
     try {
       await store.update('triage', triageRecord.id, {
@@ -2474,7 +2513,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       doc.setFontSize(16);
       safeSetTextColor([0, 51, 102]);
       doc.setFont('helvetica', 'bold');
-      doc.text('HOSPITAL CENTRAL', pageWidth / 2, margin, { align: 'center' });
+      doc.text('HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR', pageWidth / 2, margin, { align: 'center' });
 
       doc.setFontSize(10);
       safeSetTextColor([102, 102, 102]);
@@ -2846,7 +2885,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
         // Sello del hospital
         doc.setFontSize(6);
-        doc.text('HOSPITAL CENTRAL - CONFIDENCIAL', margin, 290);
+        doc.text('HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR - CONFIDENCIAL', margin, 290);
 
         // Fecha en pie de página
         const now = new Date();
@@ -2972,7 +3011,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
   }
 
   // Siguiente paciente
-  function nextPatient() {
+  async function nextPatient() {
     const nextPatient = state.filteredPatients
       .filter(p => p.status === 'waiting')
       .sort((a, b) => {
@@ -2988,14 +3027,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
       return;
     }
 
-    if (confirm(`¿Atender a ${nextPatient.fullName} (${TRIAGE_LEVELS[nextPatient.priority].name})?`)) {
+    if (await hospitalConfirm(`¿Atender a ${nextPatient.fullName} (${TRIAGE_LEVELS[nextPatient.priority].name})?`, 'question')) {
       startTriage(nextPatient);
     }
   }
 
   // Limpiar completados
   async function clearCompleted() {
-    if (!confirm('¿Eliminar todos los registros de triage completados? Esta acción no se puede deshacer.')) {
+    if (!await hospitalConfirm('¿Eliminar todos los registros de triage completados? Esta acción no se puede deshacer.', 'danger')) {
       return;
     }
 

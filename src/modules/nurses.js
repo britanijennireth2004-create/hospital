@@ -192,7 +192,18 @@ export default function mountNurses(root, { bus, store, user, role }) {
               </div>
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">NOMBRE *</label><input type="text" class="input" id="form-name" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">DNI/NIE</label><input type="text" class="input" id="form-dni" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                <div class="form-group">
+                  <label class="form-label font-bold" style="color: var(--modal-text);">CÉDULA / C.I. *</label>
+                  <div class="doc-group">
+                    <select class="input" id="form-doc-type" required style="border-color: var(--modal-border); background-color: var(--modal-bg);">
+                      <option value="V">V</option>
+                      <option value="E">E</option>
+                      <option value="J">J</option>
+                      <option value="P">P</option>
+                    </select>
+                    <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  </div>
+                </div>
               </div>
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">EMAIL *</label><input type="email" class="input" id="form-email" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
@@ -336,6 +347,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
       form: root.querySelector('#nurse-form'),
       fName: root.querySelector('#form-name'),
+      fDocType: root.querySelector('#form-doc-type'),
       fDni: root.querySelector('#form-dni'),
       fEmail: root.querySelector('#form-email'),
       fPhone: root.querySelector('#form-phone'),
@@ -510,7 +522,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
                    <div style="font-weight: 800; color: #64748b; margin-bottom: 1rem;">IDENTIFICACIÓN</div>
                    <div class="grid grid-2">
                       <div><div class="text-xs text-muted font-bold">LICENCIA</div><div class="font-mono text-lg font-bold">${nurse.license}</div></div>
-                      <div><div class="text-xs text-muted font-bold">DNI/ID</div><div class="font-bold">${nurse.dni || '-'}</div></div>
+                      <div><div class="text-xs text-muted font-bold">CÉDULA / ID</div><div class="font-bold">${nurse.docType || 'V'}-${nurse.dni || '-'}</div></div>
                    </div>
                    <div class="mt-4">
                       <div class="text-xs text-muted font-bold">CONTACTO</div>
@@ -635,6 +647,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
     if (nurse) {
       if (elements.fName) elements.fName.value = nurse.name;
+      if (elements.fDocType) elements.fDocType.value = nurse.docType || 'V';
       if (elements.fDni) elements.fDni.value = nurse.dni || '';
       if (elements.fPhone) elements.fPhone.value = nurse.phone;
       if (elements.fEmail) elements.fEmail.value = nurse.email;
@@ -676,7 +689,8 @@ export default function mountNurses(root, { bus, store, user, role }) {
     const status = elements.fStatus ? elements.fStatus.value : 'active';
     const data = {
       name: elements.fName ? elements.fName.value : '',
-      dni: elements.fDni ? elements.fDni.value : '',
+      docType: elements.fDocType ? elements.fDocType.value : 'V',
+      dni: elements.fDni ? elements.fDni.value.trim() : '',
       phone: elements.fPhone ? elements.fPhone.value : '',
       email: elements.fEmail ? elements.fEmail.value : '',
       address: elements.fAddress ? elements.fAddress.value : '',

@@ -1746,84 +1746,63 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
   }
 
-  function validateForm() {
+  async function validateForm() {
     let isValid = true;
+    window.hospitalFieldValidation.clearAll(elements.form);
+
     const requiredFields = [
-      elements.formPatient,
-      elements.formDoctor,
-      elements.formArea,
-      elements.formDate,
-      elements.formTime,
-      elements.formDuration
+      { field: elements.formPatient, label: 'Debe seleccionar paciente' },
+      { field: elements.formDoctor, label: 'Debe seleccionar médico' },
+      { field: elements.formArea, label: 'Debe seleccionar área' },
+      { field: elements.formDate, label: 'Fecha requerida' },
+      { field: elements.formTime, label: 'Hora requerida' },
+      { field: elements.formDuration, label: 'Duración requerida' }
     ];
 
-    requiredFields.forEach(field => {
-      if (field) field.classList.remove('error-field');
+    requiredFields.forEach(({ field, label }) => {
+      if (field) {
+        if (!field.value.trim()) {
+          window.hospitalFieldValidation.show(field, label);
+          isValid = false;
+        }
+      }
     });
 
-    if (elements.formDoctor && elements.formDoctor.value && elements.formDate && elements.formDate.value && elements.formTime && elements.formTime.value) {
+    if (elements.formDoctor?.value && elements.formDate?.value && elements.formTime?.value) {
       const doctor = store.find('doctors', elements.formDoctor.value);
       const duration = parseInt(elements.formDuration?.value || 30);
       if (doctor && !isDoctorWorkingAt(doctor, elements.formDate.value, elements.formTime.value, duration)) {
-        showNotification(`El médico seleccionado no trabaja en el horario solicitado o la cita excede su turno (${elements.formTime.value})`, 'warning');
-        if (elements.formTime) elements.formTime.classList.add('error-field');
+        window.hospitalFieldValidation.show(elements.formTime, 'Fuera de horario laboral');
         isValid = false;
       }
     }
 
-    requiredFields.forEach(field => {
-      if (field && !field.value.trim()) {
-        field.classList.add('error-field');
-        isValid = false;
-      }
-    });
-
-    if (elements.formDate && elements.formTime) {
+    if (elements.formDate?.value && elements.formTime?.value) {
       const selectedDate = new Date(`${elements.formDate.value}T${elements.formTime.value}`);
       const now = new Date();
       if (selectedDate < now) {
-        showNotification('No se puede programar una cita en el pasado', 'warning');
-        elements.formDate.classList.add('error-field');
-        elements.formTime.classList.add('error-field');
-        return false;
+        window.hospitalFieldValidation.show(elements.formDate, 'No puede ser fecha pasada');
+        isValid = false;
       }
     }
 
-    if (elements.formDoctor && elements.formDoctor.value && elements.formDate && elements.formDate.value) {
-      const doctorId = elements.formDoctor.value;
-      const date = elements.formDate.value;
-
-      if (isDoctorFullyBooked(doctorId, date, state.editingId)) {
-        const doctor = store.find('doctors', doctorId);
-        showNotification(
-          `El Dr. ${doctor?.name} ya no tiene disponibilidad para el ${date}. Por favor, seleccione otro médico u otra fecha.`,
-          'error'
-        );
-        elements.formDoctor.classList.add('error-field');
-        elements.formDate.classList.add('error-field');
-        return false;
+    if (elements.formDoctor?.value && elements.formDate?.value) {
+      if (isDoctorFullyBooked(elements.formDoctor.value, elements.formDate.value, state.editingId)) {
+        window.hospitalFieldValidation.show(elements.formDate, 'Médico sin disponibilidad este día');
+        isValid = false;
       }
     }
 
-    if (elements.formDoctor && elements.formDoctor.value &&
-      elements.formDate && elements.formDate.value &&
-      elements.formTime && elements.formTime.value &&
-      elements.formDuration && elements.formDuration.value) {
-
-      const doctorId = elements.formDoctor.value;
-      const date = elements.formDate.value;
-      const time = elements.formTime.value;
-      const duration = parseInt(elements.formDuration.value);
-
-      if (hasScheduleConflict(doctorId, date, time, duration, state.editingId)) {
-        showNotification(
-          `Conflicto de horario: El médico ya tiene una cita programada para ${date} a las ${time}`,
-          'warning'
-        );
-        elements.formTime.classList.add('error-field');
-        elements.formDuration.classList.add('error-field');
-        return false;
+    if (elements.formDoctor?.value && elements.formDate?.value && elements.formTime?.value && elements.formDuration?.value) {
+      if (hasScheduleConflict(elements.formDoctor.value, elements.formDate.value, elements.formTime.value, parseInt(elements.formDuration.value), state.editingId)) {
+        window.hospitalFieldValidation.show(elements.formTime, 'Conflicto: ya existe otra cita');
+        isValid = false;
       }
+    }
+
+    if (!isValid) {
+      const firstError = elements.form.querySelector('.error-field');
+      if (firstError) firstError.focus();
     }
 
     return isValid;
@@ -1845,8 +1824,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   }
 
   async function saveAppointment() {
-    if (!validateForm()) {
-      showNotification('Por favor, complete todos los campos requeridos correctamente.', 'warning');
+    if (!await validateForm()) {
       return;
     }
 
@@ -1934,7 +1912,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   }
 
   async function cancelAppointment(appointment) {
-    if (!confirm(`¿Está seguro de cancelar la cita del ${new Date(appointment.dateTime).toLocaleDateString('es-ES')}?`)) {
+    if (!await hospitalConfirm(`¿Está seguro de cancelar la cita del ${new Date(appointment.dateTime).toLocaleDateString('es-ES')}?`, 'danger')) {
       return;
     }
 

@@ -15,13 +15,158 @@ const APP_STATE = {
   modules: {}
 };
 
+// ===== PERSONALIZACIÓN DE ALERTAS Y CONFIRMACIONES (MODAL) =====
+window.hospitalAlert = function (message, type = 'info') {
+  return new Promise(resolve => {
+    const existing = document.getElementById('hospital-alert');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'hospital-alert';
+    modal.className = 'hospital-modal-overlay';
+
+    const config = {
+      info: { color: '#3b82f6', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>` },
+      error: { color: '#ef4444', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>` },
+      success: { color: '#10b981', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` },
+      warning: { color: '#f59e0b', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>` }
+    };
+
+    const s = config[type] || config.info;
+
+    modal.innerHTML = `
+      <div class="hospital-modal-content">
+        <div style="padding: 3rem 2rem 2.5rem; text-align: center;">
+          <div style="margin-bottom: 1.5rem; display: flex; justify-content: center; transform: scale(1.1);">${s.icon}</div>
+          <div style="font-size: 1.15rem; color: #1e293b; line-height: 1.6; font-weight: 600; padding: 0 1rem;">${message}</div>
+        </div>
+        <div style="padding: 1.5rem; display: flex; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9;">
+          <button id="hospital-alert-btn" style="background: ${s.color}; border: none; padding: 0.85rem 4rem; font-weight: 800; border-radius: 12px; cursor: pointer; color: white; font-size: 0.95rem; transition: all 0.2s; box-shadow: 0 4px 12px ${s.color}44;">ENTENDIDO</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    const btn = modal.querySelector('#hospital-alert-btn');
+    const content = modal.querySelector('.hospital-modal-content');
+
+    const close = () => {
+      content.classList.add('hospital-modal-close-anim');
+      modal.style.opacity = '0';
+      modal.style.transition = 'opacity 0.2s ease-in';
+      setTimeout(() => { modal.remove(); resolve(true); }, 200);
+    };
+
+    btn.focus();
+    btn.onclick = close;
+  });
+};
+
+window.hospitalConfirm = function (message, type = 'warning') {
+  return new Promise(resolve => {
+    const existing = document.getElementById('hospital-confirm');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'hospital-confirm';
+    modal.className = 'hospital-modal-overlay';
+
+    const config = {
+      warning: { color: '#f59e0b', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>` },
+      danger: { color: '#ef4444', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>` },
+      question: { color: '#3b82f6', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>` }
+    };
+
+    const s = config[type] || config.warning;
+
+    modal.innerHTML = `
+      <div class="hospital-modal-content">
+        <div style="padding: 3rem 2rem 2.5rem; text-align: center;">
+          <div style="margin-bottom: 1.5rem; display: flex; justify-content: center; transform: scale(1.1);"></div>
+          <div style="font-size: 1.15rem; color: #1e293b; line-height: 1.6; font-weight: 600; padding: 0 1rem;">${message}</div>
+        </div>
+        <div style="padding: 1.5rem; display: flex; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9; gap: 1rem;">
+          <button id="hc-cancel" style="flex: 1; padding: 0.85rem; font-weight: 700; border-radius: 12px; cursor: pointer; color: #64748b; background: white; border: 2px solid #e2e8f0; font-size: 0.95rem; transition: all 0.2s;">CANCELAR</button>
+          <button id="hc-ok" style="flex: 1.5; background: var(--triage-red); border: none; padding: 0.85rem; font-weight: 800; border-radius: 12px; cursor: pointer; color: white; font-size: 0.95rem; transition: all 0.2s; box-shadow: 0 4px 12px ${s.color}44;">CONFIRMAR</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    const content = modal.querySelector('.hospital-modal-content');
+
+    const finish = (result) => {
+      content.classList.add('hospital-modal-close-anim');
+      modal.style.opacity = '0';
+      modal.style.transition = 'opacity 0.2s ease-in';
+      setTimeout(() => { modal.remove(); resolve(result); }, 200);
+    };
+
+    modal.querySelector('#hc-ok').onclick = () => finish(true);
+    modal.querySelector('#hc-cancel').onclick = () => finish(false);
+    modal.querySelector('#hc-ok').focus();
+  });
+};
+
+// ===== HELPER PARA VALIDACIÓN DE CAMPOS (INLINE) =====
+window.hospitalFieldValidation = {
+  show: function (field, message) {
+    this.clear(field);
+    if (!field) return;
+
+    // Asegurar que el contenedor sea relativo para que el error absoluto no rompa el diseño
+    const parent = field.parentNode;
+    if (parent) {
+      const currentPos = window.getComputedStyle(parent).position;
+      if (currentPos === 'static') {
+        parent.style.position = 'relative';
+      }
+    }
+
+    field.classList.add('error-field');
+    const errorMsg = document.createElement('span');
+    errorMsg.className = 'error-field-msg';
+    errorMsg.innerHTML = message;
+
+    // Insertar después del campo (se posicionará absolutamente debajo de él)
+    field.parentNode.appendChild(errorMsg);
+  },
+  clear: function (field) {
+    if (!field) return;
+    field.classList.remove('error-field');
+    field.classList.remove('error');
+
+    // Buscar si ya tiene un mensaje de error previo
+    const prevMsg = field.previousElementSibling;
+    if (prevMsg && prevMsg.classList.contains('error-field-msg')) {
+      prevMsg.remove();
+    }
+  },
+  clearAll: function (container) {
+    const fields = container.querySelectorAll('.error-field, .error');
+    fields.forEach(f => this.clear(f));
+
+    // Por si acaso quedaron mensajes huérfanos
+    const msgs = container.querySelectorAll('.error-field-msg');
+    msgs.forEach(m => m.remove());
+  }
+};
+
+window.alert = (msg, type) => { window.hospitalAlert(msg, type); };
+
 // ===== SISTEMA DE ROUTING =====
 const ROUTES = {
   landing: {
     label: 'Inicio',
     icon: ICONS.home,
     module: () => import('../modules/landing.js'),
-    permission: () => true
+    permission: (role) => !role // Solo visible si NO está logueado o en la landing pública
+  },
+  landing_manager: {
+    label: 'Gestionar Inicio',
+    icon: ICONS.home,
+    module: () => import('../modules/landing_manager.js'),
+    permission: (role) => role === 'admin'
   },
   dashboard: {
     label: 'Dashboard',
@@ -97,7 +242,14 @@ const ROUTES = {
     label: 'Enviados',
     icon: ICONS.sendIcon,
     module: () => import('../modules/notifications.js'),
-    permission: (role) => ['admin', 'doctor', 'receptionist', 'nurse'].includes(role),
+    permission: (role) => ['admin', 'doctor', 'receptionist', 'nurse', 'patient'].includes(role),
+    parent: 'comunicaciones'
+  },
+  notif_trash: {
+    label: 'Papelera',
+    icon: ICONS.trash,
+    module: () => import('../modules/notifications.js'),
+    permission: (role) => ['admin', 'doctor', 'receptionist', 'nurse', 'patient'].includes(role),
     parent: 'comunicaciones'
   },
   notif_reminders: {
@@ -111,7 +263,7 @@ const ROUTES = {
     label: 'Alertas',
     icon: ICONS.alertIcon,
     module: () => import('../modules/notifications.js'),
-    permission: (role) => ['admin', 'doctor', 'receptionist', 'nurse'].includes(role),
+    permission: (role) => ['admin', 'doctor', 'receptionist', 'nurse', 'patient'].includes(role),
     parent: 'comunicaciones'
   },
   security: {
@@ -216,7 +368,9 @@ function mountLogin(root, { onSuccess }) {
       name: role === 'admin' ? 'Administrador' : role === 'doctor' ? 'Dra. Ana Ruiz' : role === 'nurse' ? 'Enf. Elena Soler' : role === 'receptionist' ? 'Recepcionista Carla' : 'María Gómez',
       role, email: `${role}@hospital.com`,
       patientId: role === 'patient' ? 'p_1' : null,
-      doctorId: role === 'doctor' ? 'd_1' : null
+      doctorId: role === 'doctor' ? 'd_1' : null,
+      nurseId: role === 'nurse' ? 'n_1' : null,
+      receptionistId: role === 'receptionist' ? 'r_1' : null
     };
     Logger.log(store, user, { action: Logger.Actions.LOGIN, module: Logger.Modules.AUTH, description: `Inicio de sesión exitoso: ${user.name}`, details: { username: user.username, role: user.role } });
     onSuccess(user);
@@ -752,13 +906,29 @@ async function mountAppShell(root, { user, bus, store }) {
       const rems = store.get('reminders') || [];
       const all = [...msgs, ...notifs, ...rems].filter(i => !i.deleted);
       const isUnread = i => i.status === 'pending' || i.status === 'sent' || i.status === 'scheduled';
-      let visible = all;
-      if (user.role === 'patient') visible = all.filter(i => i.recipientId === user.patientId || i.recipientId === user.id || i.createdBy === user.id);
-      else if (user.role === 'doctor') visible = all.filter(i => i.recipientId === user.doctorId || i.recipientId === user.id || i.createdBy === user.id);
+
+      const visible = all.filter(i => {
+        if (user.role === 'admin') return true;
+        if (i.createdBy === user.id) return true;
+        if (i.recipientId === user.id ||
+          (user.patientId && i.recipientId === user.patientId) ||
+          (user.doctorId && i.recipientId === user.doctorId) ||
+          (user.nurseId && i.recipientId === user.nurseId) ||
+          (user.receptionistId && i.recipientId === user.receptionistId)) return true;
+        if (i.recipientRole === user.role) return true;
+        return false;
+      });
+
       const inbox = visible.filter(i => i.createdBy !== user.id && isUnread(i)).length;
-      const sent = 0;
-      const reminders = rems.filter(i => !i.deleted && isUnread(i)).length;
-      const alerts = visible.filter(i => (i.priority === 'critical' || i.priority === 'high') && isUnread(i)).length;
+      const sent = 0; // Gmail style (unread usually refers to incoming)
+      const reminders = rems.filter(i => {
+        if (!isUnread(i)) return false;
+        // Solo para pacientes (sus propios recordatorios) o admin/recepción
+        if (user.role === 'patient') return i.recipientId === user.patientId;
+        if (['admin', 'receptionist'].includes(user.role)) return true;
+        return i.recipientId === user.id; // Fallback
+      }).length;
+      const alerts = visible.filter(i => (i.priority === 'critical' || i.priority === 'high' || i.type === 'alert') && isUnread(i)).length;
       return { inbox, sent, reminders, alerts, total: inbox + reminders + alerts };
     }
 
@@ -792,8 +962,8 @@ async function mountAppShell(root, { user, bus, store }) {
     store.subscribe('notifications', updateNotifBadges);
     store.subscribe('reminders', updateNotifBadges);
 
-    root.querySelector('#btn-logout').addEventListener('click', () => {
-      if (confirm('¿Estás seguro de cerrar sesión?')) {
+    root.querySelector('#btn-logout').addEventListener('click', async () => {
+      if (await hospitalConfirm('¿Estás seguro de cerrar sesión?', 'warning')) {
         Logger.log(store, user, {
           action: Logger.Actions.LOGOUT,
           module: Logger.Modules.AUTH,
@@ -812,6 +982,9 @@ async function mountAppShell(root, { user, bus, store }) {
   }
 
   async function navigateTo(routeId) {
+    if (routeId === 'landing' && user.role === 'admin') {
+      routeId = 'landing_manager';
+    }
     if (!ROUTES[routeId] || !ROUTES[routeId].permission(user.role)) {
       routeId = 'dashboard';
     }
@@ -997,10 +1170,10 @@ function setupAutoLogout(store) {
   }, 30000);
 }
 
-function handleAutomaticLogout() {
+async function handleAutomaticLogout() {
   localStorage.removeItem('hospital_user');
   localStorage.removeItem('hospital_landing_seen');
-  alert('Su sesión ha expirado por inactividad por motivos de seguridad.');
+  await hospitalAlert('Su sesión ha expirado por inactividad por motivos de seguridad.', 'error');
   location.reload();
 }
 

@@ -181,7 +181,18 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
               </div>
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">NOMBRE *</label><input type="text" class="input" id="form-name" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">DNI *</label><input type="text" class="input" id="form-dni" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                <div class="form-group">
+                  <label class="form-label font-bold" style="color: var(--modal-text);">CÉDULA / C.I. *</label>
+                  <div class="doc-group">
+                    <select class="input" id="form-doc-type" required style="border-color: var(--modal-border); background-color: var(--modal-bg);">
+                      <option value="V">V</option>
+                      <option value="E">E</option>
+                      <option value="J">J</option>
+                      <option value="P">P</option>
+                    </select>
+                    <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  </div>
+                </div>
               </div>
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">TELÉFONO *</label><input type="tel" class="input" id="form-phone" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
@@ -269,6 +280,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
 
       // Form fields
       fName: root.querySelector('#form-name'),
+      fDocType: root.querySelector('#form-doc-type'),
       fDni: root.querySelector('#form-dni'),
       fPhone: root.querySelector('#form-phone'),
       fEmail: root.querySelector('#form-email'),
@@ -310,7 +322,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
                 <div class="flex items-center gap-3">
                     <div>
                         <div class="font-bold">${item.name}</div>
-                        <div class="text-xs text-muted">ID: ${item.dni || 'N/A'}</div>
+                        <div class="text-xs text-muted">C.I.: ${item.docType || 'V'}-${item.dni || '0'}</div>
                     </div>
                 </div>
               </td>
@@ -392,7 +404,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
                 <div style="background: var(--modal-bg); border-radius: 8px; padding: 1.5rem; border-left: 4px solid var(--modal-header);">
                    <div style="font-weight: 800; color: var(--modal-text); margin-bottom: 1rem;">IDENTIFICACIÓN</div>
                    <div class="grid grid-2">
-                       <div><div class="text-xs text-muted font-bold">DNI/ID</div><div class="font-bold">${rec.dni || '-'}</div></div>
+                       <div><div class="text-xs text-muted font-bold">CÉDULA / ID</div><div class="font-bold">${rec.docType || 'V'}-${rec.dni || '-'}</div></div>
                        <div><div class="text-xs text-muted font-bold">CARGO</div><div class="font-bold text-lg">${rec.specialty}</div></div>
                    </div>
                    <div class="mt-4">
@@ -462,6 +474,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     elements.form.reset();
     if (item) {
       elements.fName.value = item.name;
+      if (elements.fDocType) elements.fDocType.value = item.docType || 'V';
       elements.fDni.value = item.dni || '';
       elements.fPhone.value = item.phone;
       elements.fEmail.value = item.email;
@@ -488,7 +501,8 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
 
     const data = {
       name: elements.fName.value,
-      dni: elements.fDni.value,
+      docType: elements.fDocType.value,
+      dni: elements.fDni.value.trim(),
       phone: elements.fPhone.value,
       email: elements.fEmail.value,
       specialty: elements.fSpec.value,

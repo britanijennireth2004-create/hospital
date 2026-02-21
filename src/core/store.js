@@ -5,7 +5,7 @@ export async function createStore(bus) {
 
   // Datos de ejemplo más completos
   const defaultData = {
-    version: '3.0',
+    version: '3.1',
     users: [
       {
         id: 'admin_1',
@@ -50,6 +50,7 @@ export async function createStore(bus) {
         role: 'nurse',
         name: 'Enf. Elena Soler',
         email: 'elena.soler@hospital.com',
+        nurseId: 'n_1',
         isActive: true,
         createdAt: Date.now()
       },
@@ -59,6 +60,7 @@ export async function createStore(bus) {
         password: 'demo123',
         role: 'receptionist',
         name: 'Recepcionista Carla',
+        receptionistId: 'r_1',
         email: 'carla.recepcion@hospital.com',
         isActive: true,
         createdAt: Date.now()
@@ -524,7 +526,34 @@ export async function createStore(bus) {
         isActive: true,
         createdAt: Date.now()
       }
-    ]
+    ],
+
+    // CONFIGURACIÓN DE PÁGINA DE BIENVENIDA
+    landingConfig: {
+      hero: {
+        title: 'Sistema de Gestión de Citas Médicas',
+        subtitle: 'Hospital Universitario Manuel Núñez Tovar',
+        description: 'Plataforma integral para la administración eficiente de citas, historias clínicas y comunicaciones en el entorno hospitalario.',
+        backgroundImage: 'img/hospital.jpg'
+      },
+      stats: [
+        { label: 'Citas registradas', value: 'auto' },
+        { label: 'Médicos activos', value: 'auto' },
+        { label: 'Áreas médicas', value: 'auto' },
+        { label: 'Pacientes atendidos', value: 'auto' }
+      ],
+      contact: {
+        email: 'info@humnt.gob.ve',
+        phone: '+58 (123) 456-7890',
+        address: 'Av. Universidad, Maturín, Venezuela'
+      },
+      social: {
+        instagram: '@humnt_oficial',
+        telegram: '@humnt_citas',
+        facebook: '/hospitalmanuelnunez',
+        whatsapp: '+58 424-1234567'
+      }
+    }
   };
 
   // Cargar datos
@@ -551,10 +580,19 @@ export async function createStore(bus) {
     // Conservar datos existentes y agregar estructura nueva
     const migrated = { ...newData };
 
-    // Migrar colecciones existentes
-    ['users', 'patients', 'doctors', 'areas', 'appointments', 'messages', 'notifications', 'reminders', 'communicationLogs'].forEach(collection => {
-      if (oldData[collection] && Array.isArray(oldData[collection])) {
-        migrated[collection] = oldData[collection];
+    // Migrar todas las propiedades existentes del oldData
+    Object.keys(oldData).forEach(key => {
+      // Si es un array (colección), lo migramos solo si tiene datos
+      if (Array.isArray(oldData[key])) {
+        if (oldData[key].length > 0) {
+          migrated[key] = oldData[key];
+        }
+      } else if (typeof oldData[key] === 'object' && oldData[key] !== null) {
+        // Si es un objeto, lo mezclamos con el nuevo (para no perder claves nuevas)
+        migrated[key] = { ...migrated[key], ...oldData[key] };
+      } else {
+        // Primitivos
+        migrated[key] = oldData[key];
       }
     });
 

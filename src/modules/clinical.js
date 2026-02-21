@@ -1203,6 +1203,9 @@ export default function mountClinical(root, { bus, store, user, role }) {
   }
 
   async function saveRecord() {
+    if (!await validateForm()) {
+      return;
+    }
     // Verificar permisos antes de guardar
     if (!canCreateRecords()) {
       showNotification('No tiene permiso para crear o editar registros clínicos', 'error');
@@ -1216,11 +1219,6 @@ export default function mountClinical(root, { bus, store, user, role }) {
         showNotification('No tiene permiso para editar este registro', 'error');
         return;
       }
-    }
-
-    if (!validateForm()) {
-      showNotification('Por favor, complete todos los campos requeridos correctamente.', 'warning');
-      return;
     }
 
     state.isLoading = true;
@@ -1257,25 +1255,31 @@ export default function mountClinical(root, { bus, store, user, role }) {
     }
   }
 
-  function validateForm() {
+  async function validateForm() {
     let isValid = true;
+    window.hospitalFieldValidation.clearAll(elements.form);
 
     const requiredFields = [
-      elements.formPatient,
-      elements.formDoctor,
-      elements.formDate,
-      elements.formType,
-      elements.formDiagnosis
+      { field: elements.formPatient, label: 'Debe seleccionar un paciente' },
+      { field: elements.formDoctor, label: 'Médico requerido' },
+      { field: elements.formDate, label: 'Fecha requerida' },
+      { field: elements.formType, label: 'Indique el tipo de registro' },
+      { field: elements.formDiagnosis, label: 'El diagnóstico es obligatorio' }
     ];
 
-    requiredFields.forEach(field => {
-      if (field && !field.value.trim()) {
-        field.classList.add('error');
-        isValid = false;
-      } else if (field) {
-        field.classList.remove('error');
+    requiredFields.forEach(({ field, label }) => {
+      if (field) {
+        if (!field.value.trim()) {
+          window.hospitalFieldValidation.show(field, label);
+          isValid = false;
+        }
       }
     });
+
+    if (!isValid) {
+      const firstError = elements.form.querySelector('.error-field');
+      if (firstError) firstError.focus();
+    }
 
     return isValid;
   }
@@ -1401,8 +1405,8 @@ export default function mountClinical(root, { bus, store, user, role }) {
                </div>
                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
                   <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">DNI</div>
-                    <div>${patient?.dni || '12345678A'}</div>
+                    <div style="font-weight: 700; color: var(--modal-text-muted);">CÉDULA</div>
+                    <div>${patient?.docType || 'V'}-${patient?.dni || '0'}</div>
                   </div>
                   <div>
                     <div style="font-weight: 700; color: var(--modal-text-muted);">EDAD</div>
@@ -1668,7 +1672,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
       doc.setFontSize(18);
       safeSetTextColor([10, 40, 80]);
       doc.setFont('helvetica', 'bold');
-      doc.text('HOSPITAL CENTRAL', pageWidth / 2, margin + 5, { align: 'center' });
+      doc.text('HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR', pageWidth / 2, margin + 5, { align: 'center' });
 
       doc.setFontSize(12);
       safeSetTextColor([80, 80, 80]);
@@ -1703,7 +1707,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
       doc.setFont('helvetica', 'normal');
       safeSetTextColor([0, 0, 0]);
       doc.text(`Nombre: ${patient?.name || 'N/A'}`, margin + 3, yPos + 12);
-      doc.text(`DNI: ${patient?.dni || 'N/A'}`, margin + 3, yPos + 18);
+      doc.text(`C.I.: ${patient?.docType || 'V'}-${patient?.dni || 'N/A'}`, margin + 3, yPos + 18);
       doc.text(`Edad: ${patient?.birthDate ? calculateAge(patient.birthDate) + ' años' : 'N/A'}`, margin + 3, yPos + 24);
       doc.text(`Tel: ${patient?.phone || 'N/A'}`, margin + 3, yPos + 30);
 

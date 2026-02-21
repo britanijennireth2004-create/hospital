@@ -416,8 +416,16 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                 </div>
                 
                 <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DNI/NIE</label>
-                  <input type="text" class="input" id="form-dni" placeholder="Ej: 12345678A" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
+                  <div class="doc-group">
+                    <select class="input" id="form-doc-type" required style="border-color: var(--modal-border); background-color: var(--modal-bg);">
+                      <option value="V">V</option>
+                      <option value="E">E</option>
+                      <option value="J">J</option>
+                      <option value="P">P</option>
+                    </select>
+                    <input type="text" class="input" id="form-dni" placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  </div>
                 </div>
               </div>
               
@@ -756,6 +764,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       modal: root.querySelector('#doctor-modal'),
       form: root.querySelector('#doctor-form'),
       formName: root.querySelector('#form-name'),
+      formDocType: root.querySelector('#form-doc-type'),
       formDni: root.querySelector('#form-dni'),
       formBirthDate: root.querySelector('#form-birth-date'),
       formGender: root.querySelector('#form-gender'),
@@ -1408,6 +1417,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   // Rellenar formulario principal
   function populateForm(doctor) {
     if (elements.formName) elements.formName.value = doctor.name || '';
+    if (elements.formDocType) elements.formDocType.value = doctor.docType || 'V';
     if (elements.formDni) elements.formDni.value = doctor.dni || '';
     if (elements.formBirthDate) elements.formBirthDate.value = doctor.birthDate || '';
     if (elements.formGender) elements.formGender.value = doctor.gender || '';
@@ -1538,84 +1548,58 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   }
 
   // Validar formulario principal
-  function validateForm() {
+  async function validateForm() {
     let isValid = true;
+    window.hospitalFieldValidation.clearAll(elements.form);
 
     const requiredFields = [
-      elements.formName,
-      elements.formLicense,
-      elements.formSpecialty,
-      elements.formArea,
-      elements.formPhone,
-      elements.formEmail,
-      elements.formScheduleStart,
-      elements.formScheduleEnd,
-      elements.formConsultationDuration,
-      elements.formDailyCapacity
+      { field: elements.formName, label: 'Este campo es obligatorio' },
+      { field: elements.formLicense, label: 'Este campo es obligatorio' },
+      { field: elements.formSpecialty, label: 'Este campo es obligatorio' },
+      { field: elements.formArea, label: 'Debe seleccionar un área' },
+      { field: elements.formPhone, label: 'Este campo es obligatorio' },
+      { field: elements.formEmail, label: 'Este campo es obligatorio' },
+      { field: elements.formScheduleStart, label: 'Hora requerida' },
+      { field: elements.formScheduleEnd, label: 'Hora requerida' },
+      { field: elements.formConsultationDuration, label: 'Requerido' },
+      { field: elements.formDailyCapacity, label: 'Requerido' }
     ];
 
-    requiredFields.forEach(field => {
-      if (field) field.classList.remove('error');
-    });
-
-    requiredFields.forEach(field => {
-      if (field && !field.value.trim()) {
-        field.classList.add('error');
-        isValid = false;
-
-        const fieldName = field.id.replace('form-', '').replace(/([A-Z])/g, ' $1').toLowerCase();
-        showNotification(`El campo "${fieldName}" es obligatorio`, 'warning');
+    requiredFields.forEach(({ field, label }) => {
+      if (field) {
+        if (!field.value.trim()) {
+          window.hospitalFieldValidation.show(field, label);
+          isValid = false;
+        }
       }
     });
 
-    if (elements.formDni && elements.formDni.value.trim()) {
-      const dniValue = elements.formDni.value.trim().toUpperCase();
-      const dniRegex = /^[0-9]{8}[A-Z]$/;
-
-      if (!dniRegex.test(dniValue)) {
-        elements.formDni.classList.add('error');
-        showNotification('El DNI debe tener 8 números seguidos de una letra (ej: 12345678A)', 'warning');
-        isValid = false;
-      }
+    if (elements.formDni && elements.formDni.value.trim() && !/^\d+$/.test(elements.formDni.value.trim())) {
+      window.hospitalFieldValidation.show(elements.formDni, 'Cédula inválida (solo números)');
+      isValid = false;
     }
 
     if (elements.formEmail && elements.formEmail.value.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(elements.formEmail.value.trim())) {
-        elements.formEmail.classList.add('error');
-        showNotification('Por favor, ingrese un email válido (ej: nombre@dominio.com)', 'warning');
+        window.hospitalFieldValidation.show(elements.formEmail, 'Email no válido');
         isValid = false;
       }
     }
 
     if (elements.formPhone && elements.formPhone.value.trim()) {
       const phoneRegex = /^[0-9\s\+\-\(\)]{9,15}$/;
-      const phoneValue = elements.formPhone.value.trim();
-
-      if (!phoneRegex.test(phoneValue)) {
-        elements.formPhone.classList.add('error');
-        showNotification('Ingrese un número de teléfono válido (9-15 dígitos)', 'warning');
+      if (!phoneRegex.test(elements.formPhone.value.trim())) {
+        window.hospitalFieldValidation.show(elements.formPhone, 'Teléfono no válido');
         isValid = false;
       }
     }
 
-    if (elements.formScheduleStart && elements.formScheduleEnd) {
+    if (elements.formScheduleStart && elements.formScheduleEnd && elements.formScheduleStart.value && elements.formScheduleEnd.value) {
       const startTime = new Date(`1970-01-01T${elements.formScheduleStart.value}`);
       const endTime = new Date(`1970-01-01T${elements.formScheduleEnd.value}`);
-
       if (startTime >= endTime) {
-        elements.formScheduleStart.classList.add('error');
-        elements.formScheduleEnd.classList.add('error');
-        showNotification('La hora de inicio debe ser anterior a la hora de fin', 'warning');
-        isValid = false;
-      }
-    }
-
-    if (elements.formLicense && elements.formLicense.value.trim()) {
-      const licenseValue = elements.formLicense.value.trim();
-      if (licenseValue.length < 3) {
-        elements.formLicense.classList.add('error');
-        showNotification('El número de licencia debe tener al menos 3 caracteres', 'warning');
+        window.hospitalFieldValidation.show(elements.formScheduleEnd, 'Debe ser posterior al inicio');
         isValid = false;
       }
     }
@@ -1623,10 +1607,14 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     if (elements.formDailyCapacity) {
       const capacity = parseInt(elements.formDailyCapacity.value);
       if (isNaN(capacity) || capacity < 1 || capacity > 50) {
-        elements.formDailyCapacity.classList.add('error');
-        showNotification('La capacidad diaria debe ser entre 1 y 50 pacientes', 'warning');
+        window.hospitalFieldValidation.show(elements.formDailyCapacity, 'Entre 1 y 50');
         isValid = false;
       }
+    }
+
+    if (!isValid) {
+      const firstError = elements.form.querySelector('.error-field');
+      if (firstError) firstError.focus();
     }
 
     return isValid;
@@ -1647,7 +1635,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
     return {
       name: elements.formName ? elements.formName.value.trim() : '',
-      dni: dniValue ? dniValue.toUpperCase() : null,
+      docType: elements.formDocType?.value || 'V',
+      dni: elements.formDni?.value.trim() || '',
       birthDate: elements.formBirthDate ? elements.formBirthDate.value || null : null,
       gender: elements.formGender ? elements.formGender.value || null : null,
       license: elements.formLicense ? elements.formLicense.value.trim() : '',
@@ -1672,7 +1661,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Guardar médico (formulario principal)
   async function saveDoctor() {
-    if (!validateForm()) {
+    if (!await validateForm()) {
       return;
     }
 
@@ -1842,14 +1831,14 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       return;
     }
 
-    const stats = getDoctorStats(state.currentDoctor.id);
     if (newCapacity < stats.todayAppointments) {
-      const confirm = window.confirm(
+      const confirmed = await hospitalConfirm(
         `¡Atención! El médico ya tiene ${stats.todayAppointments} citas programadas para hoy. ` +
-        `Reducir la capacidad a ${newCapacity} podría causar problemas. ¿Desea continuar?`
+        `Reducir la capacidad a ${newCapacity} podría causar problemas. ¿Desea continuar?`,
+        'warning'
       );
 
-      if (!confirm) return;
+      if (!confirmed) return;
     }
 
     try {

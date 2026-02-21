@@ -18,42 +18,42 @@ export default function mountLanding(container, { onGetStarted, store }) {
           title: 'Medicina Interna',
           description: 'Diagnóstico y tratamiento de enfermedades en adultos',
           icon: ICONS.building,
-          color: '#2196F3',
+          color: '#64748b',
           stats: { doctors: 12, appointments: 45 }
         },
         {
           title: 'Pediatría',
           description: 'Atención médica integral para niños y adolescentes',
           icon: ICONS.building,
-          color: '#4CAF50',
+          color: '#578e7e',
           stats: { doctors: 8, appointments: 32 }
         },
         {
           title: 'Cardiología',
           description: 'Especialidad en enfermedades del corazón y sistema circulatorio',
           icon: ICONS.building,
-          color: '#F44336',
+          color: '#9f7373',
           stats: { doctors: 6, appointments: 28 }
         },
         {
           title: 'Traumatología',
           description: 'Tratamiento de lesiones del sistema musculoesquelético',
           icon: ICONS.building,
-          color: '#FF9800',
+          color: '#b48464',
           stats: { doctors: 5, appointments: 21 }
         },
         {
           title: 'Ginecología',
           description: 'Atención especializada en salud femenina',
           icon: ICONS.building,
-          color: '#9C27B0',
+          color: '#87769e',
           stats: { doctors: 7, appointments: 38 }
         },
         {
           title: 'Neurología',
           description: 'Diagnóstico y tratamiento de trastornos neurológicos',
           icon: ICONS.building,
-          color: '#00BCD4',
+          color: '#6b979c',
           stats: { doctors: 4, appointments: 19 }
         }
       ];
@@ -63,21 +63,21 @@ export default function mountLanding(container, { onGetStarted, store }) {
     try {
       const areas = store.get('areas') || [];
       console.log('Áreas cargadas:', areas); // Para depuración
-      
+
       // Filtrar solo áreas principales y activas
       const mainAreas = areas.filter(area => !area.parentId && area.isActive !== false);
-      
+
       // Crear slides con las áreas disponibles
       if (mainAreas.length > 0) {
         state.slides = mainAreas.slice(0, 12).map(area => {
           const doctors = store.get('doctors') || [];
           const appointments = store.get('appointments') || [];
-          
+
           return {
             title: area.name,
             description: area.description || 'Área médica especializada del Hospital Universitario',
             icon: ICONS.building,
-            color: area.color || '#10b981',
+            color: area.color || '#578e7e',
             stats: {
               doctors: doctors.filter(d => d.areaId === area.id || (d.otherAreas && d.otherAreas.includes(area.id))).length,
               appointments: appointments.filter(a => a.areaId === area.id).length
@@ -169,7 +169,35 @@ export default function mountLanding(container, { onGetStarted, store }) {
 
   function render() {
     loadMedicalAreas();
-    
+
+    const configData = store ? store.get('landingConfig') : null;
+    const config = (configData && !Array.isArray(configData)) ? configData : null;
+
+    const hero = config ? config.hero : {
+      title: 'Sistema de Gestión de Citas Médicas',
+      subtitle: 'Hospital Universitario Manuel Núñez Tovar',
+      description: 'Plataforma integral para la administración eficiente de citas, historias clínicas y comunicaciones en el entorno hospitalario.',
+      backgroundImage: 'img/hospital.jpg'
+    };
+
+    // Calcular estadísticas automatizadas con precisión total
+    const getAutoValue = (label) => {
+      if (!store) return '0';
+      const l = label.toLowerCase();
+      if (l.includes('paciente')) return store.get('patients').length;
+      if (l.includes('médico') || l.includes('doctor')) return store.get('doctors').length;
+      if (l.includes('cita')) return store.get('appointments').length;
+      if (l.includes('área')) return store.get('areas').length;
+      return '0';
+    };
+
+    const stats = config ? config.stats : [
+      { label: 'Pacientes registrados', value: 'auto' },
+      { label: 'Médicos especialistas', value: 'auto' },
+      { label: 'Citas gestionadas', value: 'auto' },
+      { label: 'Áreas médicas', value: 'auto' }
+    ];
+
     container.innerHTML = `
       <div class="landing-container">
         <!-- Header con logo SVG -->
@@ -202,17 +230,16 @@ export default function mountLanding(container, { onGetStarted, store }) {
         <!-- Hero Section unificada con imagen de fondo y gradiente -->
         <section class="landing-hero" id="inicio">
           <div class="landing-hero-background">
-            <img src="img/hospital.jpg" alt="Hospital Universitario Manuel Núñez Tovar" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221200%22%20height%3D%22600%22%20viewBox%3D%220%200%201200%20600%22%3E%3Crect%20width%3D%221200%22%20height%3D%22600%22%20fill%3D%22%2310b981%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23ffffff%22%20font-size%3D%2236%22%20font-family%3D%22Arial%22%3EHospital%20Universitario%3C%2Ftext%3E%3C%2Fsvg%3E'">
+            <img src="${hero.backgroundImage || 'img/hospital.jpg'}" alt="${hero.subtitle}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221200%22%20height%3D%22600%22%20viewBox%3D%220%200%201200%20600%22%3E%3Crect%20width%3D%221200%22%20height%3D%22600%22%20fill%3D%22%2310b981%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23ffffff%22%20font-size%3D%2236%22%20font-family%3D%22Arial%22%3EHospital%20Universitario%3C%2Ftext%3E%3C%2Fsvg%3E'">
           </div>
           <div class="landing-hero-overlay"></div>
           <div class="landing-hero-content">
             <h1 class="landing-hero-title">
-              <span class="landing-hero-title-main">Sistema de Gestión de Citas Médicas</span>
-              <span class="landing-hero-title-sub">Hospital Universitario Manuel Núñez Tovar</span>
+              <span class="landing-hero-title-main">${hero.title}</span>
+              <span class="landing-hero-title-sub">${hero.subtitle}</span>
             </h1>
             <p class="landing-hero-description">
-              Plataforma integral para la administración eficiente de citas, historias clínicas 
-              y comunicaciones en el entorno hospitalario.
+              ${hero.description}
             </p>
             <div class="landing-hero-buttons">
               <button class="landing-btn landing-btn-primary landing-btn-large" id="hero-start-btn">
@@ -221,45 +248,25 @@ export default function mountLanding(container, { onGetStarted, store }) {
               </button>
             </div>
             <div class="landing-stats">
-              <div class="landing-stat-item">
-                <span class="landing-stat-number">500+</span>
-                <span class="landing-stat-label">Citas diarias</span>
-              </div>
-              <div class="landing-stat-item">
-                <span class="landing-stat-number">50+</span>
-                <span class="landing-stat-label">Médicos</span>
-              </div>
-              <div class="landing-stat-item">
-                <span class="landing-stat-number">${state.slides.length}</span>
-                <span class="landing-stat-label">Áreas médicas</span>
-              </div>
-              <div class="landing-stat-item">
-                <span class="landing-stat-number">98%</span>
-                <span class="landing-stat-label">Satisfacción</span>
-              </div>
+              ${stats.map(s => `
+                <div class="landing-stat-item">
+                  <span class="landing-stat-number">${s.value === 'auto' ? getAutoValue(s.label) : s.value}</span>
+                  <span class="landing-stat-label">${s.label}</span>
+                </div>
+              `).join('')}
             </div>
           </div>
         </section>
 
-        <!-- Áreas Médicas - Scroll horizontal sin barra -->
+        <!-- Áreas Médicas - Scroll horizontal interactivo -->
         <section class="landing-areas" id="areas">
           <h2 class="landing-section-title">Áreas Médicas</h2>
           <p class="landing-section-subtitle">Departamentos y servicios especializados de nuestro hospital</p>
           
-          <div class="landing-areas-scroll-container">
+          <div class="landing-areas-scroll-container" id="areas-scroll-container">
             <div class="landing-areas-scroll" id="areas-scroll">
               ${renderAreaCards()}
             </div>
-          </div>
-          
-          <!-- Indicadores de scroll -->
-          <div class="landing-scroll-indicators">
-            <button class="landing-scroll-btn landing-scroll-prev" id="scroll-prev" aria-label="Desplazar a la izquierda">
-              ${ICONS.chevronLeft}
-            </button>
-            <button class="landing-scroll-btn landing-scroll-next" id="scroll-next" aria-label="Desplazar a la derecha">
-              ${ICONS.chevronRight}
-            </button>
           </div>
         </section>
 
@@ -269,7 +276,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
           <p class="landing-section-subtitle">Síguenos en nuestras plataformas oficiales</p>
           
           <div class="landing-social-grid">
-            <a href="https://instagram.com/humnt" target="_blank" rel="noopener noreferrer" class="landing-social-card">
+            <a href="https://instagram.com/${config ? config.social.instagram.replace('@', '') : 'humnt'}" target="_blank" rel="noopener noreferrer" class="landing-social-card">
               <div class="landing-social-icon instagram">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
@@ -278,10 +285,10 @@ export default function mountLanding(container, { onGetStarted, store }) {
                 </svg>
               </div>
               <h3>Instagram</h3>
-              <p>@humnt_oficial</p>
+              <p>${config ? config.social.instagram : '@humnt_oficial'}</p>
             </a>
 
-            <a href="https://t.me/humnt" target="_blank" rel="noopener noreferrer" class="landing-social-card">
+            <a href="https://t.me/${config ? config.social.telegram.replace('@', '') : 'humnt'}" target="_blank" rel="noopener noreferrer" class="landing-social-card">
               <div class="landing-social-icon telegram">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"/>
@@ -289,27 +296,27 @@ export default function mountLanding(container, { onGetStarted, store }) {
                 </svg>
               </div>
               <h3>Telegram</h3>
-              <p>@humnt_citas</p>
+              <p>${config ? config.social.telegram : '@humnt_citas'}</p>
             </a>
 
-            <a href="https://facebook.com/humnt" target="_blank" rel="noopener noreferrer" class="landing-social-card">
+            <a href="https://facebook.com/${config ? config.social.facebook.replace('/', '') : 'humnt'}" target="_blank" rel="noopener noreferrer" class="landing-social-card">
               <div class="landing-social-icon facebook">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
                 </svg>
               </div>
               <h3>Facebook</h3>
-              <p>/hospitalmanuelnunez</p>
+              <p>${config ? config.social.facebook : '/hospitalmanuelnunez'}</p>
             </a>
 
-            <a href="https://wa.me/584241234567" target="_blank" rel="noopener noreferrer" class="landing-social-card">
+            <a href="https://wa.me/${config ? config.social.whatsapp.replace(/[^0-9]/g, '') : '584241234567'}" target="_blank" rel="noopener noreferrer" class="landing-social-card">
               <div class="landing-social-icon whatsapp">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
                 </svg>
               </div>
               <h3>WhatsApp</h3>
-              <p>+58 424-1234567</p>
+              <p>${config ? config.social.whatsapp : '+58 424-1234567'}</p>
             </a>
           </div>
         </section>
@@ -348,15 +355,15 @@ export default function mountLanding(container, { onGetStarted, store }) {
               <h4>Contacto</h4>
               <div class="landing-footer-contact-item">
                 <span class="footer-icon">${ICONS.email}</span>
-                <span>info@humnt.gob.ve</span>
+                <span>${config ? config.contact.email : 'info@humnt.gob.ve'}</span>
               </div>
               <div class="landing-footer-contact-item">
                 <span class="footer-icon">${ICONS.phone}</span>
-                <span>+58 (123) 456-7890</span>
+                <span>${config ? config.contact.phone : '+58 (123) 456-7890'}</span>
               </div>
               <div class="landing-footer-contact-item">
                 <span class="footer-icon">${ICONS.location}</span>
-                <span>Av. Universidad, Maturín, Venezuela</span>
+                <span>${config ? config.contact.address : 'Av. Universidad, Maturín, Venezuela'}</span>
               </div>
             </div>
             <div class="landing-footer-section">
@@ -449,60 +456,15 @@ export default function mountLanding(container, { onGetStarted, store }) {
       });
     });
 
-    // Scroll horizontal con botones
-    const scrollContainer = document.getElementById('areas-scroll');
-    const prevBtn = document.getElementById('scroll-prev');
-    const nextBtn = document.getElementById('scroll-next');
-
-    if (scrollContainer && prevBtn && nextBtn) {
-      const scrollAmount = 300;
-
-      prevBtn.addEventListener('click', () => {
-        scrollContainer.scrollBy({
-          left: -scrollAmount,
-          behavior: 'smooth'
-        });
-      });
-
-      nextBtn.addEventListener('click', () => {
-        scrollContainer.scrollBy({
-          left: scrollAmount,
-          behavior: 'smooth'
-        });
-      });
-
+    // Scroll horizontal con la rueda del mouse
+    const scrollContainer = document.getElementById('areas-scroll-container');
+    if (scrollContainer) {
       scrollContainer.addEventListener('wheel', (e) => {
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-          e.preventDefault();
-          scrollContainer.scrollLeft += e.deltaX;
-        } else if (e.shiftKey) {
+        if (e.deltaY !== 0) {
           e.preventDefault();
           scrollContainer.scrollLeft += e.deltaY;
         }
       }, { passive: false });
-
-      const updateScrollButtons = () => {
-        const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-        
-        if (scrollContainer.scrollLeft <= 10) {
-          prevBtn.style.opacity = '0.3';
-          prevBtn.style.pointerEvents = 'none';
-        } else {
-          prevBtn.style.opacity = '1';
-          prevBtn.style.pointerEvents = 'auto';
-        }
-        
-        if (scrollContainer.scrollLeft >= maxScroll - 10) {
-          nextBtn.style.opacity = '0.3';
-          nextBtn.style.pointerEvents = 'none';
-        } else {
-          nextBtn.style.opacity = '1';
-          nextBtn.style.pointerEvents = 'auto';
-        }
-      };
-
-      scrollContainer.addEventListener('scroll', updateScrollButtons);
-      updateScrollButtons();
     }
   }
 
@@ -511,7 +473,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
       <style>
         .landing-container {
           min-height: 100vh;
-          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
         }
 
@@ -538,7 +500,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         }
 
         .landing-logo-text {
-          background: linear-gradient(135deg, #166534, #10b981);
+          background: linear-gradient(135deg, #334155, #475569);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -563,7 +525,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
           left: 0;
           width: 0;
           height: 2px;
-          background: #10b981;
+          background: #64748b;
           transition: width 0.3s ease;
         }
 
@@ -599,23 +561,23 @@ export default function mountLanding(container, { onGetStarted, store }) {
         }
 
         .landing-btn-primary {
-          background: linear-gradient(135deg, #166534, #10b981);
+          background: linear-gradient(135deg, #334155, #64748b);
           color: white;
         }
 
         .landing-btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+          box-shadow: 0 4px 12px rgba(51, 65, 85, 0.3);
         }
 
         .landing-btn-outline {
           background: transparent;
-          border: 2px solid #10b981;
-          color: #166534;
+          border: 2px solid #64748b;
+          color: #334155;
         }
 
         .landing-btn-outline:hover {
-          background: rgba(16, 185, 129, 0.1);
+          background: rgba(100, 116, 139, 0.1);
         }
 
         .landing-btn-large {
@@ -650,7 +612,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         .landing-hero-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(10, 107, 44, 0.82) 0%, rgba(15, 141, 58, 0.70) 40%, rgba(36, 179, 107, 0.65) 100%);
+          background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(51, 65, 85, 0.75) 40%, rgba(71, 85, 105, 0.65) 100%);
           z-index: 1;
         }
 
@@ -755,16 +717,24 @@ export default function mountLanding(container, { onGetStarted, store }) {
           position: relative;
           max-width: 1200px;
           margin: 0 auto;
+          overflow-x: auto;
+          padding: 1rem 0 3rem 0;
+          margin-top: 2rem;
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none;  /* IE and Edge */
+        }
+
+        .landing-areas-scroll-container::-webkit-scrollbar {
+          display: none; /* Chrome, Safari and Opera */
         }
 
         .landing-areas-scroll {
           display: flex;
           gap: 1.5rem;
-          overflow-x: auto;
-          scroll-behavior: smooth;
+          /* Removed overflow-x: auto, scroll-behavior, and scrollbar hiding from here */
           padding: 0.5rem 0.25rem 1.5rem 0.25rem;
-          -ms-overflow-style: none;
-          scrollbar-width: none;
         }
 
         .landing-areas-scroll::-webkit-scrollbar {
@@ -850,46 +820,6 @@ export default function mountLanding(container, { onGetStarted, store }) {
           color: #6b7280;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-        }
-
-        /* Indicadores de scroll */
-        .landing-scroll-indicators {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-          margin-top: 1rem;
-        }
-
-        .landing-scroll-btn {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          border: none;
-          background: white;
-          color: #166534;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          opacity: 1;
-        }
-
-        .landing-scroll-btn:hover {
-          background: #10b981;
-          color: white;
-          transform: scale(1.1);
-        }
-
-        .landing-scroll-btn svg {
-          width: 24px;
-          height: 24px;
-        }
-
-        .landing-scroll-btn:disabled {
-          opacity: 0.3;
-          pointer-events: none;
         }
 
         /* Redes Sociales */

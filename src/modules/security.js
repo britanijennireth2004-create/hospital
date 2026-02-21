@@ -537,7 +537,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
     root.addEventListener('submit', handleSubmit);
   }
 
-  function handleClick(e) {
+  async function handleClick(e) {
     // Tabs
     if (e.target.classList.contains('tab-btn')) {
       state.activeTab = e.target.dataset.tab;
@@ -598,7 +598,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       const sessionId = e.target.dataset.id;
       const session = state.sessions.find(s => s.id === sessionId);
 
-      if (session && confirm(`¿Estás seguro de terminar la sesión de ${session.userName}?`)) {
+      if (session && await hospitalConfirm(`¿Estás seguro de terminar la sesión de ${session.userName}?`, 'danger')) {
         store.remove('sessions', sessionId);
         state.sessions = store.get('sessions') || [];
 
