@@ -473,7 +473,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
       <style>
         .landing-container {
           min-height: 100vh;
-          background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
+          background: linear-gradient(135deg, #f0f7f4 0%, #d1e2d9 100%);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
         }
 
@@ -500,7 +500,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         }
 
         .landing-logo-text {
-          background: linear-gradient(135deg, #334155, #475569);
+          background: linear-gradient(135deg, #1e3a2b, #2d5a27);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -525,7 +525,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
           left: 0;
           width: 0;
           height: 2px;
-          background: #64748b;
+          background: #2d5a27;
           transition: width 0.3s ease;
         }
 
@@ -561,23 +561,23 @@ export default function mountLanding(container, { onGetStarted, store }) {
         }
 
         .landing-btn-primary {
-          background: linear-gradient(135deg, #334155, #64748b);
+          background: linear-gradient(135deg, #1e3a2b, #2d5a27);
           color: white;
         }
 
         .landing-btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(51, 65, 85, 0.3);
+          box-shadow: 0 4px 12px rgba(30, 58, 43, 0.3);
         }
 
         .landing-btn-outline {
           background: transparent;
-          border: 2px solid #64748b;
-          color: #334155;
+          border: 2px solid #2d5a27;
+          color: #1e3a2b;
         }
 
         .landing-btn-outline:hover {
-          background: rgba(100, 116, 139, 0.1);
+          background: rgba(45, 90, 39, 0.1);
         }
 
         .landing-btn-large {
@@ -612,7 +612,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         .landing-hero-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(51, 65, 85, 0.75) 40%, rgba(71, 85, 105, 0.65) 100%);
+          background: linear-gradient(135deg, rgba(20, 50, 30, 0.85) 0%, rgba(30, 70, 45, 0.75) 40%, rgba(45, 90, 60, 0.65) 100%);
           z-index: 1;
         }
 
