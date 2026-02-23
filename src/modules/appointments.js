@@ -38,7 +38,15 @@ const icons = {
 
   conflict: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 6v5"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>`,
 
-  clinical: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3.25" y="2.75" width="13.5" height="14.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 6h7M6.5 10h7M6.5 14h4"/></svg>`
+  clinical: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3.25" y="2.75" width="13.5" height="14.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 6h7M6.5 10h7M6.5 14h4"/></svg>`,
+
+  video: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="4.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M13 8l5-3v10l-5-3z"/></svg>`,
+
+  link: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 12l4-4"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 13.5a2.83 2.83 0 004 0l1-1a2.83 2.83 0 000-4l-.5-.5M13.5 6.5a2.83 2.83 0 00-4 0l-1 1a2.83 2.83 0 000 4l.5.5"/></svg>`,
+
+  resource: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="5.5" width="15" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6 5.5V4a2 2 0 012-2h4a2 2 0 012 2v1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 9v4M8 11h4"/></svg>`,
+
+  hospital: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 5v4M8 7h4"/><path stroke="currentColor" stroke-width="1.5" d="M7 14h2v4H7zM11 14h2v4h-2z"/></svg>`
 };
 
 export default function mountAppointments(root, { bus, store, user, role }) {
@@ -375,6 +383,107 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     return slots;
   }
 
+  // ========== FUNCIONES DE DISPONIBILIDAD DE RECURSOS ==========
+
+  function isResourceAvailableAt(collection, resourceId, date, time, duration, excludeAppointmentId = null) {
+    const appointments = store.get('appointments');
+    const newStart = new Date(`${date}T${time}`);
+    const newEnd = new Date(newStart.getTime() + duration * 60000);
+
+    return !appointments.some(apt => {
+      if (excludeAppointmentId && apt.id === excludeAppointmentId) return false;
+      if (apt.status === 'cancelled') return false;
+
+      let usesResource = false;
+      if (collection === 'consultorios' && apt.consultorioId === resourceId) usesResource = true;
+      if (collection === 'equiposMedicos' && apt.equipmentIds && apt.equipmentIds.includes(resourceId)) usesResource = true;
+
+      if (!usesResource) return false;
+
+      const aptDate = new Date(apt.dateTime);
+      if (aptDate.toDateString() !== newStart.toDateString()) return false;
+
+      const aptEnd = new Date(aptDate.getTime() + (apt.duration || 30) * 60000);
+
+      return (newStart >= aptDate && newStart < aptEnd) ||
+        (newEnd > aptDate && newEnd <= aptEnd) ||
+        (newStart <= aptDate && newEnd >= aptEnd);
+    });
+  }
+
+  function getAvailableRoomsForSlot(date, time, duration, excludeAppointmentId = null) {
+    const rooms = store.get('consultorios') || [];
+    return rooms.filter(room => {
+      if (room.status === 'maintenance' || room.status === 'mantenimiento') return false;
+      return isResourceAvailableAt('consultorios', room.id, date, time, duration, excludeAppointmentId);
+    });
+  }
+
+  function getAvailableEquipmentForSlot(date, time, duration, excludeAppointmentId = null) {
+    const equipment = store.get('equiposMedicos') || [];
+    return equipment.filter(eq => {
+      if (eq.status === 'maintenance' || eq.status === 'mantenimiento') return false;
+      return isResourceAvailableAt('equiposMedicos', eq.id, date, time, duration, excludeAppointmentId);
+    });
+  }
+
+  function updateAvailableResources() {
+    const date = elements.formDate ? elements.formDate.value : null;
+    const time = elements.formTime ? elements.formTime.value : null;
+    const duration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
+    const modality = elements.formModality ? elements.formModality.value : 'presencial';
+
+    if (!date || !time) {
+      if (elements.consultorioInfo) elements.consultorioInfo.textContent = 'Seleccione fecha y hora para ver disponibilidad';
+      if (elements.equipmentInfo) elements.equipmentInfo.textContent = 'Seleccione fecha y hora para ver disponibilidad';
+      return;
+    }
+
+    // Actualizar consultorios
+    if (elements.formConsultorio) {
+      if (modality === 'virtual') {
+        elements.formConsultorio.innerHTML = '<option value="">No requiere consultorio (cita virtual)</option>';
+        elements.formConsultorio.disabled = true;
+        if (elements.consultorioInfo) elements.consultorioInfo.innerHTML = '<span style="color: #7c3aed; font-weight: 600;">Las citas virtuales no requieren consultorio físico</span>';
+      } else {
+        elements.formConsultorio.disabled = false;
+        const availableRooms = getAvailableRoomsForSlot(date, time, duration, state.editingId);
+        if (availableRooms.length > 0) {
+          const options = availableRooms.map(r => `<option value="${r.id}">${r.name} - ${r.area} (Piso ${r.floor})</option>`).join('');
+          elements.formConsultorio.innerHTML = `<option value="">Sin consultorio asignado</option>${options}`;
+          if (elements.consultorioInfo) elements.consultorioInfo.innerHTML = `<span class="available-slot">${icons.successCheck} ${availableRooms.length} consultorio(s) disponible(s)</span>`;
+        } else {
+          elements.formConsultorio.innerHTML = '<option value="">No hay consultorios disponibles</option>';
+          if (elements.consultorioInfo) elements.consultorioInfo.innerHTML = `<span class="no-slots">${icons.warning} Todos los consultorios están ocupados en este horario</span>`;
+        }
+      }
+    }
+
+    // Actualizar equipamiento
+    if (elements.formEquipment) {
+      const availableEquipment = getAvailableEquipmentForSlot(date, time, duration, state.editingId);
+      if (availableEquipment.length > 0) {
+        const options = availableEquipment.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+        elements.formEquipment.innerHTML = options;
+        if (elements.equipmentInfo) elements.equipmentInfo.innerHTML = `<span class="available-slot">${icons.successCheck} Equipos disponibles en este horario</span><br><small>Ctrl+clic para selección múltiple</small>`;
+      } else {
+        elements.formEquipment.innerHTML = '<option value="" disabled>No hay equipos disponibles</option>';
+        if (elements.equipmentInfo) elements.equipmentInfo.innerHTML = `<span class="no-slots">${icons.warning} No hay equipos disponibles</span>`;
+      }
+    }
+
+    // Insumos de laboratorio: Verificar stock global
+    if (elements.formSupplies) {
+      const supplies = store.get('suministros') || [];
+      const availableSupplies = supplies.filter(s => (s.stock || 0) > 0);
+      if (availableSupplies.length === 0) {
+        if (elements.suppliesInfo) elements.suppliesInfo.innerHTML = `<span class="no-slots">${icons.warning} No hay insumos de laboratorio en stock</span>`;
+      } else {
+        if (elements.suppliesInfo) elements.suppliesInfo.innerHTML = `Seleccione los insumos que se consumirán en esta cita`;
+      }
+    }
+  }
+
   // ========== FIN FUNCIONES DE CAPACIDAD Y DISPONIBILIDAD ==========
 
   // Renderizar componente principal
@@ -571,6 +680,31 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                   </select>
                 </div>
               </div>
+
+              <!-- Modalidad de atención -->
+              <div style="margin-bottom: 2rem;" id="modality-section">
+                <div style="font-size: 0.9rem; font-weight: 700; color: #7c3aed; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                  <span style="opacity: 0.7;">${icons.video}</span> MODALIDAD DE ATENCIÓN
+                </div>
+                
+                <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MODALIDAD *</label>
+                    <select class="input" id="form-modality" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      <option value="presencial">🏥 Presencial</option>
+                      <option value="virtual">📹 Virtual / Telemedicina</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group" id="virtual-link-group" style="display: none;">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ENLACE DE REUNIÓN</label>
+                    <input type="url" class="input" id="form-virtual-link" placeholder="https://meet.example.com/..." style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <div class="text-xs text-muted mt-1" id="virtual-link-info">
+                      Se generará automáticamente o ingrese uno manualmente
+                    </div>
+                  </div>
+                </div>
+              </div>
               
               <!-- Fecha y Hora -->
               <div style="margin-bottom: 2rem;" id="date-time-section">
@@ -591,6 +725,44 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                     <datalist id="available-times"></datalist>
                     <div class="text-xs text-muted mt-1" id="time-slot-info">
                       Seleccione un médico y fecha para ver horarios disponibles
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recursos Asociados -->
+              <div style="margin-bottom: 2rem;" id="resources-section">
+                <div style="font-size: 0.9rem; font-weight: 700; color: #2563eb; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                  <span style="opacity: 0.7;">${icons.resource}</span> RECURSOS ASOCIADOS
+                </div>
+                
+                <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <!-- Consultorio ocupando el ancho completo arriba -->
+                  <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CONSULTORIO</label>
+                    <select class="input" id="form-consultorio" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      <option value="">Sin consultorio asignado</option>
+                    </select>
+                    <div class="text-xs text-muted mt-1" id="consultorio-info">
+                      Seleccione fecha y hora para ver disponibilidad
+                    </div>
+                  </div>
+                  
+                  <!-- Equipamiento e Insumos lado a lado abajo -->
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EQUIPAMIENTO MÉDICO</label>
+                    <select class="input" id="form-equipment" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      <option value="">Ninguno / No requiere</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">INSUMOS / SUMINISTROS</label>
+                    <select class="input" id="form-supplies" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      <option value="">Ninguno / No requiere</option>
+                    </select>
+                    <div class="text-xs text-muted mt-1" id="supplies-info">
+                      Insumo a consumir en esta cita
                     </div>
                   </div>
                 </div>
@@ -695,7 +867,19 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       availableTimes: root.querySelector('#available-times'),
       noDoctorsMessage: root.querySelector('#no-doctors-message'),
       dateTimeSection: root.querySelector('#date-time-section'),
-      modalSubtitle: root.querySelector('#modal-subtitle')
+      modalSubtitle: root.querySelector('#modal-subtitle'),
+      formModality: root.querySelector('#form-modality'),
+      formVirtualLink: root.querySelector('#form-virtual-link'),
+      virtualLinkGroup: root.querySelector('#virtual-link-group'),
+      virtualLinkInfo: root.querySelector('#virtual-link-info'),
+      formConsultorio: root.querySelector('#form-consultorio'),
+      formEquipment: root.querySelector('#form-equipment'),
+      formSupplies: root.querySelector('#form-supplies'),
+      consultorioInfo: root.querySelector('#consultorio-info'),
+      equipmentInfo: root.querySelector('#equipment-info'),
+      suppliesInfo: root.querySelector('#supplies-info'),
+      resourcesSection: root.querySelector('#resources-section'),
+      modalitySection: root.querySelector('#modality-section')
     };
 
     loadSelectData();
@@ -746,6 +930,30 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       const areas = store.get('areas');
       const options = areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
       elements.formArea.innerHTML = `<option value="">Seleccionar área</option>${options}`;
+    }
+
+    // Cargar consultorios disponibles
+    if (elements.formConsultorio) {
+      const rooms = store.get('consultorios') || [];
+      const availableRooms = rooms.filter(r => r.status === 'available' || r.status === 'disponible');
+      const options = availableRooms.map(r => `<option value="${r.id}">${r.name} - ${r.area} (Piso ${r.floor})</option>`).join('');
+      elements.formConsultorio.innerHTML = `<option value="">Sin consultorio asignado</option>${options}`;
+    }
+
+    // Cargar equipamiento disponible
+    if (elements.formEquipment) {
+      const equipment = store.get('equiposMedicos') || [];
+      const availableEquipment = equipment.filter(e => e.status === 'available' || e.status === 'disponible');
+      const options = availableEquipment.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+      elements.formEquipment.innerHTML = `<option value="">Ninguno / No requiere</option>${options}`;
+    }
+
+    // Cargar suministros con stock
+    if (elements.formSupplies) {
+      const supplies = store.get('suministros') || [];
+      const availableSupplies = supplies.filter(s => (s.stock || 0) > 0);
+      const options = availableSupplies.map(s => `<option value="${s.id}">${s.name} (${s.stock} ${s.unit})</option>`).join('');
+      elements.formSupplies.innerHTML = `<option value="">Sin insumos adicionales</option>${options}`;
     }
   }
 
@@ -816,6 +1024,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <td data-label="Fecha y Hora">
             <div>${dateStr}</div>
             <div class="text-xs text-muted">${icons.clock} ${timeStr}</div>
+            ${appointment.modality === 'virtual' ? `<div class="text-xs" style="color: #7c3aed; font-weight: 600; display: flex; align-items: center; gap: 3px; margin-top: 2px;">${icons.video} Virtual</div>` : ''}
           </td>
           <td data-label="Duración">${appointment.duration} min</td>
           <td data-label="Estado">${getStatusBadge(appointment.status)}</td>
@@ -1367,7 +1576,10 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       elements.formArea.addEventListener('change', updateDoctorsByAreaAndDate);
     }
     if (elements.formDate) {
-      elements.formDate.addEventListener('change', updateDoctorsByAreaAndDate);
+      elements.formDate.addEventListener('change', () => {
+        updateDoctorsByAreaAndDate();
+        updateAvailableResources();
+      });
     }
     if (elements.formDoctor) {
       elements.formDoctor.addEventListener('change', updateAvailableTimeSlots);
@@ -1376,12 +1588,27 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       elements.formTime.addEventListener('change', () => {
         validateDoctorSchedule();
         updateDoctorsByAreaAndDate();
+        updateAvailableResources();
       });
     }
     if (elements.formDuration) {
       elements.formDuration.addEventListener('change', () => {
         updateAvailableTimeSlots();
         validateDoctorSchedule();
+        updateAvailableResources();
+      });
+    }
+    if (elements.formModality) {
+      elements.formModality.addEventListener('change', () => {
+        const isVirtual = elements.formModality.value === 'virtual';
+        if (elements.virtualLinkGroup) {
+          elements.virtualLinkGroup.style.display = isVirtual ? 'block' : 'none';
+        }
+        if (isVirtual && elements.formVirtualLink && !elements.formVirtualLink.value) {
+          const meetId = `humnt-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+          elements.formVirtualLink.value = `https://meet.hospital-humnt.com/${meetId}`;
+        }
+        updateAvailableResources();
       });
     }
     if (elements.btnViewCalendar) {
@@ -1566,6 +1793,34 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.formNotes) elements.formNotes.value = appointment.notes || '';
     if (elements.formStatus) elements.formStatus.value = appointment.status;
 
+    // Modalidad y enlace virtual
+    if (elements.formModality) {
+      elements.formModality.value = appointment.modality || 'presencial';
+      const isVirtual = (appointment.modality === 'virtual');
+      if (elements.virtualLinkGroup) {
+        elements.virtualLinkGroup.style.display = isVirtual ? 'block' : 'none';
+      }
+    }
+    if (elements.formVirtualLink) {
+      elements.formVirtualLink.value = appointment.virtualLink || '';
+    }
+
+    // Recursos asociados
+    if (elements.formConsultorio && appointment.consultorioId) {
+      setTimeout(() => {
+        updateAvailableResources();
+        setTimeout(() => {
+          if (elements.formConsultorio) elements.formConsultorio.value = appointment.consultorioId;
+        }, 50);
+      }, 150);
+    }
+    if (elements.formEquipment) {
+      elements.formEquipment.value = (appointment.equipmentIds && appointment.equipmentIds[0]) || '';
+    }
+    if (elements.formSupplies) {
+      elements.formSupplies.value = (appointment.supplyIds && appointment.supplyIds[0]) || '';
+    }
+
     updateDoctorsByAreaAndDate();
     if (elements.formDate) {
       const today = new Date().toISOString().split('T')[0];
@@ -1609,6 +1864,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.availableTimes) {
       elements.availableTimes.innerHTML = '';
     }
+    // Limpiar campos de modalidad
+    if (elements.formModality) elements.formModality.value = 'presencial';
+    if (elements.virtualLinkGroup) elements.virtualLinkGroup.style.display = 'none';
+    if (elements.formVirtualLink) elements.formVirtualLink.value = '';
+    // Limpiar campos de recursos
+    if (elements.formConsultorio) {
+      elements.formConsultorio.disabled = false;
+      elements.formConsultorio.value = '';
+    }
+    if (elements.consultorioInfo) elements.consultorioInfo.textContent = 'Seleccione fecha y hora para ver disponibilidad';
+    if (elements.equipmentInfo) elements.equipmentInfo.textContent = 'Ctrl+clic para seleccionar múltiples equipos';
   }
 
   function updateDoctorsByAreaAndDate() {
@@ -1810,6 +2076,14 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
   function getFormData() {
     const date = new Date(`${elements.formDate.value}T${elements.formTime.value}`);
+    const modality = elements.formModality ? elements.formModality.value : 'presencial';
+    const equipmentIds = elements.formEquipment && elements.formEquipment.value
+      ? [elements.formEquipment.value]
+      : [];
+    const supplyIds = elements.formSupplies && elements.formSupplies.value
+      ? [elements.formSupplies.value]
+      : [];
+
     return {
       patientId: elements.formPatient.value,
       doctorId: elements.formDoctor.value,
@@ -1819,7 +2093,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       reason: elements.formReason.value || '',
       notes: elements.formNotes.value || '',
       status: elements.formStatus ? elements.formStatus.value : 'scheduled',
-      createdBy: user.id
+      createdBy: user.id,
+      modality: modality,
+      virtualLink: modality === 'virtual' ? (elements.formVirtualLink ? elements.formVirtualLink.value : '') : '',
+      consultorioId: modality === 'presencial' ? (elements.formConsultorio ? elements.formConsultorio.value : '') : '',
+      equipmentIds: equipmentIds,
+      supplyIds: supplyIds
     };
   }
 
@@ -1890,6 +2169,18 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   }
 
   async function createAppointment(data) {
+    // Si hay insumos seleccionados, descontar stock
+    if (data.supplyIds && data.supplyIds.length > 0) {
+      for (const sId of data.supplyIds) {
+        const supply = store.find('suministros', sId);
+        if (supply) {
+          await store.update('suministros', sId, {
+            stock: Math.max(0, (supply.stock || 0) - 1)
+          });
+        }
+      }
+    }
+
     const result = await store.add('appointments', data);
     Logger.log(store, user, {
       action: Logger.Actions.CREATE,
@@ -1920,15 +2211,35 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       await store.update('appointments', appointment.id, {
         status: 'cancelled',
         cancelledAt: Date.now(),
-        cancelledBy: user.id
+        cancelledBy: user.id,
+        consultorioId: '',
+        equipmentIds: [],
+        supplyIds: []
       });
+
+      // Devolver stock de insumos
+      if (appointment.supplyIds && appointment.supplyIds.length > 0) {
+        for (const sId of appointment.supplyIds) {
+          const supply = store.find('suministros', sId);
+          if (supply) {
+            await store.update('suministros', sId, {
+              stock: (supply.stock || 0) + 1
+            });
+          }
+        }
+      }
       Logger.log(store, user, {
         action: Logger.Actions.DELETE,
         module: Logger.Modules.APPOINTMENTS,
-        description: `Cita médica cancelada ID: ${appointment.id}`,
-        details: { appointmentId: appointment.id, reason: 'Cancelado por usuario' }
+        description: `Cita médica cancelada ID: ${appointment.id}. Recursos liberados.`,
+        details: {
+          appointmentId: appointment.id,
+          reason: 'Cancelado por usuario',
+          freedConsultorio: appointment.consultorioId || null,
+          freedEquipment: appointment.equipmentIds || []
+        }
       });
-      showNotification('Cita cancelada correctamente', 'success');
+      showNotification('Cita cancelada correctamente. Los recursos han sido liberados.', 'success');
       loadAppointments();
     } catch (error) {
       console.error('Error cancelando cita:', error);
@@ -2070,11 +2381,74 @@ export default function mountAppointments(root, { bus, store, user, role }) {
             <div style="font-size: 0.75rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">ESTADO ACTUAL</div>
             <div style="display: flex; align-items: center; gap: 1rem;">
               ${getStatusBadge(appointment.status)}
+              <span class="badge" style="background: ${appointment.modality === 'virtual' ? '#7c3aed' : '#059669'}; color: white; font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                ${appointment.modality === 'virtual' ? `${icons.video} VIRTUAL` : `${icons.hospital} PRESENCIAL`}
+              </span>
               <div style="font-size: 0.85rem; color: #666;">
                 ${appointment.cancelledAt ? `Cancelada el ${new Date(appointment.cancelledAt).toLocaleDateString('es-ES')}` : ''}
               </div>
             </div>
           </div>
+
+          ${appointment.modality === 'virtual' && appointment.virtualLink ? `
+          <div style="margin-bottom: 2rem;">
+            <div style="font-size: 0.9rem; font-weight: 700; color: #7c3aed; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.video} CITA VIRTUAL - ENLACE DE REUNIÓN
+            </div>
+            <div style="background: #f5f3ff; border: 1px solid #c4b5fd; border-radius: 8px; padding: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 40px; height: 40px; background: #7c3aed; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                  ${icons.video}
+                </div>
+                <div style="flex: 1;">
+                  <div style="font-size: 0.75rem; font-weight: 700; color: #6d28d9; margin-bottom: 0.25rem;">ENLACE DE VIDEOCONFERENCIA</div>
+                  <a href="${appointment.virtualLink}" target="_blank" style="color: #7c3aed; word-break: break-all; font-size: 0.85rem;">${appointment.virtualLink}</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+
+          ${(appointment.consultorioId || (appointment.equipmentIds && appointment.equipmentIds.length > 0)) ? `
+          <div style="margin-bottom: 2rem;">
+            <div style="font-size: 0.9rem; font-weight: 700; color: #2563eb; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              ${icons.resource} RECURSOS ASIGNADOS
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              ${appointment.consultorioId ? (() => {
+          const room = store.find('consultorios', appointment.consultorioId);
+          return room ? `
+                  <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 1rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #1d4ed8; margin-bottom: 0.25rem;">CONSULTORIO</div>
+                    <div style="font-weight: 600;">${room.name}</div>
+                    <div style="font-size: 0.8rem; color: #666;">${room.area} - Piso ${room.floor}</div>
+                  </div>` : '';
+        })() : ''}
+              ${appointment.equipmentIds && appointment.equipmentIds.length > 0 ? (() => {
+          const eqNames = appointment.equipmentIds.map(eqId => {
+            const eq = store.find('equiposMedicos', eqId);
+            return eq ? eq.name : eqId;
+          });
+          return `
+                  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 1rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #15803d; margin-bottom: 0.25rem;">EQUIPAMIENTO</div>
+                    ${eqNames.map(name => `<div style="font-size: 0.85rem; padding: 0.15rem 0;">• ${name}</div>`).join('')}
+                  </div>`;
+        })() : ''}
+              ${appointment.supplyIds && appointment.supplyIds.length > 0 ? (() => {
+          const supplyNames = appointment.supplyIds.map(sId => {
+            const s = store.find('suministros', sId);
+            return s ? s.name : sId;
+          });
+          return `
+                  <div style="background: #fff7ed; border: 1px solid #ffedd5; border-radius: 4px; padding: 1rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #9a3412; margin-bottom: 0.25rem;">INSUMOS USADOS</div>
+                    ${supplyNames.map(name => `<div style="font-size: 0.85rem; padding: 0.15rem 0;">• ${name}</div>`).join('')}
+                  </div>`;
+        })() : ''}
+            </div>
+          </div>
+          ` : ''}
 
           <div style="margin-bottom: 2rem;">
             <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">

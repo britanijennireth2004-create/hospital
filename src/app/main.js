@@ -386,11 +386,9 @@ function mountLogin(root, { onSuccess }) {
           <p class="login-subtitle">Sistema de Gestión de Citas Médicas</p>
           <form id="login-form" class="login-form" autocomplete="off">
             <div class="login-field">
-              <label class="login-label" for="login-user">Usuario</label>
               <input class="login-input" type="text" id="login-user" placeholder="Ingrese su usuario" required ${isLocked ? 'disabled' : ''} />
             </div>
             <div class="login-field">
-              <label class="login-label" for="login-pass">Contraseña</label>
               <div class="auth-pw-wrap">
                 <input class="login-input" type="password" id="login-pass" placeholder="Ingrese su contraseña" required ${isLocked ? 'disabled' : ''} style="padding-right:2.5rem;" />
                 <button type="button" class="auth-eye" id="eye-login" tabindex="-1">${ai.eye}</button>
@@ -410,25 +408,13 @@ function mountLogin(root, { onSuccess }) {
               <a href="#" id="back-to-landing">← Volver a página de bienvenida</a>
             </div>
           </form>
-          <div class="login-footer-note">
-            <strong>Prototipo de demostración:</strong> Los datos se almacenan localmente en tu navegador.
-          </div>
         </div>
         <div class="login-image-panel">
-          <img src="img/hospital.jpg" alt="Hospital Universitario" />
           <div class="login-image-overlay">
             <div class="brand-title">HUMNT</div>
             <div class="brand-desc">Hospital Universitario Manuel Núñez Tovar. Sistema de gestión de citas médicas.</div>
           </div>
         </div>
-      </div>
-      <div class="quick-access-bar">
-        <span class="quick-access-label">Acceso rápido:</span>
-        <button class="quick-access-btn login-btn" data-role="admin" title="Administrador">Admin</button>
-        <button class="quick-access-btn login-btn" data-role="doctor" title="Médico">Médico</button>
-        <button class="quick-access-btn login-btn" data-role="patient" title="Paciente">Paciente</button>
-        <button class="quick-access-btn login-btn" data-role="nurse" title="Enfermera">Enfermera</button>
-        <button class="quick-access-btn login-btn" data-role="receptionist" title="Recepcionista">Recepción</button>
       </div>
     </div>
     <div id="recover-modal-overlay" class="auth-modal-overlay" style="display:none;">
@@ -742,25 +728,98 @@ async function mountAppShell(root, { user, bus, store }) {
     currentRoute: 'dashboard'
   };
 
+  function bindSearchEvents() {
+    const searchInput = root.querySelector('#global-search');
+    const searchResults = root.querySelector('#search-results');
+
+    if (!searchInput || !searchResults) return;
+
+    // Keyboard shortcut Alt+K
+    const handleKeydown = (e) => {
+      if (e.altKey && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeydown);
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase().trim();
+      if (!query) {
+        searchResults.classList.remove('active');
+        return;
+      }
+
+      const filteredRoutes = Object.entries(ROUTES).filter(([id, r]) => {
+        if (!r.permission(user.role)) return false;
+        return r.label.toLowerCase().includes(query) || (r.parent && r.parent.toLowerCase().includes(query));
+      });
+
+      if (filteredRoutes.length > 0) {
+        searchResults.innerHTML = filteredRoutes.map(([id, r]) => `
+          <div class="search-result-item" data-id="${id}">
+            <div class="search-result-icon">${r.icon}</div>
+            <div class="search-result-info">
+              <div class="search-result-label">${r.label}</div>
+              ${r.parent ? `<div class="search-result-parent">${r.parent}</div>` : ''}
+            </div>
+          </div>
+        `).join('');
+        searchResults.classList.add('active');
+      } else {
+        searchResults.innerHTML = '<div class="header-search-empty">No se encontraron resultados</div>';
+        searchResults.classList.add('active');
+      }
+    });
+
+    // Close on click outside
+    const handleClickOutside = (e) => {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.remove('active');
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+
+    searchResults.addEventListener('click', (e) => {
+      const item = e.target.closest('.search-result-item');
+      if (item) {
+        const id = item.dataset.id;
+        navigateTo(id);
+        searchInput.value = '';
+        searchResults.classList.remove('active');
+      }
+    });
+  }
+
   function render() {
     root.innerHTML = `
       <div class="app-shell">
-        <header class="app-header">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: 1rem;">
-            <div style="font-weight: bold;">Hospital Universitario Manuel Núñez Tovar</div>
+        <header class="app-header" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+          <div style="display: flex; width: var(--sidebar-width); height: var(--header-height); align-items: center; gap: 0.75rem; flex-shrink: 0; background: var(--themeDark); padding: 0.5rem 1rem;">
+            <div style="font-weight: bold; color: var(--white); font-size: 1.1rem; letter-spacing: 0.05em;">HUMNT</div>
+          </div>
+
+          <div class="header-search">
+            <div class="header-search-input-wrapper">
+              <span class="header-search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </span>
+              <input type="text" id="global-search" class="header-search-input" placeholder="Buscar menú, accesos, opciones... (Alt+K)">
+            </div>
+            <div id="search-results" class="header-search-results"></div>
           </div>
           
-          <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem; flex-shrink: 0;">
             <div class="user-info" style="display: flex; align-items: center; gap: 0.75rem;">
               <div style="text-align: right;">
-                <div style="font-weight: 500;">${user.name}</div>
-                <div style="font-size: 0.875rem; color: var(--card);">${user.role.toUpperCase()}</div>
+                <div style="font-weight: 600; font-size: 0.9rem;">${user.name}</div>
+                <div style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-transform: uppercase;">${user.role}</div>
               </div>
-              <div style="width: 36px; height: 36px; background: var(--modal-section-green-light); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+              <div style="width: 36px; height: 36px; background: var(--primary-light); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid rgba(15,141,58,0.2);">
                 ${user.name.charAt(0)}
               </div>
             </div>
-            <button class="btn btn-sm" id="btn-logout" title="Cerrar Sesión" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: none; background: transparent;">
+            <button class="btn btn-sm" id="btn-logout" title="Cerrar Sesión" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 1px solid #fecaca; background: #fef2f2; transition: all 0.2s;">
               <span style="display: flex; align-items: center; justify-content: center; color: var(--danger);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -775,7 +834,6 @@ async function mountAppShell(root, { user, bus, store }) {
         <main class="app-main">
           <nav class="app-sidebar">
             <div class="nav-menu">
-              <div style="font-weight: bold; font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--muted); padding: 0 0.75rem; letter-spacing: 0.05em;">MENÚ PRINCIPAL</div>
               <div id="nav-links">
                 ${(() => {
         const items = [];
@@ -978,6 +1036,7 @@ async function mountAppShell(root, { user, bus, store }) {
       }
     });
 
+    bindSearchEvents();
     navigateTo(state.currentRoute);
   }
 

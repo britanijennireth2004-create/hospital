@@ -14,7 +14,6 @@ body {
 
 body {
   background: var(--bg);
-  color: var(--text);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -471,7 +470,7 @@ textarea.error {
   left: 0;
   right: 0;
   height: var(--header-height);
-  background: var(--bg-header);
+  background: var(--neutralLighterAlt);
   box-shadow: var(--shadow);
   display: flex;
   align-items: center;
@@ -489,7 +488,8 @@ textarea.error {
 
 .app-sidebar {
   width: var(--sidebar-width);
-  background: var(--card);
+  background: var(--themeDark);
+  border-top: 1px solid var(--themeLight);
   border-right: 1px solid var(--border);
   transition: transform 0.3s ease, width 0.3s ease;
   overflow-y: auto;
@@ -514,7 +514,7 @@ textarea.error {
   padding: 0.75rem 1rem;
   border: none;
   background: transparent;
-  color: var(--text);
+  color: var(--neutralLighterAlt);
   border-radius: var(--radius);
   cursor: pointer;
   text-align: left;
@@ -531,7 +531,7 @@ textarea.error {
 
 .nav-btn.active {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--white);
   font-weight: 600;
 }
 
