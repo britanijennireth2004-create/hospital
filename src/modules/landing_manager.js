@@ -49,7 +49,7 @@ export default function mountLandingManager(root, { store, user, role }) {
           </div>
         </div>
 
-        <div class="grid grid-2 gap-4">
+        <div class="responsive-grid">
           <!-- Sección Hero e Imagen -->
           <div class="card">
             <h3 class="mb-4 flex items-center gap-2">
@@ -68,12 +68,12 @@ export default function mountLandingManager(root, { store, user, role }) {
                 <div class="hero-preview-small mb-2" id="hero-preview-box" style="background-image: url('${c.hero.backgroundImage || 'img/hospital.jpg'}');">
                   ${!c.hero.backgroundImage ? '<span>Sin imagen</span>' : ''}
                 </div>
-                <div class="flex gap-2">
+                <div class="upload-actions">
                   <input type="file" id="hero-file-input" accept="image/*" style="display: none;">
                   <button class="btn btn-outline flex-1" id="btn-trigger-upload">
-                    📁 Subir Imagen desde Dispositivo
+                    📁 <span class="btn-text">Subir Imagen</span>
                   </button>
-                  <button class="btn btn-outline" id="btn-reset-img" title="Restaurar por defecto">
+                  <button class="btn btn-outline btn-reset" id="btn-reset-img" title="Restaurar por defecto">
                     🔄
                   </button>
                 </div>
@@ -100,7 +100,7 @@ export default function mountLandingManager(root, { store, user, role }) {
             </h3>
             <p class="text-sm mb-4">El portal mostrará automáticamente el total de registros detectados en cada módulo:</p>
             
-            <div class="grid grid-2 gap-3">
+            <div class="grid stats-auto-grid gap-3">
               <div class="stat-info-card">
                 <span class="stat-info-label">Pacientes</span>
                 <span class="stat-info-value">${counts.patients}</span>
@@ -167,10 +167,20 @@ export default function mountLandingManager(root, { store, user, role }) {
       </div>
 
       <style>
+        .responsive-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          gap: 1.5rem;
+        }
+        .stats-auto-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          gap: 0.75rem;
+        }
         .hero-preview-small {
           width: 100%;
-          height: 150px;
-          border-radius: 8px;
+          height: 180px;
+          border-radius: 12px;
           background-size: cover;
           background-position: center;
           border: 2px solid var(--border);
@@ -179,31 +189,60 @@ export default function mountLandingManager(root, { store, user, role }) {
           justify-content: center;
           color: var(--text-muted);
           overflow: hidden;
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .upload-actions {
+          display: flex;
+          gap: 0.5rem;
         }
         .stat-info-card {
           background: white;
           border: 1px solid var(--border);
-          padding: 1rem;
-          border-radius: 8px;
+          padding: 1.25rem 0.75rem;
+          border-radius: 12px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          transition: transform 0.2s;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         .stat-info-card:hover {
-          transform: translateY(-2px);
+          transform: translateY(-3px);
           border-color: var(--accent);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         .stat-info-label {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: var(--text-muted);
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.08em;
+          margin-bottom: 0.25rem;
+          font-weight: 600;
         }
         .stat-info-value {
-          font-size: 1.5rem;
-          font-weight: 700;
+          font-size: 1.75rem;
+          font-weight: 800;
           color: var(--accent);
+          line-height: 1;
+        }
+        @media (max-width: 768px) {
+          .responsive-grid {
+            grid-template-columns: 1fr;
+          }
+          .card .flex.justify-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+          }
+          .btn-save-config {
+            width: 100%;
+          }
+          .btn-text {
+            display: none;
+          }
+          .btn-trigger-upload::after {
+            content: ' Subir';
+          }
         }
       </style>
     `;

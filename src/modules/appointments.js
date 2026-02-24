@@ -521,9 +521,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           </div>
         </div>
 
-        <!-- Estadísticas rápidas -->
-        <div class="grid grid-4 mb-4" id="stats-container"></div>
-
         <!-- Filtros -->
         <div class="card mb-4" id="filters-container">
           <h3 class="mb-3">Filtros</h3>
