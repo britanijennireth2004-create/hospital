@@ -403,7 +403,10 @@ export default function mountLanding(container, { onGetStarted, store }) {
   function renderAreaCards() {
     return state.slides.map((area, index) => `
       <div class="landing-area-card-wrapper">
-        <div class="landing-area-card" style="border-left: 3px solid ${area.color};">
+        <div class="landing-area-card" style="border-top: 3px solid ${area.color};">
+          <div class="landing-area-icon" style="background: ${area.color}15; color: ${area.color};">
+            ${area.icon}
+          </div>
           <h3 class="landing-area-title">${area.title}</h3>
           <p class="landing-area-description">${area.description}</p>
           <div class="landing-area-stats">
@@ -752,7 +755,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
           height: 100%;
           display: flex;
           flex-direction: column;
-          border-left: 3px solid transparent;
+          border-top: 3px solid transparent;
         }
 
         .landing-area-card:hover {

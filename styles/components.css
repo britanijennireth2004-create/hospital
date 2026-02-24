@@ -2,7 +2,7 @@
 
 /* App Shell */
 .app-header {
-  background: var(--neutralLighterAlt);
+  background: var(--bg-header);
   border-bottom: 1px solid var(--border);
   padding: var(--spacing-md) var(--spacing-lg);
 }
@@ -888,7 +888,6 @@
 
 /* Left panel — form */
 .login-form-panel {
-  width: 50%;
   flex: 1;
   padding: 3rem 2.5rem;
   display: flex;
@@ -899,7 +898,7 @@
 .login-title {
   font-size: 1.65rem;
   font-weight: 700;
-  color: var(--greenDark);
+  color: var(--text);
   line-height: 1.25;
   margin-bottom: 0.35rem;
 }
@@ -914,7 +913,7 @@
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 1.1rem;
   margin-bottom: 2rem;
 }
 
@@ -933,21 +932,19 @@
 .login-input {
   width: 100%;
   padding: 0.7rem 0.85rem;
-  border-color: var(--neutralTertiary);
-  border-width: 0 0 2px 0;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   font-family: var(--font);
   font-size: 0.9rem;
-  background: var(--white);
+  background: white;
   color: var(--text);
-  box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .login-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);
+  box-shadow: 0 0 0 3px rgba(15, 141, 58, 0.12);
 }
 
 .login-input::placeholder {
@@ -960,7 +957,7 @@
   padding: 0.8rem;
   border: none;
   border-radius: var(--radius);
-  background: var(--greenDark);
+  background: var(--accent);
   color: white;
   font-family: var(--font);
   font-size: 0.95rem;
@@ -987,7 +984,7 @@
 }
 
 .login-recover a {
-  color: var(--greenDark);
+  color: var(--accent);
   font-size: 0.85rem;
   text-decoration: none;
   font-weight: 500;
@@ -1009,7 +1006,7 @@
 
 /* Right panel — image */
 .login-image-panel {
-  width: 50%;
+  width: 420px;
   min-height: 520px;
   position: relative;
   overflow: hidden;
@@ -1027,9 +1024,10 @@
 .login-image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(rgba(29, 53, 87, 0.8), rgba(63, 230, 57, 0.8)), url(../img/hospital.jpg);
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(135deg,
+      rgba(10, 107, 44, 0.82) 0%,
+      rgba(15, 141, 58, 0.70) 40%,
+      rgba(36, 179, 107, 0.65) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;

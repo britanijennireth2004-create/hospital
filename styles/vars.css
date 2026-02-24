@@ -1,51 +1,4 @@
 :root {
-  /* Colores de fluent */
-  /* Colores de acento */
-  --yellowDark: #d29200;
-  --yellow: #ffb900;
-  --orange: #d83b01;
-  --orangeLight: #ea4300;
-  --redDark: #a4262c;
-  --red: #d13438;
-  --blueDark: #002050;
-  --blue: #0078d4;
-  --tealDark: #004b50;
-  --teal: #008272;
-  --tealLight: #00B294;
-  --greenDark: #004b1c;
-  --green: #107c10;
-  /* Colores principales */
-  /* Primary */
-  --themeDarker: #19291c;
-  --themeDark: #223826;
-  --themeDarkAlt: #29432d;
-  --themePrimary: #2d4a32;
-  --themeSecondary: #3f6044;
-  --themeTertiary: #709276;
-  --themeLight: #b1c9b5;
-  --themeLighter: #d4e2d6;
-  --themeLighterAlt: #f4f8f5;
-  /* Foreground */
-  --black: #000000;
-  --neutralDark: #201f1e;
-  --neutralPrimary: #323130;
-  --neutralPrimaryAlt: #3b3a39;
-  --neutralSecondary: #605e5c;
-  --neutralTertiary: #a19f9d;
-  --neutralSecondaryAlt: #8a8886;
-  --white: #ffffff;
-  /*Background*/
-  --neutralTertiaryAlt: #c8c6c4;
-  --neutralQuaternaryAlt: #e1dfdd;
-  --neutralLight: #edebe9;
-  --neutralLighter: #f3f2f1;
-  --neutralLighterAlt: #faf9f8;
-  
-  
-  
-  
-  
-
   /* Colores principales */
   --bg: #d4e8d7;
   --bg-light: #f0f7f0;
@@ -77,7 +30,7 @@
   --shadow-lg: 0 12px 40px rgba(15, 59, 47, 0.12);
 
   /* Bordes redondeados */
-  --radius: 0;
+  --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
 

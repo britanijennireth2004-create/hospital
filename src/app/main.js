@@ -386,9 +386,11 @@ function mountLogin(root, { onSuccess }) {
           <p class="login-subtitle">Sistema de Gestión de Citas Médicas</p>
           <form id="login-form" class="login-form" autocomplete="off">
             <div class="login-field">
+              <label class="login-label" for="login-user">Usuario</label>
               <input class="login-input" type="text" id="login-user" placeholder="Ingrese su usuario" required ${isLocked ? 'disabled' : ''} />
             </div>
             <div class="login-field">
+              <label class="login-label" for="login-pass">Contraseña</label>
               <div class="auth-pw-wrap">
                 <input class="login-input" type="password" id="login-pass" placeholder="Ingrese su contraseña" required ${isLocked ? 'disabled' : ''} style="padding-right:2.5rem;" />
                 <button type="button" class="auth-eye" id="eye-login" tabindex="-1">${ai.eye}</button>
@@ -408,13 +410,25 @@ function mountLogin(root, { onSuccess }) {
               <a href="#" id="back-to-landing">← Volver a página de bienvenida</a>
             </div>
           </form>
+          <div class="login-footer-note">
+            <strong>Prototipo de demostración:</strong> Los datos se almacenan localmente en tu navegador.
+          </div>
         </div>
         <div class="login-image-panel">
+          <img src="img/hospital.jpg" alt="Hospital Universitario" />
           <div class="login-image-overlay">
             <div class="brand-title">HUMNT</div>
             <div class="brand-desc">Hospital Universitario Manuel Núñez Tovar. Sistema de gestión de citas médicas.</div>
           </div>
         </div>
+      </div>
+      <div class="quick-access-bar">
+        <span class="quick-access-label">Acceso rápido:</span>
+        <button class="quick-access-btn login-btn" data-role="admin" title="Administrador">Admin</button>
+        <button class="quick-access-btn login-btn" data-role="doctor" title="Médico">Médico</button>
+        <button class="quick-access-btn login-btn" data-role="patient" title="Paciente">Paciente</button>
+        <button class="quick-access-btn login-btn" data-role="nurse" title="Enfermera">Enfermera</button>
+        <button class="quick-access-btn login-btn" data-role="receptionist" title="Recepcionista">Recepción</button>
       </div>
     </div>
     <div id="recover-modal-overlay" class="auth-modal-overlay" style="display:none;">
@@ -795,8 +809,8 @@ async function mountAppShell(root, { user, bus, store }) {
     root.innerHTML = `
       <div class="app-shell">
         <header class="app-header" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-          <div style="display: flex; width: var(--sidebar-width); height: var(--header-height); align-items: center; gap: 0.75rem; flex-shrink: 0; background: var(--themeDark); padding: 0.5rem 1rem;">
-            <div style="font-weight: bold; color: var(--white); font-size: 1.1rem; letter-spacing: 0.05em;">HUMNT</div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: 1rem; flex-shrink: 0;">
+            <div style="font-weight: bold; color: var(--primary); font-size: 1.1rem; letter-spacing: 0.05em;">HUMNT</div>
           </div>
 
           <div class="header-search">
@@ -834,6 +848,7 @@ async function mountAppShell(root, { user, bus, store }) {
         <main class="app-main">
           <nav class="app-sidebar">
             <div class="nav-menu">
+              <div style="font-weight: bold; font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--muted); padding: 0 0.75rem; letter-spacing: 0.05em;">MENÚ PRINCIPAL</div>
               <div id="nav-links">
                 ${(() => {
         const items = [];
