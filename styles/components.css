@@ -937,21 +937,25 @@
 
 .login-input {
   width: 100%;
-  padding: 0.7rem 0.85rem;
+  padding: 0.3rem 0.85rem;
   border-color: var(--neutralTertiary);
   border-width: 0 0 2px 0;
   border-radius: var(--radius);
   font-family: var(--font);
   font-size: 0.9rem;
   background: var(--white);
-  color: var(--text);
+  color: var(--themeDark);
   box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.login-input:hover {
+  background: var(--neutralLighter);
+}
+
 .login-input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--green);
   box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);
 }
 

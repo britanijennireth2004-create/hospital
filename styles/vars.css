@@ -40,11 +40,11 @@
   --neutralLight: #edebe9;
   --neutralLighter: #f3f2f1;
   --neutralLighterAlt: #faf9f8;
-  
-  
-  
-  
-  
+
+
+
+
+
 
   /* Colores principales */
   --bg: #d4e8d7;
@@ -109,7 +109,7 @@
   --modal-text: #2d4a3e;
   --modal-text-muted: #5a7a6a;
 
-/* variables para niveles de triage */
+  /* variables para niveles de triage */
   --triage-gray: #cdd8cd;
   --triage-red: #ea4632;
   --triage-orange: #ea7d32;

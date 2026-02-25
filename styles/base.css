@@ -28,7 +28,7 @@ h6 {
   font-weight: 600;
   line-height: 1.3;
   margin-bottom: 0.75rem;
-  color: var(--text);
+  color: var(--themeDark);
 }
 
 h1 {
@@ -81,7 +81,7 @@ p {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--themeDark);
   color: white;
 }
 
@@ -101,8 +101,8 @@ p {
 }
 
 .btn-outline:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--themeDark);
+  color: var(--themeDark);
 }
 
 .btn-danger {
@@ -135,12 +135,15 @@ p {
 select,
 textarea {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border);
+  padding: 0.3rem 0.85rem;
+  border-color: var(--neutralTertiary);
+  border-width: 0 0 2px 0;
   border-radius: var(--radius);
   font-family: var(--font);
-  font-size: 0.875rem;
-  background-color: white;
+  font-size: 0.9rem;
+  background: var(--white);
+  color: var(--themeDark);
+  box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);
   transition: border-color 0.2s;
   outline: none;
 }
@@ -159,8 +162,7 @@ select {
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(15, 141, 58, 0.1);
+  border-color: var(--green);
 }
 
 .input.error,
@@ -211,6 +213,23 @@ textarea.error {
 }
 
 /* ===== CARDS ===== */
+.stat-info-card {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 1.25rem 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.stat-info-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
 .card {
   background: var(--card);
   border-radius: var(--radius);
@@ -228,10 +247,36 @@ textarea.error {
   border-bottom: 1px solid var(--border);
 }
 
+.card-gestion {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+}
+
+.card-gestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-body {
+  padding: 0 1.5rem !important;
+}
+
+
 /* ===== GRID ===== */
 .grid {
   display: grid;
   gap: 1rem;
+}
+
+.grid-gap-2 {
+  display: grid;
+  gap: 8rem;
 }
 
 .grid-2 {
@@ -314,6 +359,10 @@ textarea.error {
   margin-top: 1.5rem;
 }
 
+.mb-0 {
+  margin-bottom: 0;
+}
+
 .mb-1 {
   margin-bottom: 0.25rem;
 }
@@ -348,6 +397,14 @@ textarea.error {
 
 .justify-center {
   justify-content: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.flex-1 {
+  flex: 1;
 }
 
 .gap-2 {
@@ -568,7 +625,7 @@ textarea.error {
 .app-content {
   flex: 1;
   padding: 1.5rem;
-  background: var(--bg);
+  background: var(--white);
   overflow-y: auto;
 }
 
