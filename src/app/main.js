@@ -82,7 +82,7 @@ window.hospitalConfirm = function (message, type = 'warning') {
     modal.innerHTML = `
       <div class="hospital-modal-content">
         <div style="padding: 3rem 2rem 2.5rem; text-align: center;">
-          <div style="margin-bottom: 1.5rem; display: flex; justify-content: center; transform: scale(1.1);"></div>
+          <div style="margin-bottom: 1.5rem; display: flex; justify-content: center; transform: scale(1.1);">${s.icon}</div>
           <div style="font-size: 1.15rem; color: #1e293b; line-height: 1.6; font-weight: 600; padding: 0 1rem;">${message}</div>
         </div>
         <div style="padding: 1.5rem; display: flex; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9; gap: 1rem;">
@@ -975,7 +975,7 @@ async function mountAppShell(root, { user, bus, store }) {
       const notifs = store.get('notifications') || [];
       const rems = store.get('reminders') || [];
       const all = [...msgs, ...notifs, ...rems].filter(i => !i.deleted);
-      const isUnread = i => i.status === 'pending' || i.status === 'sent' || i.status === 'scheduled';
+      const isUnread = i => i.status === 'pending' || i.status === 'sent' || i.status === 'scheduled' || i.status === 'delivered';
 
       const visible = all.filter(i => {
         if (user.role === 'admin') return true;
