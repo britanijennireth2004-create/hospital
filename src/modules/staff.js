@@ -66,18 +66,6 @@ export default function mountStaff(root, { bus, store, user, role }) {
   function render() {
     root.innerHTML = `
       <div class="staff-module">
-        <div class="card mb-4">
-          <div class="flex justify-between items-center">
-            <div>
-              <h2 style="margin:0;">Gestión de Staff Administrativo</h2>
-              <p class="text-muted" style="margin:0;">Personal de enfermería, recepción y servicios</p>
-            </div>
-            <button class="btn btn-primary" id="btn-add-staff">
-              <span class="flex items-center gap-2">${icons.plus} Nuevo Ingreso</span>
-            </button>
-          </div>
-        </div>
-
         <div class="grid grid-3 mb-4" id="staff-stats"></div>
 
         <div class="card p-0 overflow-hidden">
@@ -88,14 +76,20 @@ export default function mountStaff(root, { bus, store, user, role }) {
             </div>
           </div>
 
-          <div class="p-4 border-b flex gap-4">
-            <div class="flex-1">
-              <input type="text" class="input" id="search-staff" placeholder="Buscar por nombre o correo..." value="${state.filters.search}">
-            </div>
-            <div style="width: 200px;">
-              <select class="input" id="area-filter">
-                <option value="">Todas las áreas</option>
-              </select>
+          <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);">
+            <div class="flex justify-between items-center">
+              <button class="btn btn-primary" id="btn-add-staff">
+                <span class="flex items-center gap-2">${icons.plus} Nuevo Ingreso</span>
+              </button>
+              <div class="search-input-wrapper" style="position: relative; width: 450px;">
+                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" class="input" id="search-staff" 
+                       placeholder="Buscar por nombre, correo, área..." 
+                       value="${state.filters.search}"
+                       style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;">
+              </div>
             </div>
           </div>
 
@@ -192,15 +186,20 @@ export default function mountStaff(root, { bus, store, user, role }) {
       });
     });
 
-    root.querySelector('#search-staff').addEventListener('input', (e) => {
-      state.filters.search = e.target.value;
-      loadData();
-    });
+    const searchStaff = root.querySelector('#search-staff');
+    if (searchStaff) {
+      searchStaff.addEventListener('input', (e) => {
+        state.filters.search = e.target.value;
+        loadData();
+      });
+    }
 
-    elements.areaFilter.addEventListener('change', (e) => {
-      state.filters.areaId = e.target.value;
-      loadData();
-    });
+    if (elements.areaFilter) {
+      elements.areaFilter.addEventListener('change', (e) => {
+        state.filters.areaId = e.target.value;
+        loadData();
+      });
+    }
 
     root.querySelector('#btn-add-staff').addEventListener('click', () => openModal());
     root.querySelector('#close-modal').addEventListener('click', closeModal);

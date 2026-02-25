@@ -152,21 +152,6 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="security-module animated-fade-in" style="max-width: 1400px; margin: 0 auto; padding: 1rem;">
-        <!-- Header -->
-        <div class="card" style="margin-bottom: 2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h2 style="margin: 0;">Seguridad y Auditoría</h2>
-              <p style="color: var(--muted); margin: 0;">Control de acceso, sesiones y registro de actividad</p>
-            </div>
-            <div style="display: flex; gap: 1rem;">
-              <button class="btn btn-outline" id="btn-export-logs">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar Logs
-              </button>
-            </div>
-          </div>
-        </div>
-
         <!-- Stats Cards -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
           <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-red);">
@@ -267,10 +252,21 @@ export default function mountSecurity(root, { bus, store, user, role }) {
   // Tab de Auditoría
   function renderAuditTab(logs, totalPages) {
     return `
-      <div class="grid" style="grid-template-columns: 1.5fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1.5rem;">
-        <input type="text" id="filter-search" placeholder="Buscar por usuario o descripción..." value="${state.filters.search}"
-          style="padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.875rem;">
-        <select id="filter-action" style="padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <button class="btn btn-outline" id="btn-export-logs">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar Logs
+        </button>
+        <div class="search-input-wrapper" style="position: relative; width: 450px;">
+          <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" id="filter-search" placeholder="Buscar por usuario o descripción..." value="${state.filters.search}"
+            style="padding: 0.625rem 1rem 0.625rem 2.8rem; border: 1px solid transparent; border-radius: 20px; font-size: 0.875rem; background: rgba(0,0,0,0.05); transition: all 0.3s; width: 100%; height: 40px;">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center;">
+        <select id="filter-action" style="padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); flex: 1;">
           <option value="">Todas las acciones</option>
           <option value="LOGIN" ${state.filters.action === 'LOGIN' ? 'selected' : ''}>Login</option>
           <option value="LOGOUT" ${state.filters.action === 'LOGOUT' ? 'selected' : ''}>Logout</option>
@@ -278,7 +274,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
           <option value="UPDATE" ${state.filters.action === 'UPDATE' ? 'selected' : ''}>Editar</option>
           <option value="DELETE" ${state.filters.action === 'DELETE' ? 'selected' : ''}>Eliminar</option>
         </select>
-        <select id="filter-module" style="padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius);">
+        <select id="filter-module" style="padding: 0.625rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); flex: 1;">
           <option value="">Todos los módulos</option>
           <option value="auth" ${state.filters.module === 'auth' ? 'selected' : ''}>Autenticación</option>
           <option value="patients" ${state.filters.module === 'patients' ? 'selected' : ''}>Pacientes</option>
@@ -473,17 +469,17 @@ export default function mountSecurity(root, { bus, store, user, role }) {
             <div>
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Longitud mínima</label>
               <input type="number" name="minLength" value="${p.minLength || 8}" min="6" max="20"
-                style="width: 100%; padding: 0.625rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                style="width: 100%; padding: 0.625rem; border-width: 0 0 2px 0; border-color: var(--neutralTertiary); border-radius: var(--radius); background: var(--white);">
             </div>
             <div>
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Días de expiración</label>
               <input type="number" name="expirationDays" value="${p.expirationDays || 90}" min="30" max="365"
-                style="width: 100%; padding: 0.625rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                style="width: 100%; padding: 0.625rem; border-width: 0 0 2px 0; border-color: var(--neutralTertiary); border-radius: var(--radius); background: var(--white);">
             </div>
             <div>
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Historial de contraseñas</label>
               <input type="number" name="preventReuse" value="${p.preventReuse || 3}" min="1" max="10"
-                style="width: 100%; padding: 0.625rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                style="width: 100%; padding: 0.625rem; border-width: 0 0 2px 0; border-color: var(--neutralTertiary); border-radius: var(--radius); background: var(--white);">
             </div>
           </div>
 
@@ -516,7 +512,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
             <div>
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Timeout de sesión (minutos)</label>
               <input type="number" name="sessionTimeoutMinutes" value="${p.sessionTimeoutMinutes || 480}" min="15" max="1440"
-                style="width: 100%; padding: 0.625rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                style="width: 100%; padding: 0.625rem; border-width: 0 0 2px 0; border-color: var(--neutralTertiary); border-radius: var(--radius); background: var(--white);">
             </div>
           </div>
         </div>
@@ -543,7 +539,6 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       state.activeTab = e.target.dataset.tab;
       state.currentPage = 1;
       render();
-      setupEventListeners();
     }
 
     // Paginación
@@ -552,7 +547,6 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       if (page >= 1) {
         state.currentPage = page;
         render();
-        setupEventListeners();
       }
     }
 
@@ -561,7 +555,6 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       state.filters = { search: '', action: '', module: '', dateFrom: '', dateTo: '' };
       state.currentPage = 1;
       render();
-      setupEventListeners();
     }
 
     // Exportar logs
@@ -605,7 +598,6 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         addAuditLog('LOGOUT', 'security', `Sesión de ${session.userName} terminada manualmente por el administrador`);
 
         render();
-        setupEventListeners();
         showNotification('Sesión terminada satisfactoriamente', 'success');
       }
     }
@@ -616,13 +608,11 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       state.filters.action = e.target.value;
       state.currentPage = 1;
       render();
-      setupEventListeners();
     }
     if (e.target.id === 'filter-module') {
       state.filters.module = e.target.value;
       state.currentPage = 1;
       render();
-      setupEventListeners();
     }
   }
 
@@ -631,7 +621,6 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       state.filters.search = e.target.value;
       state.currentPage = 1;
       render();
-      setupEventListeners();
     }
   }
 
@@ -664,7 +653,8 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       // Registrar en auditoría
       addAuditLog('UPDATE', 'security', 'Políticas de seguridad actualizadas');
 
-      showNotification('Políticas guardadas correctamente', 'success');
+      showNotification('Políticas de seguridad actualizadas', 'success');
+      render();
     }
   }
 

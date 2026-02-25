@@ -457,18 +457,23 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="module-triage">
-        <!-- Header -->
-        <div class="card">
+        <!-- Barra de Búsqueda + Botón -->
+        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
           <div class="flex justify-between items-center">
-            <div>
-              <h2>Triage de Urgencias</h2>
-              <p class="text-muted">Sistema de priorización de pacientes en emergencias</p>
-            </div>
             ${canCreate ? `
             <button class="btn btn-primary" id="btn-new-triage">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo Triage
             </button>
-            ` : ''}
+            ` : '<div></div>'}
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input type="text" class="input" id="filter-search" 
+                     placeholder="Buscar paciente por nombre, cédula..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
+                     value="${state.filters.search}">
+            </div>
           </div>
         </div>
 
@@ -513,17 +518,8 @@ export default function mountTriage(root, { bus, store, user, role }) {
           </div>
         </div>
 
-        <!-- Filtros y búsqueda -->
+        <!-- Filtros y lista -->
         <div class="card">
-          <div class="flex justify-between items-center mb-4">
-            <h3 style="margin: 0;">Pacientes en Espera</h3>
-            <div class="flex gap-2">
-              <div class="input-group">
-                <input type="text" class="input" id="filter-search" placeholder="Buscar paciente..." value="${state.filters.search}">
-                <button class="btn btn-outline" id="btn-search"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-              </div>
-            </div>
-          </div>
           
           <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
             <div class="form-group">
@@ -1454,7 +1450,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
               <div>
                 <div style="font-weight: 500;">${patient.fullName}</div>
                 <div style="font-size: 0.75rem; color: var(--muted);">
-                  ${patient.age} años • ${patient.gender === 'M' ? '♂' : patient.gender === 'F' ? '♀' : '⚧'}
+                  ${patient.age} años • ${patient.gender === 'M' ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px;"><circle cx="9" cy="15" r="5"/><path d="M13 11l6-6"/><path d="M14 5h5v5"/></svg>' : patient.gender === 'F' ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px;"><circle cx="12" cy="9" r="6"/><path d="M12 15v7"/><path d="M9 19h6"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px;"><circle cx="12" cy="12" r="4"/><path d="M12 16v6"/><path d="M9 20h6"/><path d="M12 8V2"/><path d="M9 4l3-2 3 2"/><path d="M16 8l5-5"/><path d="M17 3h4v4"/></svg>'}
                 </div>
               </div>
             </div>
@@ -2762,7 +2758,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
             doc.text(patient.age.toString(), xPos, yPos);
             xPos += patientColWidths[1];
 
-            const genderSymbol = patient.gender === 'M' ? '♂' : patient.gender === 'F' ? '♀' : '⚧';
+            const genderSymbol = patient.gender === 'M' ? 'MASCULINO' : patient.gender === 'F' ? 'FEMENINO' : 'OTRO';
             doc.text(genderSymbol, xPos, yPos);
             xPos += patientColWidths[2];
 

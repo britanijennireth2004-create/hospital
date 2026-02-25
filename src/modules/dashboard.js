@@ -32,13 +32,8 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     root.innerHTML = `
       <div class="module-dashboard">
         <!-- Header -->
-        <div class="card">
-          <h1>Bienvenido, ${user.name}</h1>
-          <p class="text-muted">Sistema de Gestión Hospitalaria - ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-        </div>
-
         <!-- Estadísticas -->
-        <div class="grid grid-4" id="stats-container">
+        <div class="grid grid-gap-2 grid-4 mb-4" id="stats-container">
           <!-- Se llenará dinámicamente -->
         </div>
 
@@ -194,19 +189,19 @@ export default function mountDashboard(root, { bus, store, user, role }) {
 
     if (role === 'patient') {
       statsHTML = `
-        <div class="card">
+        <div class="stat-info-card">
           <div class="text-muted text-sm">Mis Citas</div>
           <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
           <div class="text-xs text-muted mt-1">${icons.calendar} Programadas</div>
         </div>
         
-        <div class="card">
+        <div class="stat-info-card">
           <div class="text-muted text-sm">Historias Clínicas</div>
           <div class="text-2xl font-bold" style="color: var(--accent-2);">${store.get('clinicalRecords')?.filter(r => r.patientId === user.patientId).length || 0}</div>
           <div class="text-xs text-muted mt-1">${icons.clipboard} Registros propios</div>
         </div>
         
-        <div class="card">
+        <div class="stat-info-card">
           <div class="text-muted text-sm">Próxima Visita</div>
           <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments > 0 ? 'Programada' : 'No hay'}</div>
           <div class="text-xs text-muted mt-1">${icons.info} Ver detalle abajo</div>
@@ -215,19 +210,19 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     } else {
       // Estadísticas para personal (admin, doctor, nurse, receptionist)
       statsHTML = `
-        <div class="card">
+        <div class="stat-info-card">
           <div class="text-muted text-sm">Citas totales</div>
           <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
           <div class="text-xs text-muted mt-1">${icons.calendar} ${stats.todayAppointments} hoy</div>
         </div>
         
-        <div class="card">
+        <div class="stat-info-card">
           <div class="text-muted text-sm">Pacientes</div>
           <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.totalPatients}</div>
           <div class="text-xs text-muted mt-1">${icons.user} Registrados</div>
         </div>
         
-        <div class="card">
+        <div class="stat-info-card">
           <div class="text-muted text-sm">Médicos</div>
           <div class="text-2xl font-bold" style="color: var(--info);">${stats.totalDoctors}</div>
           <div class="text-xs text-muted mt-1">${icons.doctor} Activos</div>
@@ -236,7 +231,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
 
       if (role === 'nurse') {
         statsHTML += `
-          <div class="card">
+          <div class="stat-info-card">
             <div class="text-muted text-sm">Pacientes en triage</div>
             <div class="text-2xl font-bold" style="color: var(--warning);">${stats.triagePending || 0}</div>
             <div class="text-xs text-muted mt-1">${icons.triage} Pendientes</div>
@@ -244,7 +239,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         `;
       } else {
         statsHTML += `
-          <div class="card">
+          <div class="stat-info-card">
             <div class="text-muted text-sm">Próximas citas</div>
             <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments}</div>
             <div class="text-xs text-muted mt-1">${icons.warning} 7 días</div>

@@ -26,68 +26,74 @@ const ico = {
 
 const CSS = `
 <style>
-.notif-module { display:flex; flex-direction:column; height:calc(100vh - var(--header-height) - 2rem); background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden; }
-.notif-toolbar { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 1rem; border-bottom:1px solid var(--border); background:var(--card); min-height:48px; flex-shrink:0; }
-.notif-toolbar-btn { width:32px; height:32px; border:none; background:transparent; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); transition:all .15s; }
-.notif-toolbar-btn:hover { background:var(--border); color:var(--text); }
-.notif-new-btn { display:flex; align-items:center; gap:8px; padding:0.5rem 1.25rem; background:var(--accent); color:white; border:none; border-radius:var(--radius); font-size:0.82rem; font-weight:600; cursor:pointer; transition:all .2s; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-.notif-new-btn:hover { box-shadow:0 4px 12px rgba(0,0,0,0.18); transform:translateY(-1px); }
-.notif-search { flex:1; max-width:500px; position:relative; }
-.notif-search input { width:100%; padding:0.45rem 0.75rem 0.45rem 2.25rem; border:1px solid var(--border); border-radius:24px; font-size:0.8rem; background:var(--bg-light); box-sizing:border-box; transition:all .2s; }
-.notif-search input:focus { background:white; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-color:var(--accent); outline:none; }
-.notif-search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
-.notif-info { font-size:0.72rem; color:var(--muted); white-space:nowrap; margin-left:auto; }
-.notif-list { flex:1; overflow-y:auto; }
-.notif-row { display:flex; align-items:center; gap:0; padding:0; border-bottom:1px solid #f0f0f0; cursor:pointer; transition:background .1s; }
-.notif-row:hover { background:#f8faf8; box-shadow:inset 0 -1px 0 #e8e8e8, inset 0 1px 0 #e8e8e8; z-index:1; }
-.notif-row.unread { background:#f0f7f0; }
-.notif-row.unread .msg-sender, .notif-row.unread .msg-subject { font-weight:700; }
-.notif-row.selected { background:#c2e7ff !important; }
-.notif-row .row-check { width:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.notif-row .row-check input { width:16px; height:16px; cursor:pointer; accent-color:var(--accent); }
-.notif-row .row-star { width:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
-.notif-row .row-star:hover svg { transform:scale(1.2); }
-.notif-row .msg-sender { width:180px; font-size:0.82rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0.65rem 0.5rem; flex-shrink:0; }
-.notif-row .msg-content { flex:1; display:flex; align-items:baseline; gap:6px; padding:0.65rem 0.5rem; min-width:0; overflow:hidden; }
-.notif-row .msg-subject { font-size:0.82rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:260px; }
-.notif-row .msg-preview { font-size:0.78rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
-.notif-row .msg-badges { display:flex; gap:4px; align-items:center; flex-shrink:0; padding:0 4px; }
-.notif-row .msg-date { width:80px; text-align:right; font-size:0.72rem; padding:0.65rem 0.5rem 0.65rem 0; flex-shrink:0; color:var(--muted); }
-.notif-row.unread .msg-date { color:var(--text); font-weight:600; }
-.notif-row .row-actions { display:flex; gap:2px; flex-shrink:0; padding-right:0.5rem; }
-.notif-row .row-actions .notif-toolbar-btn { width:28px; height:28px; }
+.notif-module { display:flex; flex-direction:column; background:transparent; gap: 1rem; }
+.notif-main-card { background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden; display:flex; flex-direction:column; min-height: 600px; }
+.notif-toolbar { display:flex; align-items:center; gap:0.5rem; padding:0.75rem 1.25rem; border-bottom:1px solid var(--border); background:white; min-height:56px; flex-shrink:0; }
+.notif-toolbar-btn { width:36px; height:36px; border:none; background:transparent; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); transition:all .15s; }
+.notif-toolbar-btn:hover { background:var(--bg-light); color:var(--text); }
+.notif-toolbar-btn.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); }
+.notif-new-btn { display:flex; align-items:center; gap:8px; padding:0.6rem 1.5rem; background:var(--accent); color:white; border:none; border-radius:24px; font-size:0.85rem; font-weight:700; cursor:pointer; transition:all .2s; box-shadow:0 4px 10px rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 0.025em; }
+.notif-new-btn:hover { box-shadow:0 6px 15px rgba(16, 185, 129, 0.4); transform:translateY(-1px); }
+.notif-search { flex:1; max-width:450px; position:relative; }
+.notif-search input { width:100%; padding:0.6rem 1rem 0.6rem 2.5rem; border:1px solid var(--border); border-radius:20px; font-size:0.85rem; background:var(--bg-light); box-sizing:border-box; transition:all .2s; }
+.notif-search input:focus { background:white; box-shadow:0 0 0 3px rgba(16, 185, 129, 0.1); border-color:var(--accent); outline:none; }
+.notif-search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+.notif-info { font-size:0.75rem; color:var(--muted); white-space:nowrap; margin-left:auto; font-weight: 500; }
+.notif-list { flex:1; overflow-y:auto; background: white; }
+.notif-row { display:flex; align-items:center; gap:0; padding:0; border-bottom:1px solid #f3f4f6; cursor:pointer; transition:all .1s; position: relative; }
+.notif-row:hover { background:#f9fafb; z-index:1; }
+.notif-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--accent); transition: width 0.15s; }
+.notif-row.unread { background:rgba(16, 185, 129, 0.03); }
+.notif-row.unread::before { width: 3px; }
+.notif-row.unread .msg-sender, .notif-row.unread .msg-subject { font-weight:700; color: #1a202c; }
+.notif-row.selected { background:rgba(59, 130, 246, 0.08) !important; }
+.notif-row .row-check { width:48px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.notif-row .row-check input { width:17px; height:17px; cursor:pointer; accent-color:var(--accent); }
+.notif-row .row-star { width:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; color: #d1d5db; transition: color 0.2s; }
+.notif-row .row-star:hover { color: #f59e0b; }
+.notif-row .msg-sender { width:200px; font-size:0.88rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0.85rem 0.5rem; flex-shrink:0; }
+.notif-row .msg-content { flex:1; display:flex; align-items:baseline; gap:8px; padding:0.85rem 0.5rem; min-width:0; overflow:hidden; }
+.notif-row .msg-subject { font-size:0.88rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:300px; }
+.notif-row .msg-preview { font-size:0.82rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+.notif-row .msg-badges { display:flex; gap:6px; align-items:center; flex-shrink:0; padding:0 8px; }
+.notif-row .msg-date { width:90px; text-align:right; font-size:0.75rem; padding:0.85rem 1rem 0.85rem 0; flex-shrink:0; color:var(--muted); }
+.notif-row.unread .msg-date { color:var(--accent-dark); font-weight:700; }
+.notif-row .row-actions { display:none; gap:4px; flex-shrink:0; padding-right:1rem; background: inherit; height: 100%; align-items: center; }
+.notif-row:hover .row-actions { display:flex; }
+.notif-row .row-actions .notif-toolbar-btn { width:32px; height:32px; }
 
 /* Modal de Confirmación */
-.notif-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:10000; backdrop-filter:blur(2px); }
-.notif-modal { background:white; width:90%; max-width:400px; border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-xl); animation:notif-modal-in 0.3s ease; }
-@keyframes notif-modal-in { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-.notif-modal-header { padding:1.25rem; background:#fee2e2; color:#b91c1c; display:flex; align-items:center; gap:12px; }
-.notif-modal-header h3 { margin:0; font-size:1.1rem; }
-.notif-modal-body { padding:1.5rem; font-size:0.9rem; line-height:1.5; color:var(--text); }
-.notif-modal-footer { padding:1rem; background:var(--bg-light); display:flex; justify-content:flex-end; gap:0.75rem; border-top:1px solid var(--border); }
+.notif-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:10000; backdrop-filter:blur(3px); }
+.notif-modal { background:white; width:95%; max-width:450px; border-radius:16px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); animation:notif-modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes notif-modal-in { from { opacity:0; transform:scale(0.9) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.notif-modal-header { padding:1.5rem; background:#fee2e2; color:#dc2626; display:flex; align-items:center; gap:12px; }
+.notif-modal-header h3 { margin:0; font-size:1.25rem; font-weight: 800; }
+.notif-modal-body { padding:2rem; font-size:1rem; line-height:1.6; color:#4a5568; }
+.notif-modal-footer { padding:1.25rem 1.5rem; background:#f8fafc; display:flex; justify-content:flex-end; gap:1rem; border-top:1px solid #edf2f7; }
 
-.notif-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; color:var(--muted); flex:1; }
-.notif-empty svg { opacity:0.15; margin-bottom:1rem; transform:scale(3); }
-.notif-detail { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
-.notif-detail-header { padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:1rem; }
-.notif-detail-body { padding:1.5rem; flex:1; }
-.notif-avatar { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.1rem; color:white; flex-shrink:0; }
-.badge-ch { display:inline-flex; padding:1px 8px; border-radius:12px; font-size:0.65rem; font-weight:600; }
-.badge-pr { display:inline-flex; padding:1px 8px; border-radius:12px; font-size:0.65rem; font-weight:600; }
-.notif-compose { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-.notif-compose-header { padding:0.85rem 1.25rem; background:var(--bg-light); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.notif-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6rem 2rem; color:var(--muted); flex:1; text-align: center; }
+.notif-empty svg { opacity:0.1; margin-bottom:1.5rem; transform:scale(4); }
+.notif-detail { flex:1; overflow-y:auto; display:flex; flex-direction:column; background: white; }
+.notif-detail-header { padding:2rem; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:1.25rem; }
+.notif-detail-body { padding:2rem; flex:1; }
+.notif-avatar { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.25rem; color:white; flex-shrink:0; transform: rotate(-2deg); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.badge-ch { display:inline-flex; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:700; text-transform: uppercase; letter-spacing: 0.025em; }
+.badge-pr { display:inline-flex; padding:2px 10px; border-radius:12px; font-size:0.7rem; font-weight:700; text-transform: uppercase; letter-spacing: 0.025em; }
+.notif-compose { flex:1; display:flex; flex-direction:column; overflow:hidden; background: white; }
+.notif-compose-header { padding:1.25rem 2rem; background:white; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
 .notif-compose-form { flex:1; display:flex; flex-direction:column; }
-.notif-compose-field { display:flex; align-items:center; gap:8px; padding:0 1.25rem; border-bottom:1px solid #f0f0f0; }
-.notif-compose-field label { font-size:0.78rem; color:var(--muted); width:55px; font-weight:500; flex-shrink:0; }
-.notif-compose-field input, .notif-compose-field select { flex:1; border:none; padding:0.6rem 0; font-size:0.85rem; outline:none; background:transparent; font-family:inherit; }
+.notif-compose-field { display:flex; align-items:center; gap:12px; padding:0 2rem; border-bottom:1px solid #f1f5f9; }
+.notif-compose-field label { font-size:0.85rem; color:var(--muted); width:70px; font-weight:600; flex-shrink:0; }
+.notif-compose-field input, .notif-compose-field select { flex:1; border:none; padding:1rem 0; font-size:0.92rem; outline:none; background:transparent; font-family:inherit; color: #2d3748; }
+.notif-compose-field input::placeholder { color: #a0aec0; }
 .notif-compose-field select { cursor:pointer; }
-.notif-compose-textarea { flex:1; border:none; padding:1rem 1.25rem; font-size:0.88rem; resize:none; outline:none; font-family:inherit; line-height:1.65; }
-.notif-compose-footer { padding:0.65rem 1.25rem; border-top:1px solid var(--border); display:flex; align-items:center; gap:0.75rem; }
-.notif-send-btn { padding:0.5rem 2rem; background:var(--accent); color:white; border:none; border-radius:var(--radius); font-size:0.85rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s; }
-.notif-send-btn:hover { box-shadow:0 3px 10px rgba(0,0,0,0.15); }
-.notif-discard-btn { margin-left:auto; width:32px; height:32px; border:none; background:transparent; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); }
-.notif-discard-btn:hover { background:#fee2e2; color:#ef4444; }
-@media(max-width:768px){ .notif-row .msg-sender{width:100px;} .notif-row .msg-subject{max-width:140px;} }
+.notif-compose-textarea { flex:1; border:none; padding:2rem; font-size:1.05rem; resize:none; outline:none; font-family:inherit; line-height:1.75; color: #2d3748; }
+.notif-compose-footer { padding:1.25rem 2rem; border-top:1px solid var(--border); display:flex; align-items:center; gap:1rem; background: #f8fafc; }
+.notif-send-btn { padding:0.75rem 2.5rem; background:var(--accent); color:white; border:none; border-radius:12px; font-size:0.95rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all .2s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); text-transform: uppercase; }
+.notif-send-btn:hover { box-shadow:0 8px 20px rgba(16, 185, 129, 0.3); transform: translateY(-2px); }
+.notif-discard-btn { margin-left:auto; width:42px; height:42px; border:none; background:transparent; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); transition: all 0.2s; }
+.notif-discard-btn:hover { background:#fee2e2; color:#ef4444; transform: rotate(90deg); }
+@media(max-width:768px){ .notif-row .msg-sender{width:120px;} .notif-row .msg-subject{max-width:180px;} .notif-detail-header{padding:1.5rem; flex-direction: column;} }
 </style>
 `;
 
@@ -126,14 +132,22 @@ export default function mountNotifications(root, { bus, store, user, role, route
   }
 
   function getActorName(id) {
-    if (!id || id === 'system') return 'Sistema';
+    if (!id || id === 'system') return 'Sistema Hospitalario';
     if (id.startsWith('role_')) {
-      const roleMap = { role_doctor: 'Gremio Médico', role_nurse: 'Personal de Enfermería', role_receptionist: 'Recepción' };
+      const roleMap = {
+        role_admin: 'Alta Administración',
+        role_doctor: 'Gremio Médico',
+        role_nurse: 'Personal de Enfermería',
+        role_receptionist: 'Recepción General',
+        role_patient: 'Pacientes'
+      };
       return roleMap[id] || id;
     }
     const u = store.find('users', id); if (u) return u.name;
     const d = store.find('doctors', id); if (d) return d.name;
     const p = store.find('patients', id); if (p) return p.name;
+    const n = store.find('nurses', id); if (n) return n.name;
+    const r = store.find('receptionists', id); if (r) return r.name;
     return id;
   }
 
@@ -213,6 +227,13 @@ export default function mountNotifications(root, { bus, store, user, role, route
     else if (state.folder === 'reminders') items = items.filter(i => i._src === 'reminders' && !i.deleted);
     else if (state.folder === 'alerts') items = items.filter(i => (i.priority === 'critical' || i.priority === 'high' || i._src === 'notifications') && !i.deleted);
     else if (state.folder === 'trash') items = items.filter(i => i.deleted);
+
+    // Filtro por Rol Destinatario (Solo para Inbox)
+    if (state.folder === 'inbox') {
+      const unreadCount = items.filter(i => i.status !== 'read').length;
+      // Podríamos actualizar el título de la pestaña aquí via bus si fuera necesario
+    }
+
     if (state.search) {
       const s = state.search.toLowerCase();
       items = items.filter(i => (i.title || '').toLowerCase().includes(s) || (i.content || '').toLowerCase().includes(s) || (i.recipientName || '').toLowerCase().includes(s) || getActorName(i.createdBy).toLowerCase().includes(s));
@@ -229,34 +250,43 @@ export default function mountNotifications(root, { bus, store, user, role, route
   // === RENDER PRINCIPAL ===
   function render() {
     const items = getFolderItems();
+    const allItems = getAllItems().filter(i => !i.deleted);
+    const unreadMap = {
+      inbox: allItems.filter(i => i.createdBy !== user.id && (i.status === 'sent' || i.status === 'pending' || i.status === 'scheduled' || i.status === 'delivered')).length,
+      alerts: allItems.filter(i => (i.priority === 'critical' || i.priority === 'high' || i._src === 'notifications') && i.status !== 'read').length,
+      reminders: allItems.filter(i => i._src === 'reminders' && i.status !== 'read').length
+    };
+
     root.innerHTML = CSS + `
     <div class="notif-module">
-      ${state.view === 'compose' ? renderCompose() : state.view === 'detail' ? renderDetail() : renderList(items)}
+      <div class="notif-main-card">
+        ${state.view === 'compose' ? renderCompose() : state.view === 'detail' ? renderDetail() : renderList(items, unreadMap)}
+      </div>
     </div>`;
     setupEvents();
   }
 
   // === VISTA LISTA ===
-  function renderList(items) {
+  function renderList(items, unreadMap) {
     return `
       <div class="notif-toolbar">
-        ${canSend ? `<button class="notif-new-btn" id="btn-new">${ico.plus} Nuevo</button>` : ''}
-        <div style="width:1px;height:24px;background:var(--border);margin:0 0.25rem;"></div>
-        <button class="notif-toolbar-btn" id="tb-selectall" title="Seleccionar todo">${ico.selectAll}</button>
+        ${canSend ? `<button class="notif-new-btn" id="btn-new">${ico.plus} Redactar</button>` : ''}
+        <div style="width:1px;height:24px;background:var(--border);margin:0 0.5rem;"></div>
         <button class="notif-toolbar-btn" id="tb-refresh" title="Actualizar">${ico.refresh}</button>
+        <button class="notif-toolbar-btn" id="tb-selectall" title="Seleccionar todo">${ico.selectAll}</button>
         ${state.selectedIds.size > 0 ? `
-          <button class="notif-toolbar-btn" id="tb-markread" title="Marcar como leído" style="color:var(--accent);">${ico.markRead}</button>
+          <button class="notif-toolbar-btn" id="tb-markread" title="Marcar leídos" style="color:var(--accent);">${ico.markRead}</button>
           <button class="notif-toolbar-btn" id="tb-delete" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Mover a papelera'}" style="color:var(--danger);">${ico.trash}</button>
-          <span style="font-size:0.75rem;color:var(--muted);font-weight:500;">${state.selectedIds.size} seleccionados</span>
-        ` : ''}
-        ${state.folder === 'trash' && items.length > 0 ? `
-          <button class="btn btn-outline-danger btn-sm" id="btn-empty-trash" style="margin-left:8px; font-size:0.7rem; padding:2px 8px;">Vaciar Papelera</button>
+          <div style="font-size:0.8rem; color:var(--accent); font-weight:700; margin-left: 0.5rem; padding: 0.2rem 0.6rem; background:rgba(16,185,129,0.1); border-radius:12px;">${state.selectedIds.size} seleccionados</div>
         ` : ''}
         <div class="notif-search">
-          <span class="notif-search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <span class="notif-search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
           <input id="notif-search" type="text" placeholder="Buscar en ${folderTitle().toLowerCase()}..." value="${state.search}">
         </div>
-        <span class="notif-info">${folderTitle()} — ${items.length} mensaje${items.length !== 1 ? 's' : ''}</span>
+        <div class="notif-info">
+          <span style="color: var(--text); font-weight: 700;">${folderTitle()}</span>
+          ${unreadMap[state.folder] ? `<span style="background:var(--accent); color:white; padding:1px 8px; border-radius:10px; margin-left:8px; font-size:0.7rem;">${unreadMap[state.folder]} nuevos</span>` : ''}
+        </div>
       </div>
       <div class="notif-list">
         ${items.length === 0 ? renderEmpty() : items.map(i => renderRow(i)).join('')}
@@ -265,7 +295,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
 
   function renderRow(item) {
     const sender = state.folder === 'sent' ? `Para: ${item.recipientName || '—'}` : getActorName(item.createdBy);
-    const isUnread = item.status !== 'read' && item.status !== 'finalized';
+    const isUnread = (item.status === 'sent' || item.status === 'pending' || item.status === 'scheduled' || item.status === 'delivered') && item.createdBy !== user.id;
     const isSelected = state.selectedIds.has(item.id);
     return `
     <div class="notif-row ${isUnread ? 'unread' : ''} ${isSelected ? 'selected' : ''}" data-id="${item.id}">
@@ -283,8 +313,9 @@ export default function mountNotifications(root, { bus, store, user, role, route
       </div>
       <div class="msg-date">${fmtDate(item.createdAt)}</div>
       <div class="row-actions">
-        ${state.folder !== 'trash' ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar leído">${ico.markRead}</button>` : ''}
+        ${state.folder !== 'trash' && isUnread ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar como leído">${ico.markRead}</button>` : ''}
         <button class="notif-toolbar-btn" data-action="delete" data-aid="${item.id}" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Eliminar'}">${ico.trash}</button>
+        ${state.folder !== 'trash' ? `<button class="notif-toolbar-btn" data-action="reply-row" data-aid="${item.id}" title="Responder">${ico.reply}</button>` : ''}
       </div>
     </div>`;
   }
@@ -391,7 +422,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
       }
     }
 
-    const showAdminOption = role === 'receptionist' || role === 'admin';
+    const showAdminOption = true; // Todos pueden escribir a admin/recepción en un GH hospitalario
 
     return `
       <div class="notif-compose-header">
@@ -409,28 +440,22 @@ export default function mountNotifications(root, { bus, store, user, role, route
           ` : `
             <select id="cmp-to" required>
               <option value="">Seleccionar destinatario...</option>
-              <optgroup label="Roles de Personal">
-                ${showAdminOption ? `<option value="role_admin" ${replyId === 'role_admin' ? 'selected' : ''}>Alta Administración</option>` : ''}
+              <optgroup label="Destinatarios por Gremio">
+                <option value="role_admin" ${replyId === 'role_admin' ? 'selected' : ''}>Alta Administración</option>
+                <option value="role_receptionist" ${replyId === 'role_receptionist' ? 'selected' : ''}>Mesa de Recepción General</option>
                 <option value="role_doctor" ${replyId === 'role_doctor' ? 'selected' : ''}>Todo el Gremio Médico</option>
-                <option value="role_nurse" ${replyId === 'role_nurse' ? 'selected' : ''}>Todo el Personal de Enfermería</option>
-                <option value="role_receptionist" ${replyId === 'role_receptionist' ? 'selected' : ''}>Toda la Recepción</option>
+                <option value="role_nurse" ${replyId === 'role_nurse' ? 'selected' : ''}>Personal de Enfermería</option>
               </optgroup>
-              ${showAdminOption && admins.length > 0 ? `
-              <optgroup label="Administración">
+              ${admins.length > 0 ? `
+              <optgroup label="Directivos y Administradores">
                 ${admins.map(a => `<option value="${a.id}" data-name="${a.name}" ${replyId === a.id ? 'selected' : ''}>${a.name} (Admin)</option>`).join('')}
               </optgroup>
               ` : ''}
-              <optgroup label="Pacientes">
-                ${patients.map(p => `<option value="${p.id}" data-name="${p.name}" ${replyId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-              </optgroup>
-              <optgroup label="Médicos">
+              <optgroup label="Médicos Adscritos">
                 ${doctors.map(d => `<option value="${d.id}" data-name="${d.name}" ${replyId === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
               </optgroup>
-              <optgroup label="Enfermería">
-                ${nurses.map(n => `<option value="${n.id}" data-name="${n.name}" ${replyId === n.id ? 'selected' : ''}>${n.name}</option>`).join('')}
-              </optgroup>
-              <optgroup label="Recepción">
-                ${receptionists.map(r => `<option value="${r.id}" data-name="${r.name}" ${replyId === r.id ? 'selected' : ''}>${r.name}</option>`).join('')}
+              <optgroup label="Pacientes Registrados">
+                ${patients.map(p => `<option value="${p.id}" data-name="${p.name}" ${replyId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
               </optgroup>
             </select>
           `}
@@ -472,7 +497,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
     const src = findSrc(id);
     const item = findItem(id);
     if (!src || !item) return;
-    const isRecipient = item.recipientId === user.id ||
+    const isRecipient = role === 'admin' || item.recipientId === user.id ||
       (user.patientId && item.recipientId === user.patientId) ||
       (user.doctorId && item.recipientId === user.doctorId) ||
       (user.nurseId && item.recipientId === user.nurseId) ||
@@ -482,6 +507,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
     if (isRecipient && item.status !== 'read') {
       store.update(src, id, { status: 'read' });
       loadData();
+      render();
     }
   }
   function toggleStar(id) { const src = findSrc(id); const item = findItem(id); if (src && item) store.update(src, id, { starred: !item.starred }); loadData(); }
@@ -636,6 +662,9 @@ export default function mountNotifications(root, { bus, store, user, role, route
     if (btnEmpty) btnEmpty.onclick = () => emptyTrash();
     root.querySelectorAll('[data-action="read"]').forEach(b => {
       b.onclick = e => { e.stopPropagation(); markRead(b.dataset.aid); render(); showToast('Marcado como leído'); };
+    });
+    root.querySelectorAll('[data-action="reply-row"]').forEach(b => {
+      b.onclick = e => { e.stopPropagation(); const item = findItem(b.dataset.aid); state.replyTo = item; state.view = 'compose'; render(); };
     });
     const back = root.querySelector('#detail-back');
     if (back) back.onclick = () => { state.view = 'list'; state.viewingId = null; render(); };

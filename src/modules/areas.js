@@ -6,16 +6,13 @@ export default function mountAreas(root, { bus, store, user, role }) {
   const state = {
     areas: [],
     filters: {
-      search: '',
-      status: 'active',
-      parentId: ''
+      search: ''
     },
     editingId: null,
     isLoading: false,
     showModal: false,
     currentPage: 1,
-    itemsPerPage: 10,
-    viewMode: 'grid' // grid o list
+    itemsPerPage: 10
   };
 
   let elements = {};
@@ -24,7 +21,6 @@ export default function mountAreas(root, { bus, store, user, role }) {
   function init() {
     render();
     setupEventListeners();
-    loadAreas();
 
     // Suscribirse a cambios en el store
     const unsubscribe = store.subscribe('areas', () => {
@@ -54,7 +50,6 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     state.areas = areas;
     renderAreasList();
-    renderAreasGrid();
     updateStats();
     loadSelectData();
   }
@@ -62,40 +57,24 @@ export default function mountAreas(root, { bus, store, user, role }) {
   // Aplicar filtros
   function applyFilters(areas) {
     return areas.filter(area => {
-      // Filtro de búsqueda
       if (state.filters.search) {
         const searchTerm = state.filters.search.toLowerCase();
+        const statusText = area.isActive ? 'activo active' : 'inactivo inactive';
+        const parentAreaName = getParentAreaName(area.parentId);
+
         const searchFields = [
           area.name,
           area.code,
           area.description,
-          area.location
+          area.location,
+          statusText,
+          parentAreaName
         ].filter(Boolean).join(' ').toLowerCase();
 
         if (!searchFields.includes(searchTerm)) {
           return false;
         }
       }
-
-      // Filtro por estado
-      if (state.filters.status) {
-        if (state.filters.status === 'active' && !area.isActive) {
-          return false;
-        }
-        if (state.filters.status === 'inactive' && area.isActive !== false) {
-          return false;
-        }
-      }
-
-      // Filtro por área padre
-      if (state.filters.parentId === 'main') {
-        if (area.parentId) return false;
-      } else if (state.filters.parentId === 'sub') {
-        if (!area.parentId) return false;
-      } else if (state.filters.parentId) {
-        if (area.parentId !== state.filters.parentId) return false;
-      }
-
       return true;
     });
   }
@@ -142,132 +121,102 @@ export default function mountAreas(root, { bus, store, user, role }) {
     const canManage = role === 'admin';
 
     root.innerHTML = `
-      <div class="module-areas animated-fade-in" style="max-width: 1400px; margin: 0 auto; padding: 1rem;">
-        <!-- Header -->
-        <div class="card" style="margin-bottom: 2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+      <style>
+        .module-areas { max-width: 1400px; margin: 0 auto; padding: 1.5rem; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .areas-header-card { 
+          background: white; 
+          border-radius: 16px; 
+          padding: 2rem; 
+          box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+          margin-bottom: 2rem;
+          border: 1px solid rgba(0,0,0,0.05);
+        }
+        .areas-table-card { 
+          background: white; 
+          border-radius: 16px; 
+          box-shadow: 0 10px 30px rgba(0,0,0,0.06); 
+          overflow: hidden;
+          border: 1px solid rgba(0,0,0,0.05);
+        }
+        .areas-table { width: 100%; border-collapse: collapse; }
+        .areas-table th { 
+          background: #f8fafc; 
+          padding: 1.25rem 1rem; 
+          text-align: left; 
+          font-size: 0.75rem; 
+          font-weight: 700; 
+          color: #64748b; 
+          text-transform: uppercase; 
+          letter-spacing: 0.05em;
+          border-bottom: 1px solid #edf2f7;
+        }
+        .areas-table td { padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .areas-table tr:hover { background: #fcfdfe; }
+        .search-container { position: relative; flex: 1; max-width: 500px; }
+        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+        .search-input { 
+          width: 100%; 
+          padding: 0.85rem 1rem 0.85rem 3.2rem; 
+          border-radius: 20px; 
+          background: rgba(0,0,0,0.05); 
+          border: 1px solid transparent; 
+          font-size: 0.95rem; 
+          transition: all 0.2s; 
+          outline: none; 
+        }
+        .search-input:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1); }
+        .area-badge { padding: 0.4rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .area-type-pill { background: #f1f5f9; color: #475569; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+        .area-icon-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.1rem; }
+      </style>
+
+      <div class="module-areas animated-fade-in">
+        <!-- Estadísticas -->
+        <div class="grid grid-4" id="stats-container" style="gap: 1.5rem; margin-bottom: 2rem;">
+          <!-- Se llenará dinámicamente -->
+        </div>
+
+        <div class="areas-header-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
             <div>
-              <h2 style="margin: 0;">Áreas Médicas</h2>
-              <p style="color: var(--muted); margin: 0;">Gestión de departamentos y servicios del hospital</p>
+              <h1 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 0.75rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/></svg>
+                Gestión de Áreas Médicas
+              </h1>
+              <p style="margin: 0.5rem 0 0; color: #64748b; font-size: 0.95rem;" id="list-view-count">Organiza y administra los departamentos del hospital</p>
             </div>
-            <div style="display: flex; gap: 1rem;">
+            
+            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; justify-content: flex-end; min-width: 300px;">
+              <div class="search-container">
+                <span class="search-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" class="search-input" id="filter-search" placeholder="Búscar por nombre, código o ubicación..." value="${state.filters.search}">
+              </div>
+              
               ${canManage ? `
-                <button class="btn btn-primary" id="btn-new-area">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.5rem;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> NUEVA ÁREA
+                <button class="btn btn-primary" id="btn-new-area" style="padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: var(--accent); box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Nueva Área
                 </button>
               ` : ''}
             </div>
           </div>
         </div>
 
-        <!-- Estadísticas -->
-        <div class="grid grid-4" id="stats-container" style="gap: 1.5rem; margin-bottom: 2rem;">
-          <!-- Se llenará dinámicamente -->
-        </div>
-
-        <!-- Vista de tarjetas con scroll horizontal -->
-        <div class="card" id="grid-view-section">
-          <div class="card-header">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-2">
-                <h3 style="margin: 0;">Departamentos</h3>
-                <div class="text-muted" id="areas-view-count">Cargando...</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <button class="btn btn-outline btn-sm" id="btn-toggle-view">
-                  <span id="view-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span> Ver lista
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div class="areas-grid-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding-bottom: 0.5rem;">
-            <div class="areas-grid" id="areas-grid" style="display: flex; gap: 1rem; min-width: min-content;">
-              <!-- Se llenará dinámicamente -->
-            </div>
-          </div>
-          
-          <div id="empty-grid" class="hidden">
-            <div class="text-center" style="padding: 2rem;">
-              <div style="margin-bottom: 1rem; opacity: 0.3;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg></div>
-              <h3>No hay áreas</h3>
-              <p class="text-muted">No se encontraron áreas con los filtros aplicados</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Vista de lista con filtros -->
-        <div class="card" id="list-view-section" style="display: none;">
-          <div class="card-header">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-2">
-                <h3 style="margin: 0;">Lista de Áreas</h3>
-                <div class="text-muted" id="list-view-count"></div>
-              </div>
-              <button class="btn btn-outline btn-sm" id="btn-toggle-view-list">
-                <span id="view-icon-list"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg></span> Ver tarjetas
-              </button>
-            </div>
-          </div>
-          
-          <!-- Filtros (solo visibles en vista de lista) -->
-          <div class="p-4 border-b">
-            <div class="grid" style="grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Buscar</label>
-                <input type="text" class="input" id="filter-search" 
-                       placeholder="Nombre, código, ubicación...">
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Estado</label>
-                <select class="input" id="filter-status">
-                  <option value="active">Activas</option>
-                  <option value="inactive">Inactivas</option>
-                  <option value="">Todas</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Tipo</label>
-                <select class="input" id="filter-parent">
-                  <option value="">Todas</option>
-                  <option value="main">Áreas principales</option>
-                  <option value="sub">Sub-áreas</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Área padre</label>
-                <select class="input" id="filter-parent-area">
-                  <option value="">Todas las áreas</option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="flex justify-end gap-2 mt-3">
-              <button class="btn btn-outline" id="btn-clear-filters">
-                Limpiar filtros
-              </button>
-              <button class="btn btn-primary" id="btn-apply-filters">
-                Aplicar filtros
-              </button>
-            </div>
-          </div>
-          
-          <!-- Lista de áreas -->
-          <div class="table-responsive" id="list-view-container">
-            <table class="table" id="areas-table">
+        <!-- Vista de lista -->
+        <div class="areas-table-card">
+          <div class="table-responsive">
+            <table class="areas-table" id="areas-table">
               <thead>
                 <tr>
-                  <th>Área</th>
-                  <th>Código</th>
+                  <th style="width: 300px;">Área / Servicio</th>
                   <th>Ubicación</th>
-                  <th>Médicos</th>
-                  <th>Citas (mes)</th>
+                  <th style="text-align: center;">Médicos</th>
+                  <th style="text-align: center;">Citas (Mes)</th>
                   <th>Tipo</th>
                   <th>Estado</th>
-                  <th>Acciones</th>
+                  <th style="text-align: right;">Acciones</th>
                 </tr>
               </thead>
               <tbody id="areas-list">
@@ -276,22 +225,20 @@ export default function mountAreas(root, { bus, store, user, role }) {
             </table>
           </div>
           
-          <!-- Paginación -->
-          <div id="pagination" class="flex justify-between items-center mt-3">
-            <!-- Se llenará dinámicamente -->
-          </div>
+          <!-- Paginación y Estados Vacíos -->
+          <div id="pagination" style="padding: 1.5rem; border-top: 1px solid #f1f5f9;"></div>
           
-          <div id="empty-state" class="hidden">
-            <div class="text-center" style="padding: 3rem;">
-              <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">🏥</div>
-              <h3>No hay áreas</h3>
-              <p class="text-muted">No se encontraron áreas con los filtros aplicados</p>
-              ${canManage ? `
-                <button class="btn btn-primary mt-3" id="btn-create-first">
-                  Crear primera área
-                </button>
-              ` : ''}
+          <div id="empty-state" class="hidden" style="padding: 5rem 2rem; text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.2;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6V2H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4"/><path d="M16 22v-8h-4v8"/><path d="M11 5h1"/><path d="M11 9h1"/><path d="M11 13h1"/></svg>
             </div>
+            <h3 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 0.5rem;">No se encontraron áreas</h3>
+            <p style="color: #64748b; max-width: 400px; margin: 0 auto 2rem;">Ajuste los filtros de búsqueda o registre una nueva área en el sistema.</p>
+            ${canManage ? `
+              <button class="btn btn-primary" id="btn-create-first" style="padding: 0.75rem 2rem; border-radius: 12px;">
+                Registrar primera área
+              </button>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -309,8 +256,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
           
           <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
             <form id="area-form">
-              <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                🏢 INFORMACIÓN GENERAL DEL ÁREA
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M15 18h.01"/><path d="M9 18h.01"/></svg>
+                INFORMACIÓN GENERAL DEL ÁREA
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
@@ -347,8 +295,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
                 </div>
               </div>
               
-              <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
-                ⚙️ CONFIGURACIÓN TÉCNICA
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                CONFIGURACIÓN TÉCNICA
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
@@ -446,34 +395,12 @@ export default function mountAreas(root, { bus, store, user, role }) {
     // Guardar referencias a elementos
     elements = {
       statsContainer: root.querySelector('#stats-container'),
-      areasGrid: root.querySelector('#areas-grid'),
-      areasGridContainer: root.querySelector('.areas-grid-container'),
-      areasViewCount: root.querySelector('#areas-view-count'),
       listViewCount: root.querySelector('#list-view-count'),
-      emptyGrid: root.querySelector('#empty-grid'),
       areasList: root.querySelector('#areas-list'),
       areasTable: root.querySelector('#areas-table'),
-      listViewContainer: root.querySelector('#list-view-container'),
       pagination: root.querySelector('#pagination'),
       emptyState: root.querySelector('#empty-state'),
-
-      // Secciones de vista
-      gridViewSection: root.querySelector('#grid-view-section'),
-      listViewSection: root.querySelector('#list-view-section'),
-      btnToggleView: root.querySelector('#btn-toggle-view'),
-      btnToggleViewList: root.querySelector('#btn-toggle-view-list'),
-      viewIcon: root.querySelector('#view-icon'),
-      viewIconList: root.querySelector('#view-icon-list'),
-
-      // Filtros
       filterSearch: root.querySelector('#filter-search'),
-      filterStatus: root.querySelector('#filter-status'),
-      filterParent: root.querySelector('#filter-parent'),
-      filterParentArea: root.querySelector('#filter-parent-area'),
-      btnClearFilters: root.querySelector('#btn-clear-filters'),
-      btnApplyFilters: root.querySelector('#btn-apply-filters'),
-
-      // Modal
       modal: root.querySelector('#area-modal'),
       form: root.querySelector('#area-form'),
       formName: root.querySelector('#form-name'),
@@ -500,15 +427,6 @@ export default function mountAreas(root, { bus, store, user, role }) {
       btnCreateFirst: root.querySelector('#btn-create-first')
     };
 
-    // Configurar vista inicial
-    if (state.viewMode === 'list') {
-      elements.gridViewSection.style.display = 'none';
-      elements.listViewSection.style.display = 'block';
-    } else {
-      elements.gridViewSection.style.display = 'block';
-      elements.listViewSection.style.display = 'none';
-    }
-
     // Cargar datos iniciales
     loadSelectData();
     loadAreas();
@@ -518,14 +436,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
   function loadSelectData() {
     const areas = store.get('areas') || [];
 
-    // Áreas padre para filtros
-    if (elements.filterParentArea) {
-      const options = areas
-        .filter(a => !a.parentId) // Solo áreas principales
-        .map(a => `<option value="${a.id}">${a.name}</option>`)
-        .join('');
-      elements.filterParentArea.innerHTML = `<option value="">Todas las áreas</option>${options}`;
-    }
+    // Ya no se necesitan cargas de filtros aquí
 
     // Áreas padre para formulario
     if (elements.formParent) {
@@ -544,90 +455,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
     }
   }
 
-  // Renderizar tarjetas de áreas
-  function renderAreasGrid() {
-    if (!elements.areasGrid) return;
 
-    const areas = state.areas.filter(area => !area.parentId); // Solo áreas principales en grid
+  // Renderizado de lista manejado por renderAreasList
 
-    if (areas.length === 0) {
-      elements.emptyGrid.classList.remove('hidden');
-      elements.areasGridContainer.style.display = 'none';
-      elements.areasViewCount.textContent = '0 áreas';
-      return;
-    }
-
-    elements.emptyGrid.classList.add('hidden');
-    elements.areasGridContainer.style.display = 'block';
-    elements.areasViewCount.textContent = `${areas.length} ${areas.length === 1 ? 'departamento' : 'departamentos'}`;
-
-    const cards = areas.map(area => {
-      const stats = getAreaStats(area.id);
-      const subAreas = state.areas.filter(a => a.parentId === area.id);
-
-      return `
-        <div class="card" style="flex: 0 0 300px; border-left: 4px solid ${area.color || '#2196F3'}; margin: 0;">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-            <div style="width: 48px; height: 48px; background: ${area.color || '#2196F3'}; 
-                       border-radius: 8px; display: flex; align-items: center; justify-content: center; 
-                       color: white; font-size: 1.25rem; font-weight: bold;">
-              ${area.code ? area.code.charAt(0) : area.name.charAt(0)}
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-weight: 600; font-size: 1.125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${area.name}">${area.name}</div>
-              <div style="color: var(--muted); font-size: 0.875rem; font-family: monospace;">${area.code || 'Sin código'}</div>
-            </div>
-          </div>
-          
-          <p style="color: var(--muted); font-size: 0.875rem; margin-bottom: 1.25rem; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
-            ${area.description || 'Sin descripción disponible para este departamento médico.'}
-          </p>
-          
-          ${area.location ? `
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
-              <span style="opacity: 0.6;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${area.location}</span>
-            </div>
-          ` : ''}
-          
-          ${area.phone ? `
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
-              <span style="opacity: 0.6;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
-              <span>${area.phone}</span>
-            </div>
-          ` : ''}
-          
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; background: var(--bg-light); padding: 0.75rem; border-radius: var(--radius); margin-bottom: 1rem;">
-            <div style="text-align: center;">
-              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Médicos</div>
-              <div style="font-weight: 700; font-size: 1.15rem; color: var(--accent);">${stats.doctors}</div>
-            </div>
-            <div style="text-align: center; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
-              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Citas Hoy</div>
-              <div style="font-weight: 700; font-size: 1.15rem; color: var(--accent-2);">${stats.todayAppointments}</div>
-            </div>
-            <div style="text-align: center;">
-              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Subs</div>
-              <div style="font-weight: 700; font-size: 1.15rem; color: var(--info);">${subAreas.length}</div>
-            </div>
-          </div>
-          
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="view" data-id="${area.id}">
-              Ver detalles
-            </button>
-            ${role === 'admin' ? `
-              <button class="btn btn-outline btn-sm" data-action="edit" data-id="${area.id}">
-                Editar
-              </button>
-            ` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    elements.areasGrid.innerHTML = cards;
-  }
 
   // Renderizar lista de áreas
   function renderAreasList() {
@@ -641,77 +471,69 @@ export default function mountAreas(root, { bus, store, user, role }) {
       elements.emptyState.classList.remove('hidden');
       elements.areasTable.classList.add('hidden');
       elements.pagination.classList.add('hidden');
-      elements.listViewCount.textContent = '0 áreas';
+      if (elements.listViewCount) elements.listViewCount.textContent = '0 áreas';
       return;
     }
 
     elements.emptyState.classList.add('hidden');
     elements.areasTable.classList.remove('hidden');
     elements.pagination.classList.remove('hidden');
-    elements.listViewCount.textContent = `${state.areas.length} ${state.areas.length === 1 ? 'área' : 'áreas'}`;
+    if (elements.listViewCount) elements.listViewCount.textContent = `${state.areas.length} ${state.areas.length === 1 ? 'área' : 'áreas'}`;
 
     const rows = paginatedAreas.map(area => {
       const stats = getAreaStats(area.id);
       const parentName = getParentAreaName(area.parentId);
       const canEdit = role === 'admin';
 
+      const typeNames = { clinical: 'Clínica', diagnostic: 'Diagnóstico', surgical: 'Quirúrgica', administrative: 'Admin', support: 'Soporte' };
+
       return `
         <tr>
           <td>
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div style="width: 32px; height: 32px; background: ${area.color || '#2196F3'}; 
-                       border-radius: 6px; display: flex; align-items: center; justify-content: center; 
-                       color: white; font-weight: bold; font-size: 0.875rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div class="area-icon-box" style="background: ${area.color || '#2196F3'};">
                 ${area.code ? area.code.charAt(0) : area.name.charAt(0)}
               </div>
               <div>
-                <div style="font-weight: 500;">${area.name}</div>
-                <div class="text-xs text-muted">${area.code || 'Sin código'}</div>
-              </div>
-            </div>
-          </td>
-          <td>${area.code || '-'}</td>
-          <td>
-            <div>${area.location || 'No especificada'}</div>
-            <div class="text-xs text-muted">${area.phone || 'Sin teléfono'}</div>
-          </td>
-          <td>
-            <div class="text-center">
-              <div style="font-weight: bold; color: ${stats.totalDoctors > 0 ? 'var(--accent)' : 'var(--muted)'}">
-                ${stats.totalDoctors}
+                <div style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">${area.name}</div>
+                <div style="font-family: monospace; font-size: 0.75rem; color: #94a3b8; font-weight: 600;">${area.code || 'S/C'}</div>
               </div>
             </div>
           </td>
           <td>
-            <div class="text-center">
-              <div style="font-weight: bold; color: ${stats.monthAppointments > 0 ? 'var(--accent-2)' : 'var(--muted)'}">
-                ${stats.monthAppointments}
-              </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #64748b; font-size: 0.85rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${area.location || '<span style="opacity: 0.5;">No asignada</span>'}
             </div>
           </td>
-          <td>
-            ${parentName ? `
-              <div>
-                <div class="text-xs text-muted">Sub-área de:</div>
-                <div class="text-sm">${parentName}</div>
-              </div>
-            ` : '<span class="badge badge-info">Principal</span>'}
+          <td style="text-align: center;">
+            <span style="font-weight: 700; color: #334155; background: #f1f5f9; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
+              ${stats.totalDoctors}
+            </span>
           </td>
-          <td>
-            <span class="badge ${area.isActive ? 'badge-success' : 'badge-danger'}">
-              ${area.isActive ? 'Activa' : 'Inactiva'}
-              ${area.status === 'maintenance' ? ' (Mantenimiento)' : ''}
+          <td style="text-align: center;">
+            <span style="font-weight: 700; color: var(--accent); font-size: 0.85rem;">
+              ${stats.monthAppointments}
             </span>
           </td>
           <td>
-            <div class="flex gap-2">
-              <button class="btn btn-outline btn-sm" data-action="view" data-id="${area.id}">
-                Ver
+            <span class="area-type-pill">${typeNames[area.type] || 'Clínica'}</span>
+            ${parentName ? `<div style="font-size: 0.65rem; color: #94a3b8; margin-top: 2px;">Sub de: ${parentName}</div>` : ''}
+          </td>
+          <td>
+            <span class="area-badge" style="background: ${area.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${area.isActive ? '#10b981' : '#ef4444'};">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+              ${area.isActive ? 'Activa' : (area.status === 'maintenance' ? 'Mantenimiento' : 'Inactiva')}
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+              <button class="btn btn-outline btn-sm" data-action="view" data-id="${area.id}" title="Ver detalles" style="padding: 0.4rem; border-radius: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
-              
               ${canEdit ? `
-                <button class="btn btn-outline btn-sm" data-action="edit" data-id="${area.id}">
-                  Editar
+                <button class="btn btn-outline btn-sm" data-action="edit" data-id="${area.id}" title="Editar área" style="padding: 0.4rem; border-radius: 8px; color: var(--accent);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
               ` : ''}
             </div>
@@ -853,38 +675,32 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
   // Configurar event listeners
   function setupEventListeners() {
-    // Filtros
-    if (elements.btnApplyFilters) {
-      elements.btnApplyFilters.addEventListener('click', applyFiltersHandler);
+    // Helper para debouncing
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
     }
 
-    if (elements.btnClearFilters) {
-      elements.btnClearFilters.addEventListener('click', clearFiltersHandler);
-    }
-
-    // Búsqueda en tiempo real
+    // Búsqueda unificada
     if (elements.filterSearch) {
-      let searchTimeout;
-      elements.filterSearch.addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-          state.filters.search = e.target.value;
-          loadAreas();
-        }, 300);
-      });
-    }
+      elements.filterSearch.addEventListener('input', debounce((e) => {
+        state.filters.search = e.target.value;
+        state.currentPage = 1;
+        loadAreas();
 
-    // Cambiar vista (desde grid a list)
-    if (elements.btnToggleView) {
-      elements.btnToggleView.addEventListener('click', () => toggleView('list'));
-    }
-
-    // Cambiar vista (desde list a grid)
-    if (elements.btnToggleViewList) {
-      elements.btnToggleViewList.addEventListener('click', () => toggleView('grid'));
+        // Sincronizar con el input de la lista si existe
+        const listSearch = root.querySelector('#filter-search-list');
+        if (listSearch && listSearch !== e.target) {
+          listSearch.value = e.target.value;
+        }
+      }, 300));
     }
 
     // Modal
+
     if (elements.btnNewArea) {
       elements.btnNewArea.addEventListener('click', () => openModal());
     }
@@ -905,105 +721,32 @@ export default function mountAreas(root, { bus, store, user, role }) {
       elements.btnSave.addEventListener('click', saveArea);
     }
 
-    // Agregar especialidad
     if (elements.btnAddSpecialty) {
       elements.btnAddSpecialty.addEventListener('click', addSpecialty);
     }
 
-    if (elements.formAddSpecialty) {
-      elements.formAddSpecialty.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          addSpecialty();
-        }
-      });
-    }
-
-    // Sincronizar color picker con input de texto
-    if (elements.formColor && elements.formColorText) {
-      elements.formColor.addEventListener('input', (e) => {
-        elements.formColorText.value = e.target.value;
-      });
-
-      elements.formColorText.addEventListener('input', (e) => {
-        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-          elements.formColor.value = e.target.value;
-        }
-      });
-    }
-
-    // Acciones en la lista y grid
-    if (elements.areasList) {
-      elements.areasList.addEventListener('click', handleListAction);
-    }
-
-    if (elements.areasGrid) {
-      elements.areasGrid.addEventListener('click', handleListAction);
-    }
-
-    // Paginación
+    // Paginación (event delegation)
     if (elements.pagination) {
       elements.pagination.addEventListener('click', handlePagination);
     }
 
-    // Scroll horizontal con rueda del ratón
-    if (elements.areasGridContainer) {
-      elements.areasGridContainer.addEventListener('wheel', (e) => {
-        if (e.deltaY !== 0) {
-          e.preventDefault();
-          elements.areasGridContainer.scrollLeft += e.deltaY;
-        }
-      }, { passive: false });
+    // Acciones de la lista y grid (event delegation)
+    if (elements.areasList) {
+      elements.areasList.addEventListener('click', handleListAction);
     }
-  }
 
-  // Cambiar entre vista de tarjetas y lista
-  function toggleView(targetView) {
-    state.viewMode = targetView;
 
-    if (targetView === 'list') {
-      elements.gridViewSection.style.display = 'none';
-      elements.listViewSection.style.display = 'block';
-    } else {
-      elements.gridViewSection.style.display = 'block';
-      elements.listViewSection.style.display = 'none';
-      renderAreasGrid();
-    }
   }
 
   // Manejar filtros
+  // Los antiguos manejadores de filtros han sido eliminados en la refactorización unificada.
+
+
+
+
+  // Manejar filtros
   function applyFiltersHandler() {
-    state.filters = {
-      search: elements.filterSearch?.value || '',
-      status: elements.filterStatus?.value || 'active',
-      parentId: elements.filterParent?.value || '',
-      parentArea: elements.filterParentArea?.value || ''
-    };
-
-    // Si se selecciona un área padre específica, sobreescribir el tipo
-    if (state.filters.parentArea) {
-      state.filters.parentId = state.filters.parentArea;
-    }
-
-    state.currentPage = 1;
-    loadAreas();
-  }
-
-  function clearFiltersHandler() {
-    if (elements.filterSearch) elements.filterSearch.value = '';
-    if (elements.filterStatus) elements.filterStatus.value = 'active';
-    if (elements.filterParent) elements.filterParent.value = '';
-    if (elements.filterParentArea) elements.filterParentArea.value = '';
-
-    state.filters = {
-      search: '',
-      status: 'active',
-      parentId: '',
-      parentArea: ''
-    };
-
-    state.currentPage = 1;
-    loadAreas();
+    // Los antiguos manejadores de filtros han sido eliminados en la refactorización unificada.
   }
 
   // Manejar paginación
@@ -1322,67 +1065,176 @@ export default function mountAreas(root, { bus, store, user, role }) {
     return store.update('areas', id, data);
   }
 
-  // Ver área
+  // Ver área — Modal premium institucional
   function viewArea(area) {
     if (!area) return;
 
     const stats = getAreaStats(area.id);
     const subAreas = state.areas.filter(a => a.parentId === area.id);
 
+    // Buscar nombre del médico responsable
+    let headDoctorName = 'No asignado';
+    if (area.headDoctorId) {
+      const headDoc = store.find('doctors', area.headDoctorId);
+      if (headDoc) headDoctorName = headDoc.name;
+    }
+
+    // Tipo de área legible
+    const areaTypes = {
+      clinical: 'Clínica',
+      diagnostic: 'Diagnóstico',
+      surgical: 'Quirúrgica',
+      administrative: 'Administrativa',
+      support: 'Soporte'
+    };
+    const areaTypeName = areaTypes[area.type] || 'Clínica';
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.style.cssText = `
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.5); display: flex; align-items: center;
-      justify-content: center; z-index: 5000; padding: 1rem;
+      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 5000; padding: 1rem;
     `;
 
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 800px; background: white; border-radius: var(--radius); overflow: hidden;">
-        <div class="modal-header" style="padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
-          <h3 class="modal-title" style="margin: 0;">${area.name}</h3>
-          <button class="close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      <div class="modal-content" style="max-width: 850px; width: 100%; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border-radius: 16px;">
+        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">FICHA DE ÁREA / SERVICIO MÉDICO</div>
+          <button class="close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>
-        <div class="modal-body" style="padding: 1.5rem;">
-          <div style="display: grid; grid-template-columns: 1fr 200px; gap: 2rem;">
-            <div>
-              <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin: 0 0 0.5rem 0; color: var(--accent);">Descripción</h4>
-                <p style="margin: 0; line-height: 1.6;">${area.description || 'Sin descripción disponible.'}</p>
-              </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                <div>
-                  <h4 style="margin: 0 0 0.5rem 0; color: var(--accent);">Contacto</h4>
-                  <div style="font-size: 0.9rem;"><strong>Ubicación:</strong> ${area.location || '-'}</div>
-                  <div style="font-size: 0.9rem;"><strong>Teléfono:</strong> ${area.phone || '-'}</div>
-                </div>
-                <div>
-                  <h4 style="margin: 0 0 0.5rem 0; color: var(--accent);">Gestión</h4>
-                  <div style="font-size: 0.9rem;"><strong>Responsable:</strong> ${area.headDoctor || 'No asignado'}</div>
-                  <div style="font-size: 0.9rem;"><strong>Estado:</strong> <span class="badge ${area.isActive ? 'badge-success' : 'badge-danger'}">${area.isActive ? 'Activo' : 'Inactivo'}</span></div>
-                </div>
-              </div>
+        
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
+          <!-- Encabezado del área -->
+          <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 2rem;">
+            <div style="width: 80px; height: 80px; background: ${area.color || '#2196F3'}; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 800; box-shadow: 0 4px 10px ${area.color || '#2196F3'}44; flex-shrink: 0;">
+              ${area.code ? area.code.substring(0, 3) : area.name.charAt(0)}
             </div>
-
-            <div>
-              <div style="background: var(--bg-light); padding: 1.25rem; border-radius: var(--radius); border: 1px solid var(--border); text-align: center;">
-                <div style="margin-bottom: 1rem;">
-                  <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">${stats.totalDoctors}</div>
-                  <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Médicos</div>
-                </div>
-                <div>
-                  <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-2);">${stats.todayAppointments}</div>
-                  <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase;">Citas Hoy</div>
-                </div>
+            <div style="flex: 1;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--modal-header); letter-spacing: 0.1em; margin-bottom: 0.25rem;">DEPARTAMENTO</div>
+              <h3 style="margin: 0; font-size: 1.75rem; color: #1a202c; font-weight: 800;">${area.name}</h3>
+              <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                <span class="badge badge-info" style="font-size: 0.75rem;">${area.code || 'Sin código'}</span>
+                <span class="badge ${area.isActive ? 'badge-success' : 'badge-danger'}" style="font-size: 0.75rem;">${area.isActive ? 'Activa' : 'Inactiva'}${area.status === 'maintenance' ? ' (Mantenimiento)' : ''}</span>
+                <span class="badge" style="background: ${area.color || '#2196F3'}22; color: ${area.color || '#2196F3'}; font-size: 0.75rem;">${areaTypeName}</span>
               </div>
             </div>
           </div>
+
+          <!-- Estadísticas rápidas -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+            <div style="background: #f0f9ff; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #bae6fd;">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #0369a1;">${stats.totalDoctors}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #0c4a6e; text-transform: uppercase; letter-spacing: 0.05em;">Médicos</div>
+            </div>
+            <div style="background: #f0fdf4; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #bbf7d0;">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #15803d;">${stats.todayAppointments}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #14532d; text-transform: uppercase; letter-spacing: 0.05em;">Citas Hoy</div>
+            </div>
+            <div style="background: #fefce8; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #fef08a;">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #a16207;">${stats.monthAppointments}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #713f12; text-transform: uppercase; letter-spacing: 0.05em;">Citas Mes</div>
+            </div>
+            <div style="background: #faf5ff; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #e9d5ff;">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #7e22ce;">${subAreas.length}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #581c87; text-transform: uppercase; letter-spacing: 0.05em;">Sub-áreas</div>
+            </div>
+          </div>
+
+          <!-- Información detallada -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div style="background: var(--modal-bg); border-radius: 8px; padding: 1.5rem; border-left: 4px solid var(--modal-header);">
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; color: #64748b; margin-bottom: 1rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                UBICACIÓN Y CONTACTO
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div>
+                  <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">UBICACIÓN</div>
+                  <div style="font-weight: 600; color: #334155;">${area.location || 'No especificada'}</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">TELÉFONO</div>
+                  <div style="font-weight: 600; color: #334155;">${area.phone || 'No registrado'}</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">EMAIL</div>
+                  <div style="font-weight: 600; color: #334155;">${area.email || 'No registrado'}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="background: #f0fdf4; border-radius: 8px; padding: 1.5rem; border-left: 4px solid #16a34a;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; color: #166534; margin-bottom: 1rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                GESTIÓN Y CAPACIDAD
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div>
+                  <div style="font-size: 0.7rem; color: #166534; font-weight: 700; text-transform: uppercase;">RESPONSABLE</div>
+                  <div style="font-weight: 600; color: #334155;">${headDoctorName}</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.7rem; color: #166534; font-weight: 700; text-transform: uppercase;">CAPACIDAD</div>
+                  <div style="font-weight: 600; color: #334155;">${area.capacity || 1} consultorio${(area.capacity || 1) > 1 ? 's' : ''}</div>
+                </div>
+                ${area.parentId ? `
+                <div>
+                  <div style="font-size: 0.7rem; color: #166534; font-weight: 700; text-transform: uppercase;">ÁREA PADRE</div>
+                  <div style="font-weight: 600; color: #334155;">${getParentAreaName(area.parentId)}</div>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Descripción -->
+          <div style="background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">DESCRIPCIÓN DEL SERVICIO</div>
+            <div style="font-size: 0.95rem; line-height: 1.6; color: #334155;">${area.description || 'Sin descripción disponible para este departamento médico.'}</div>
+          </div>
+
+          <!-- Especialidades -->
+          ${area.specialties && area.specialties.length > 0 ? `
+          <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em;">ESPECIALIDADES</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              ${area.specialties.map(s => `<span class="badge badge-info" style="padding: 4px 12px; font-size: 0.8rem;">${s}</span>`).join('')}
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- Sub-áreas -->
+          ${subAreas.length > 0 ? `
+          <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em;">SUB-ÁREAS ASOCIADAS</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              ${subAreas.map(sa => `
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <div style="width: 8px; height: 8px; border-radius: 50%; background: ${sa.color || '#2196F3'};">&nbsp;</div>
+                  <span style="font-weight: 600; font-size: 0.85rem; color: #334155;">${sa.name}</span>
+                  <span class="badge ${sa.isActive ? 'badge-success' : 'badge-danger'}" style="font-size: 0.6rem;">${sa.isActive ? 'Activa' : 'Inactiva'}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- Notas -->
+          ${area.notes ? `
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #92400e; text-transform: uppercase; margin-bottom: 0.5rem;">NOTAS</div>
+            <div style="font-size: 0.9rem; color: #78350f; line-height: 1.5;">${area.notes}</div>
+          </div>
+          ` : ''}
         </div>
-        <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
-          <button class="btn btn-outline" id="btn-view-doctors">Ver Equipo Médico</button>
-          <button class="btn btn-outline" id="close-view-area">Cerrar</button>
-          ${role === 'admin' ? `<button class="btn btn-primary" id="edit-area-from-view">Editar Área</button>` : ''}
+        
+        <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+          <button class="btn" id="btn-view-doctors" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">VER EQUIPO MÉDICO</button>
+          <button class="btn" id="close-view-area" style="background: var(--danger); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CERRAR</button>
+          ${role === 'admin' ? `<button class="btn" id="edit-area-from-view" style="background: var(--success); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">EDITAR ÁREA</button>` : ''}
         </div>
       </div>
     `;
@@ -1393,6 +1245,12 @@ export default function mountAreas(root, { bus, store, user, role }) {
     modal.querySelector('.close-modal').onclick = closeHandler;
     modal.querySelector('#close-view-area').onclick = closeHandler;
     modal.onclick = (e) => { if (e.target === modal) closeHandler(); };
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') {
+        closeHandler();
+        document.removeEventListener('keydown', escHandler);
+      }
+    });
 
     modal.querySelector('#btn-view-doctors').onclick = () => {
       closeHandler();
@@ -1445,7 +1303,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
       </div>
     `).join('') : `
       <div style="text-align: center; padding: 3rem; color: #94a3b8;">
-        <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">👨‍⚕️</div>
+        <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
         <div style="font-weight: 600;">No hay médicos asignados actualmente</div>
         <div style="font-size: 0.85rem;">Este área no cuenta con personal médico activo registrado.</div>
       </div>

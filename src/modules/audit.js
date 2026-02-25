@@ -48,46 +48,26 @@ export default function mountAudit(container, { store, bus, user }) {
     const actions = [...new Set(state.logs.map(l => l.action))];
 
     container.innerHTML = `
-        <div class="module-header">
-          <div>
-            <h1>Auditoría y Trazabilidad</h1>
-            <p>Registro inmutable de toda la actividad del sistema</p>
-          </div>
-          <div class="actions">
-            <button class="btn btn-outline" id="btn-refresh-audit">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-              Actualizar
-            </button>
-            <button class="btn btn-primary" id="btn-export-audit">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar CSV
-            </button>
-          </div>
-        </div>
-
-        <div class="card mb-1rem">
-          <div class="grid" style="grid-template-columns: 1fr 1fr 1.5fr 1fr; gap: 1rem;">
-            <div class="form-group">
-              <label>Módulo</label>
-              <select class="form-control filter-audit" data-filter="module">
-                <option value="">Todos los módulos</option>
-                ${modules.map(mod => `<option value="${mod}" ${state.filters.module === mod ? 'selected' : ''}>${getModuleLabel(mod)}</option>`).join('')}
-              </select>
+        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
+          <div class="flex justify-between items-center">
+            <div class="flex gap-2">
+              <button class="btn btn-outline" id="btn-refresh-audit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                Actualizar
+              </button>
+              <button class="btn btn-primary" id="btn-export-audit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar CSV
+              </button>
             </div>
-            <div class="form-group">
-              <label>Acción</label>
-              <select class="form-control filter-audit" data-filter="action">
-                <option value="">Todas las acciones</option>
-                ${actions.map(acc => `<option value="${acc}" ${state.filters.action === acc ? 'selected' : ''}>${acc}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Usuario</label>
-              <input type="text" class="form-control filter-audit" data-filter="user" placeholder="Buscar por nombre..." value="${state.filters.user}">
-            </div>
-            <div class="form-group">
-              <label>Fecha</label>
-              <input type="date" class="form-control filter-audit" data-filter="date" value="${state.filters.date}">
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input type="text" class="input" id="filter-audit-search" 
+                     placeholder="Buscar por nombre, módulo, acción..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
+                     value="${state.filters.user}">
             </div>
           </div>
         </div>
@@ -146,7 +126,7 @@ export default function mountAudit(container, { store, bus, user }) {
         <div class="mt-1rem" style="color: var(--muted); font-size: 0.875rem;">
           Mostrando ${filteredLogs.length} de ${state.logs.length} registros totales.
         </div>
-      `;
+    `;
 
     setupListeners();
   }
@@ -185,13 +165,13 @@ export default function mountAudit(container, { store, bus, user }) {
   }
 
   function setupListeners() {
-    container.querySelectorAll('.filter-audit').forEach(input => {
-      input.addEventListener('input', (e) => {
-        const filter = e.target.dataset.filter;
-        state.filters[filter] = e.target.value;
+    const searchInput = container.querySelector('#filter-audit-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        state.filters.user = e.target.value;
         renderTable();
       });
-    });
+    }
 
     const refreshBtn = container.querySelector('#btn-refresh-audit');
     if (refreshBtn) refreshBtn.addEventListener('click', loadLogs);
@@ -244,7 +224,7 @@ export default function mountAudit(container, { store, bus, user }) {
     modal.className = 'modal-overlay';
     modal.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7); display: flex; align-items: center;
+      background: rgba(0, 0, 0, 0.7); display: flex; align-items: center;
       justify-content: center; z-index: 3000; backdrop-filter: blur(4px);
     `;
 
@@ -313,7 +293,7 @@ export default function mountAudit(container, { store, bus, user }) {
           <button class="btn btn-primary close-modal" style="width: 100%; padding: 0.75rem;">Cerrar Informe</button>
         </div>
       </div>
-    `;
+      `;
 
     document.body.appendChild(modal);
 

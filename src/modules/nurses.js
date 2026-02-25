@@ -91,59 +91,28 @@ export default function mountNurses(root, { bus, store, user, role }) {
     const canManage = role === 'admin' || role === 'receptionist';
     root.innerHTML = `
       <div class="module-doctors">
-        <!-- Header -->
-        <div class="card">
+        <div class="card" style="padding: 0.75rem 1rem;">
           <div class="flex justify-between items-center">
-            <div>
-              <h2>Cuerpo de Enfermería</h2>
-              <p class="text-muted">Gestión de personal de planta y atención</p>
-            </div>
             ${canManage ? `
               <button class="btn btn-primary" id="btn-new-nurse">
                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                   ${icons.add} Nuevo Personal
                 </span>
               </button>
-            ` : ''}
+            ` : '<div></div>'}
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                ${icons.search || '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'}
+              </span>
+              <input type="text" class="input" id="filter-search" 
+                     placeholder="Buscar por nombre, especialidad, área, estado..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;">
+            </div>
           </div>
         </div>
 
         <!-- Estadísticas -->
         <div class="grid grid-4" id="stats-container" class="mb-4"></div>
-
-        <!-- Filtros -->
-        <div class="card mb-4">
-          <h3 class="mb-3">Búsqueda y Filtros</h3>
-          <div class="grid grid-4">
-            <div class="form-group">
-              <label class="form-label">Buscar</label>
-              <input type="text" class="input" id="filter-search" placeholder="Nombre, especialidad...">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Especialidad</label>
-              <select class="input" id="filter-specialty">
-                <option value="">Todas</option>
-                <option value="Enfermería General">Enfermería General</option>
-                <option value="Pediatría">Pediatría</option>
-                <option value="Quirúrgica">Quirúrgica</option>
-                <option value="Urgencias">Urgencias</option>
-                <option value="Cuidados Intensivos">Cuidados Intensivos</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Área</label>
-              <select class="input" id="filter-area"><option value="">Todas las áreas</option></select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Estado</label>
-              <select class="input" id="filter-status">
-                <option value="active">Activos</option>
-                <option value="inactive">Inactivos</option>
-                <option value="">Todos</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
         <!-- Lista -->
         <div class="card">
@@ -191,7 +160,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
                 ${icons.user} DATOS PERSONALES
               </div>
               <div class="grid grid-2 gap-4 mb-4">
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">NOMBRE *</label><input type="text" class="input" id="form-name" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">NOMBRE *</label><input type="text" class="input" id="form-name" required style="border-color: var(--neutralTertiary); background: var(--white);"></div>
                 <div class="form-group">
                   <label class="form-label font-bold" style="color: var(--modal-text);">CÉDULA / C.I. *</label>
                   <div class="doc-group">
@@ -201,16 +170,16 @@ export default function mountNurses(root, { bus, store, user, role }) {
                       <option value="J">J</option>
                       <option value="P">P</option>
                     </select>
-                    <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="border-color: var(--neutralTertiary); background: var(--white);">
                   </div>
                 </div>
               </div>
               <div class="grid grid-2 gap-4 mb-4">
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">EMAIL *</label><input type="email" class="input" id="form-email" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">TELÉFONO *</label><input type="tel" class="input" id="form-phone" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">EMAIL *</label><input type="email" class="input" id="form-email" required style="border-color: var(--neutralTertiary); background: var(--white);"></div>
+                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">TELÉFONO *</label><input type="tel" class="input" id="form-phone" required style="border-color: var(--neutralTertiary); background: var(--white);"></div>
               </div>
               
-              <div class="form-group mb-4"><label class="form-label font-bold" style="color: var(--modal-text);">DIRECCIÓN</label><input type="text" class="input" id="form-address" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+              <div class="form-group mb-4"><label class="form-label font-bold" style="color: var(--modal-text);">DIRECCIÓN</label><input type="text" class="input" id="form-address" style="border-color: var(--neutralTertiary); background: var(--white);"></div>
 
               <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
                 ${icons.clipboard} DATOS PROFESIONALES
@@ -218,7 +187,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
               <div class="grid grid-2 gap-4 mb-4">
                  <div class="form-group">
                     <label class="form-label font-bold" style="color: var(--modal-text);">ESPECIALIDAD *</label>
-                    <select class="input" id="form-specialty" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-specialty" style="border-color: var(--neutralTertiary); background: var(--white);">
                        <option value="Enfermería General">Enfermería General</option>
                        <option value="Pediatría">Pediatría</option>
                        <option value="Quirúrgica">Quirúrgica</option>
@@ -226,22 +195,22 @@ export default function mountNurses(root, { bus, store, user, role }) {
                        <option value="Cuidados Intensivos">Cuidados Intensivos</option>
                     </select>
                  </div>
-                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">Nº LICENCIA *</label><input type="text" class="input" id="form-license" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">Nº LICENCIA *</label><input type="text" class="input" id="form-license" required style="border-color: var(--neutralTertiary); background: var(--white);"></div>
               </div>
-              <div class="form-group mb-4"><label class="form-label font-bold" style="color: var(--modal-text);">ÁREA *</label><select class="input" id="form-area" required style="border-color: var(--modal-border); background: var(--modal-bg);"></select></div>
+              <div class="form-group mb-4"><label class="form-label font-bold" style="color: var(--modal-text);">ÁREA *</label><select class="input" id="form-area" required style="border-color: var(--neutralTertiary); background: var(--white);"></select></div>
 
               <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
                 ${icons.calendar} HORARIO Y CAPACIDAD
               </div>
               <div class="grid grid-2 gap-4 mb-4">
-                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">ENTRADA (TURNO)</label><input type="time" class="input" id="form-schedule-start" value="07:00" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
-                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">SALIDA (TURNO)</label><input type="time" class="input" id="form-schedule-end" value="15:00" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">ENTRADA (TURNO)</label><input type="time" class="input" id="form-schedule-start" value="07:00" style="border-color: var(--neutralTertiary); background: var(--white);"></div>
+                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">SALIDA (TURNO)</label><input type="time" class="input" id="form-schedule-end" value="15:00" style="border-color: var(--neutralTertiary); background: var(--white);"></div>
               </div>
               <div class="grid grid-2 gap-4 mb-4">
-                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">CAPACIDAD DIARIA (PACIENTES)</label><input type="number" class="input" id="form-daily-capacity" value="15" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">CAPACIDAD DIARIA (PACIENTES)</label><input type="number" class="input" id="form-daily-capacity" value="15" style="border-color: var(--neutralTertiary); background: var(--white);"></div>
                  <div class="form-group">
                     <label class="form-label font-bold" style="color: var(--modal-text);">ESTADO ACTUAL</label>
-                    <select class="input" id="form-status" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-status" style="border-color: var(--neutralTertiary); background: var(--white);">
                       <option value="active">Activo</option>
                       <option value="inactive">Inactivo</option>
                       <option value="vacation">Vacaciones</option>
@@ -255,11 +224,11 @@ export default function mountNurses(root, { bus, store, user, role }) {
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group">
                   <label class="form-label font-bold" style="color: var(--modal-text);">USUARIO</label>
-                  <input type="text" class="input" id="form-username" placeholder="Email por defecto" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="text" class="input" id="form-username" placeholder="Email por defecto" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
                 <div class="form-group">
                   <label class="form-label font-bold" style="color: var(--modal-text);">CONTRASEÑA *</label>
-                  <input type="password" class="input" id="form-password" placeholder="Mínimo 6 caracteres" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="password" class="input" id="form-password" placeholder="Mínimo 6 caracteres" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
               </div>
             </form>
@@ -381,9 +350,9 @@ export default function mountNurses(root, { bus, store, user, role }) {
       currentCapDisplay: root.querySelector('#current-capacity-display')
     };
 
-    const areas = store.get('areas');
+    const areas = store.get('areas') || [];
     const opts = areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-    elements.area.innerHTML += opts;
+    if (elements.area) elements.area.innerHTML += opts;
     if (elements.fArea) elements.fArea.innerHTML = `<option value="">Seleccione área</option>` + opts;
   }
 
@@ -391,7 +360,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
     const start = (state.currentPage - 1) * state.itemsPerPage;
     const items = state.nurses.slice(start, start + state.itemsPerPage);
 
-    elements.nursesCount.textContent = `${state.nurses.length} Registros`;
+    if (elements.nursesCount) elements.nursesCount.textContent = `${state.nurses.length} Registros`;
     const canManage = role === 'admin' || role === 'receptionist';
 
     elements.nursesList.innerHTML = items.map(nurse => {
@@ -417,8 +386,9 @@ export default function mountNurses(root, { bus, store, user, role }) {
                     ${nurse.status === 'vacation' ? 'Vacaciones' : (nurse.isActive ? 'Activo' : 'Inactivo')}
                  </span>
                  ${canManage ? `
-                 <button class="btn btn-xs btn-outline" onclick="window.nursesAction('status', '${nurse.id}')" title="Cambiar">${icons.status}</button>
-                 ` : ''}
+                  <button class="btn btn-xs btn-outline" onclick="window.nursesAction('status', '${nurse.id}')" title="Estado">${icons.status}</button>
+                  <button class="btn btn-xs btn-outline" onclick="window.nursesAction('capacity', '${nurse.id}')" title="Capacidad">${icons.capacity}</button>
+                  ` : ''}
               </div>
            </td>
            <td>

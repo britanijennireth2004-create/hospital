@@ -84,6 +84,7 @@ const icons = {
   add: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
   <path stroke="currentColor" stroke-width="2" d="M10 3v14M3 10h14"/>
 </svg>`,
+  search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
   filter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
   <path stroke="currentColor" stroke-width="1.5" d="M2 4h16v2l-5 5v5l-2 2v-7L2 6V4z"/>
 </svg>`
@@ -93,10 +94,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   const state = {
     doctors: [],
     filters: {
-      search: '',
-      specialty: '',
-      areaId: '',
-      status: 'active'
+      search: ''
     },
     editingId: null,
     isLoading: false,
@@ -151,32 +149,28 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     return doctors.filter(doctor => {
       if (state.filters.search) {
         const searchTerm = state.filters.search.toLowerCase();
+        const area = store.find('areas', doctor.areaId);
+
+        // Traducir estado para facilitar búsqueda
+        const statusMap = {
+          'active': 'activo active',
+          'inactive': 'inactivo inactive',
+          'vacation': 'vacaciones vacation',
+          'license': 'licencia license'
+        };
+        const statusText = statusMap[doctor.status] || (doctor.isActive ? 'activo active' : 'inactivo inactive');
+
         const searchFields = [
           doctor.name,
           doctor.specialty,
           doctor.license,
           doctor.email,
-          doctor.phone
+          doctor.phone,
+          area?.name,
+          statusText
         ].filter(Boolean).join(' ').toLowerCase();
 
         if (!searchFields.includes(searchTerm)) {
-          return false;
-        }
-      }
-
-      if (state.filters.specialty && doctor.specialty !== state.filters.specialty) {
-        return false;
-      }
-
-      if (state.filters.areaId && doctor.areaId !== state.filters.areaId) {
-        return false;
-      }
-
-      if (state.filters.status) {
-        if (state.filters.status === 'active' && !doctor.isActive) {
-          return false;
-        }
-        if (state.filters.status === 'inactive' && doctor.isActive !== false) {
           return false;
         }
       }
@@ -263,12 +257,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     root.innerHTML = `
       <div class="module-doctors">
         <!-- Header -->
-        <div class="card">
+        <div class="card" style="padding: 0.75rem 1rem;">
           <div class="flex justify-between items-center">
-            <div>
-              <h2>Médicos</h2>
-              <p class="text-muted">Gestión del personal médico</p>
-            </div>
             ${canManage ? `
               <button class="btn btn-primary" id="btn-new-doctor">
                 <span style="display: flex; align-items: center; gap: 0.5rem;">
@@ -276,65 +266,22 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                   Nuevo Médico
                 </span>
               </button>
-            ` : ''}
+            ` : '<div></div>'}
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                ${icons.search}
+              </span>
+              <input type="text" class="input" id="filter-search" 
+                     placeholder="Buscar por nombre, especialidad, licencia, área, estado..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
+                     value="${state.filters.search}">
+            </div>
           </div>
         </div>
 
         <!-- Estadísticas -->
         <div class="grid grid-4" id="stats-container">
           <!-- Se llenará dinámicamente -->
-        </div>
-
-        <!-- Filtros -->
-        <div class="card">
-          <h3 class="mb-3">Búsqueda y Filtros</h3>
-          <div class="grid" style="grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
-              <label class="form-label">Buscar</label>
-              <input type="text" class="input" id="filter-search" 
-                     placeholder="Nombre, especialidad, licencia...">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Especialidad</label>
-              <select class="input" id="filter-specialty">
-                <option value="">Todas</option>
-                <option value="Medicina General">Medicina General</option>
-                <option value="Pediatría">Pediatría</option>
-                <option value="Ginecología">Ginecología</option>
-                <option value="Cardiología">Cardiología</option>
-                <option value="Dermatología">Dermatología</option>
-                <option value="Ortopedia">Ortopedia</option>
-                <option value="Oftalmología">Oftalmología</option>
-                <option value="Psiquiatría">Psiquiatría</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Área</label>
-              <select class="input" id="filter-area">
-                <option value="">Todas las áreas</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Estado</label>
-              <select class="input" id="filter-status">
-                <option value="active">Activos</option>
-                <option value="inactive">Inactivos</option>
-                <option value="">Todos</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn btn-outline" id="btn-clear-filters">
-              Limpiar filtros
-            </button>
-            <button class="btn btn-primary" id="btn-apply-filters">
-              Aplicar filtros
-            </button>
-          </div>
         </div>
 
         <!-- Lista de médicos -->
@@ -412,7 +359,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
-                  <input type="text" class="input" id="form-name" required placeholder="Ej: Juan Pérez García" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="text" class="input" id="form-name" required placeholder="Ej: Juan Pérez García" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
                 
                 <div class="form-group">
@@ -424,7 +371,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                       <option value="J">J</option>
                       <option value="P">P</option>
                     </select>
-                    <input type="text" class="input" id="form-dni" placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <input type="text" class="input" id="form-dni" placeholder="Número de cédula" style="border-color: var(--neutralTertiary); background: var(--white);">
                   </div>
                 </div>
               </div>
@@ -432,12 +379,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO</label>
-                  <input type="date" class="input" id="form-birth-date" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="date" class="input" id="form-birth-date" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO</label>
-                  <select class="input" id="form-gender" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <select class="input" id="form-gender" style="border-color: var(--neutralTertiary); background: var(--white);">
                     <option value="">Seleccionar</option>
                     <option value="M">Masculino</option>
                     <option value="F">Femenino</option>
@@ -455,12 +402,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NÚMERO DE LICENCIA *</label>
-                  <input type="text" class="input" id="form-license" required placeholder="Ej: MED-123456" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="text" class="input" id="form-license" required placeholder="Ej: MED-123456" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESPECIALIDAD *</label>
-                  <select class="input" id="form-specialty" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <select class="input" id="form-specialty" required style="border-color: var(--neutralTertiary); background: var(--white);">
                     <option value="">Seleccionar especialidad</option>
                     <option value="Medicina General">Medicina General</option>
                     <option value="Pediatría">Pediatría</option>
@@ -477,7 +424,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ÁREA PRINCIPAL *</label>
-                <select class="input" id="form-area" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                <select class="input" id="form-area" required style="border-color: var(--neutralTertiary); background: var(--white);">
                   <option value="">Seleccionar área</option>
                 </select>
               </div>
@@ -497,18 +444,18 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO *</label>
-                  <input type="tel" class="input" id="form-phone" required placeholder="Ej: +34 600 123 456" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="tel" class="input" id="form-phone" required placeholder="Ej: +34 600 123 456" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL *</label>
-                  <input type="email" class="input" id="form-email" required placeholder="Ej: medico@hospital.com" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="email" class="input" id="form-email" required placeholder="Ej: medico@hospital.com" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
               </div>
               
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DIRECCIÓN</label>
-                  <input type="text" class="input" id="form-address" placeholder="Ej: Calle Principal 123, Ciudad" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="text" class="input" id="form-address" placeholder="Ej: Calle Principal 123, Ciudad" style="border-color: var(--neutralTertiary); background: var(--white);">
               </div>
               
               <!-- Horario y disponibilidad -->
@@ -520,12 +467,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ENTRADA *</label>
-                  <input type="time" class="input" id="form-schedule-start" required value="08:00" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="time" class="input" id="form-schedule-start" required value="08:00" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">SALIDA *</label>
-                  <input type="time" class="input" id="form-schedule-end" required value="17:00" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="time" class="input" id="form-schedule-end" required value="17:00" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
               </div>
               
@@ -544,7 +491,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DURACIÓN DE CONSULTA *</label>
-                  <select class="input" id="form-consultation-duration" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <select class="input" id="form-consultation-duration" required style="border-color: var(--neutralTertiary); background: var(--white);">
                     <option value="15">15 minutos</option>
                     <option value="20">20 minutos</option>
                     <option value="30" selected>30 minutos</option>
@@ -555,7 +502,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CAPACIDAD DIARIA *</label>
-                  <input type="number" class="input" id="form-daily-capacity" required min="1" max="50" value="20" placeholder="Ej: 20" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="number" class="input" id="form-daily-capacity" required min="1" max="50" value="20" placeholder="Ej: 20" style="border-color: var(--neutralTertiary); background: var(--white);">
                   <div class="text-xs text-muted mt-1">Máximo de pacientes por día</div>
                 </div>
               </div>
@@ -581,18 +528,18 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE DE USUARIO</label>
-                  <input type="text" class="input" id="form-username" placeholder="Se usará el email si se deja vacío" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="text" class="input" id="form-username" placeholder="Se usará el email si se deja vacío" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CONTRASEÑA DE ACCESO *</label>
-                  <input type="password" class="input" id="form-password" ${state.editingId ? '' : 'required'} placeholder="Mínimo 6 caracteres" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <input type="password" class="input" id="form-password" ${state.editingId ? '' : 'required'} placeholder="Mínimo 6 caracteres" style="border-color: var(--neutralTertiary); background: var(--white);">
                 </div>
               </div>
 
               <div class="form-group" style="margin-top: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOTAS INTERNAS</label>
-                <textarea class="input" id="form-notes" rows="2" placeholder="Notas adicionales..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
+                <textarea class="input" id="form-notes" rows="2" placeholder="Notas adicionales..." style="border-color: var(--neutralTertiary); background: var(--white);"></textarea>
               </div>
             </form>
           </div>
@@ -633,7 +580,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NUEVO ESTADO *</label>
-                <select class="input" id="status-form-state" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                <select class="input" id="status-form-state" required style="border-color: var(--neutralTertiary); background: var(--white);">
                   <option value="">Seleccionar estado</option>
                   <option value="active">Activo</option>
                   <option value="inactive">Inactivo</option>
@@ -644,12 +591,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MOTIVO DEL CAMBIO</label>
-                <textarea class="input" id="status-form-reason" rows="3" placeholder="Ej: Vacaciones programadas, licencia médica..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
+                <textarea class="input" id="status-form-reason" rows="3" placeholder="Ej: Vacaciones programadas, licencia médica..." style="border-color: var(--neutralTertiary); background: var(--white);"></textarea>
               </div>
               
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE REINTEGRO</label>
-                <input type="date" class="input" id="status-form-return-date" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                <input type="date" class="input" id="status-form-return-date" style="border-color: var(--neutralTertiary); background: var(--white);">
               </div>
             </form>
           </div>
@@ -754,11 +701,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
       // Filtros
       filterSearch: root.querySelector('#filter-search'),
-      filterSpecialty: root.querySelector('#filter-specialty'),
-      filterArea: root.querySelector('#filter-area'),
-      filterStatus: root.querySelector('#filter-status'),
-      btnClearFilters: root.querySelector('#btn-clear-filters'),
-      btnApplyFilters: root.querySelector('#btn-apply-filters'),
+      filterSearch: root.querySelector('#filter-search'),
 
       // Modal principal
       modal: root.querySelector('#doctor-modal'),
@@ -820,13 +763,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Cargar datos en selects
   function loadSelectData() {
-    // Áreas para filtros
-    if (elements.filterArea) {
-      const areas = store.get('areas');
-      const options = areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-      elements.filterArea.innerHTML = `<option value="">Todas las áreas</option>${options}`;
-    }
-
     // Áreas para formulario principal
     if (elements.formArea) {
       const areas = store.get('areas');
@@ -855,7 +791,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.emptyState.classList.remove('hidden');
       elements.doctorsTable.classList.add('hidden');
       elements.pagination.classList.add('hidden');
-      elements.doctorsCount.textContent = '0 médicos';
+      if (elements.doctorsCount) elements.doctorsCount.textContent = '0 médicos';
       return;
     }
 
@@ -863,7 +799,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     elements.doctorsTable.classList.remove('hidden');
     elements.pagination.classList.remove('hidden');
 
-    elements.doctorsCount.textContent = `${state.doctors.length} ${state.doctors.length === 1 ? 'médico' : 'médicos'}`;
+    if (elements.doctorsCount) elements.doctorsCount.textContent = `${state.doctors.length} ${state.doctors.length === 1 ? 'médico' : 'médicos'}`;
 
     const rows = paginatedDoctors.map(doctor => {
       const stats = getDoctorStats(doctor.id);
@@ -1056,29 +992,10 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Configurar event listeners
   function setupEventListeners() {
-    if (elements.btnApplyFilters) {
-      elements.btnApplyFilters.addEventListener('click', applyFiltersHandler);
-    }
-
-    if (elements.btnClearFilters) {
-      elements.btnClearFilters.addEventListener('click', clearFiltersHandler);
-    }
-
-    // Debounced search
     if (elements.filterSearch) {
-      const debouncedLoad = debounce(() => { state.currentPage = 1; loadDoctors(); }, 300);
-      elements.filterSearch.addEventListener('input', (e) => {
-        state.filters.search = e.target.value;
-        debouncedLoad();
-      });
+      elements.filterSearch.addEventListener('input', debounce(applyFiltersHandler, 300));
     }
 
-    // Other filter changes
-    [elements.filterSpecialty, elements.filterArea, elements.filterStatus].forEach(el => {
-      if (el) {
-        el.addEventListener('change', () => { state.currentPage = 1; loadDoctors(); });
-      }
-    });
 
     if (elements.btnNewDoctor) {
       elements.btnNewDoctor.addEventListener('click', () => openModal());
@@ -1181,33 +1098,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Manejar filtros
   function applyFiltersHandler() {
-    state.filters = {
-      search: elements.filterSearch?.value || '',
-      specialty: elements.filterSpecialty?.value || '',
-      areaId: elements.filterArea?.value || '',
-      status: elements.filterStatus ? elements.filterStatus.value : 'active'
-    };
-
+    state.filters.search = elements.filterSearch?.value || '';
     state.currentPage = 1;
     loadDoctors();
   }
 
-  function clearFiltersHandler() {
-    if (elements.filterSearch) elements.filterSearch.value = '';
-    if (elements.filterSpecialty) elements.filterSpecialty.value = '';
-    if (elements.filterArea) elements.filterArea.value = '';
-    if (elements.filterStatus) elements.filterStatus.value = '';
-
-    state.filters = {
-      search: '',
-      specialty: '',
-      areaId: '',
-      status: ''
-    };
-
-    state.currentPage = 1;
-    loadDoctors();
-  }
+  // El manejador de limpieza de filtros ha sido eliminado en la refactorización unificada.
 
   // Manejar paginación
   function handlePagination(event) {

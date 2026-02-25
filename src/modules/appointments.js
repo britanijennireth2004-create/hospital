@@ -46,18 +46,15 @@ const icons = {
 
   resource: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="5.5" width="15" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6 5.5V4a2 2 0 012-2h4a2 2 0 012 2v1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 9v4M8 11h4"/></svg>`,
 
-  hospital: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 5v4M8 7h4"/><path stroke="currentColor" stroke-width="1.5" d="M7 14h2v4H7zM11 14h2v4h-2z"/></svg>`
+  hospital: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 5v4M8 7h4"/><path stroke="currentColor" stroke-width="1.5" d="M7 14h2v4H7zM11 14h2v4h-2z"/></svg>`,
+  search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M13 13l4 4"/></svg>`
 };
 
 export default function mountAppointments(root, { bus, store, user, role }) {
   const state = {
     appointments: [],
     filters: {
-      status: '',
-      doctorId: '',
-      patientId: '',
-      dateFrom: '',
-      dateTo: ''
+      search: ''
     },
     editingId: null,
     isLoading: false,
@@ -82,6 +79,14 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     return unsubscribe;
   }
 
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
   // Cargar citas
   function loadAppointments() {
     let appointments = store.get('appointments');
@@ -97,25 +102,58 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     updateStats();
   }
 
-  // Aplicar filtros
   function applyFilters(appointments) {
-    return appointments.filter(appointment => {
-      if (state.filters.status && appointment.status !== state.filters.status) return false;
-      if (state.filters.doctorId && appointment.doctorId !== state.filters.doctorId) return false;
-      if (state.filters.patientId && appointment.patientId !== state.filters.patientId) return false;
-      if (state.filters.dateFrom) {
-        const fromDate = new Date(state.filters.dateFrom);
-        const appointmentDate = new Date(appointment.dateTime);
-        if (appointmentDate < fromDate) return false;
-      }
-      if (state.filters.dateTo) {
-        const toDate = new Date(state.filters.dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        const appointmentDate = new Date(appointment.dateTime);
-        if (appointmentDate > toDate) return false;
-      }
-      return true;
-    });
+    let filtered = appointments;
+
+    // Filtro por búsqueda global
+    if (state.filters.search) {
+      const searchTerm = state.filters.search.toLowerCase();
+      filtered = filtered.filter(appointment => {
+        const patient = store.find('patients', appointment.patientId);
+        const doctor = store.find('doctors', appointment.doctorId);
+        const area = store.find('areas', appointment.areaId);
+
+        const statusMap = {
+          'scheduled': 'programada',
+          'confirmed': 'confirmada',
+          'completed': 'completada',
+          'cancelled': 'cancelada'
+        };
+
+        const appointmentDate = new Date(appointment.dateTime).toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+
+        const searchFields = [
+          patient?.name,
+          patient?.dni,
+          doctor?.name,
+          area?.name,
+          appointment.status,
+          statusMap[appointment.status],
+          appointmentDate,
+          appointment.reason,
+          appointment.modality
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        return searchFields.includes(searchTerm);
+      });
+    }
+
+    // Filtros específicos adicionales
+    if (state.filters.doctorId) {
+      filtered = filtered.filter(a => a.doctorId === state.filters.doctorId);
+    }
+    if (state.filters.areaId) {
+      filtered = filtered.filter(a => a.areaId === state.filters.areaId);
+    }
+    if (state.filters.status) {
+      filtered = filtered.filter(a => a.status === state.filters.status);
+    }
+
+    return filtered;
   }
 
   // Filtrar por rol
@@ -133,13 +171,19 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
   function getDoctorAppointmentsForDate(doctorId, date) {
     const appointments = store.get('appointments');
-    const targetDate = new Date(date).toDateString();
-
+    // date es "YYYY-MM-DD"
     return appointments.filter(appointment => {
       if (appointment.doctorId !== doctorId) return false;
       if (appointment.status === 'cancelled') return false;
-      const appointmentDate = new Date(appointment.dateTime).toDateString();
-      return appointmentDate === targetDate;
+
+      // Convertir a objeto Date para mayor seguridad
+      const aptDate = new Date(appointment.dateTime);
+      const year = aptDate.getFullYear();
+      const month = String(aptDate.getMonth() + 1).padStart(2, '0');
+      const day = String(aptDate.getDate()).padStart(2, '0');
+      const appointmentDatePart = `${year}-${month}-${day}`;
+
+      return appointmentDatePart === date;
     });
   }
 
@@ -253,7 +297,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     let filteredDoctors = doctors;
     if (areaId) {
-      filteredDoctors = doctors.filter(d => d.areaId === areaId);
+      filteredDoctors = doctors.filter(d => d.areaId === areaId || (d.otherAreas && d.otherAreas.includes(areaId)));
     }
 
     return filteredDoctors.filter(doctor => {
@@ -281,8 +325,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       if (appointment.doctorId !== doctorId) return false;
       if (appointment.status === 'cancelled') return false;
 
-      const appointmentDate = new Date(appointment.dateTime);
-      if (appointmentDate.toDateString() !== newAppointmentStart.toDateString()) return false;
+      const aptDate = new Date(appointment.dateTime);
+      const isSameDay = aptDate.getFullYear() === newAppointmentStart.getFullYear() &&
+        aptDate.getMonth() === newAppointmentStart.getMonth() &&
+        aptDate.getDate() === newAppointmentStart.getDate();
+
+      if (!isSameDay) return false;
 
       const existingStart = new Date(appointment.dateTime);
       const existingEnd = new Date(existingStart.getTime() + (appointment.duration * 60000));
@@ -295,7 +343,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     });
   }
 
-  function getAvailableTimeSlots(doctorId, date, duration = 30) {
+  function getAvailableTimeSlots(doctorId, date, duration = 30, excludeAppointmentId = null) {
     const doctor = store.find('doctors', doctorId);
     if (!doctor) return [];
 
@@ -354,7 +402,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     if (!worksThatDay) return [];
 
-    const existingAppointments = getDoctorAppointmentsForDate(doctorId, date);
+    const existingAppointments = getDoctorAppointmentsForDate(doctorId, date)
+      .filter(a => !excludeAppointmentId || a.id !== excludeAppointmentId);
+
     const slots = [];
 
     let currentMin = workStartMin;
@@ -492,18 +542,23 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="module-appointments">
-        <!-- Header -->
-        <div class="card">
+        <!-- Barra de Búsqueda + Botón -->
+        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
           <div class="flex justify-between items-center">
-            <div>
-              <h2>Citas Médicas</h2>
-              <p class="text-muted">Gestión y programación de citas</p>
-            </div>
             ${canCreate ? `
               <button class="btn btn-primary" id="btn-new-appointment">
                 ${icons.plus} Nueva Cita
               </button>
-            ` : ''}
+            ` : '<div></div>'}
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                ${icons.search}
+              </span>
+              <input type="text" class="input" id="filter-search" 
+                     placeholder="Buscar por paciente, médico, área, estado, fecha o motivo..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
+                     value="${state.filters.search}">
+            </div>
           </div>
           
           <div class="flex justify-between items-center mt-3">
@@ -518,60 +573,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
             <div class="text-muted text-sm" id="view-description">
               ${state.currentView === 'calendar' ? 'Vista mensual de citas' : 'Lista detallada de todas las citas'}
             </div>
-          </div>
-        </div>
-
-        <!-- Filtros -->
-        <div class="card mb-4" id="filters-container">
-          <h3 class="mb-3">Filtros</h3>
-          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-            <div class="form-group">
-              <label class="form-label">Estado</label>
-              <select class="input" id="filter-status">
-                <option value="">Todos</option>
-                <option value="scheduled">Programada</option>
-                <option value="confirmed">Confirmada</option>
-                <option value="completed">Completada</option>
-                <option value="cancelled">Cancelada</option>
-              </select>
-            </div>
-            
-            ${role === 'admin' || role === 'doctor' || role === 'receptionist' ? `
-              <div class="form-group">
-                <label class="form-label">Paciente</label>
-                <select class="input" id="filter-patient">
-                  <option value="">Todos los pacientes</option>
-                </select>
-              </div>
-            ` : ''}
-            
-            ${role === 'admin' || role === 'patient' || role === 'receptionist' ? `
-              <div class="form-group">
-                <label class="form-label">Médico</label>
-                <select class="input" id="filter-doctor">
-                  <option value="">Todos los médicos</option>
-                </select>
-              </div>
-            ` : ''}
-            
-            <div class="form-group">
-              <label class="form-label">Fecha desde</label>
-              <input type="date" class="input" id="filter-date-from">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Fecha hasta</label>
-              <input type="date" class="input" id="filter-date-to">
-            </div>
-          </div>
-          
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn btn-outline" id="btn-clear-filters">
-              Limpiar filtros
-            </button>
-            <button class="btn btn-primary" id="btn-apply-filters">
-              Aplicar filtros
-            </button>
           </div>
         </div>
 
@@ -643,14 +644,14 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                 <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">PACIENTE *</label>
-                    <select class="input" id="form-patient" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-patient" required style="border-color: var(--neutralTertiary); background: var(--white);">
                       <option value="">Seleccionar paciente</option>
                     </select>
                   </div>
                   
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MÉDICO *</label>
-                    <select class="input" id="form-doctor" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-doctor" required style="border-color: var(--neutralTertiary); background: var(--white);">
                       <option value="">Seleccionar médico</option>
                     </select>
                   </div>
@@ -672,7 +673,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
               <div style="margin-bottom: 2rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ÁREA *</label>
-                  <select class="input" id="form-area" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <select class="input" id="form-area" required style="border-color: var(--neutralTertiary); background: var(--white);">
                     <option value="">Seleccionar área</option>
                   </select>
                 </div>
@@ -687,15 +688,15 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                 <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MODALIDAD *</label>
-                    <select class="input" id="form-modality" required style="border-color: var(--modal-border); background: var(--modal-bg);">
-                      <option value="presencial">🏥 Presencial</option>
-                      <option value="virtual">📹 Virtual / Telemedicina</option>
+                    <select class="input" id="form-modality" required style="border-color: var(--neutralTertiary); background: var(--white);">
+                      <option value="presencial">Presencial</option>
+                      <option value="virtual">Virtual / Telemedicina</option>
                     </select>
                   </div>
                   
                   <div class="form-group" id="virtual-link-group" style="display: none;">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ENLACE DE REUNIÓN</label>
-                    <input type="url" class="input" id="form-virtual-link" placeholder="https://meet.example.com/..." style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <input type="url" class="input" id="form-virtual-link" placeholder="https://meet.example.com/..." style="border-color: var(--neutralTertiary); background: var(--white);">
                     <div class="text-xs text-muted mt-1" id="virtual-link-info">
                       Se generará automáticamente o ingrese uno manualmente
                     </div>
@@ -712,14 +713,14 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                 <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA *</label>
-                    <input type="date" class="input" id="form-date" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <input type="date" class="input" id="form-date" required style="border-color: var(--neutralTertiary); background: var(--white);">
                   </div>
                   
                   <div class="form-group" id="time-input-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">HORA *</label>
-                    <input type="time" class="input" id="form-time" required style="border-color: var(--modal-border); background: var(--modal-bg);"
-                           list="available-times" step="1800" min="09:00" max="17:00">
-                    <datalist id="available-times"></datalist>
+                    <select class="input" id="form-time" required style="border-color: var(--neutralTertiary); background: var(--white);">
+                      <option value="">Seleccione médico y fecha</option>
+                    </select>
                     <div class="text-xs text-muted mt-1" id="time-slot-info">
                       Seleccione un médico y fecha para ver horarios disponibles
                     </div>
@@ -737,7 +738,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                   <!-- Consultorio ocupando el ancho completo arriba -->
                   <div class="form-group" style="grid-column: span 2;">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CONSULTORIO</label>
-                    <select class="input" id="form-consultorio" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-consultorio" style="border-color: var(--neutralTertiary); background: var(--white);">
                       <option value="">Sin consultorio asignado</option>
                     </select>
                     <div class="text-xs text-muted mt-1" id="consultorio-info">
@@ -748,14 +749,14 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                   <!-- Equipamiento e Insumos lado a lado abajo -->
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EQUIPAMIENTO MÉDICO</label>
-                    <select class="input" id="form-equipment" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-equipment" style="border-color: var(--neutralTertiary); background: var(--white);">
                       <option value="">Ninguno / No requiere</option>
                     </select>
                   </div>
 
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">INSUMOS / SUMINISTROS</label>
-                    <select class="input" id="form-supplies" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-supplies" style="border-color: var(--neutralTertiary); background: var(--white);">
                       <option value="">Ninguno / No requiere</option>
                     </select>
                     <div class="text-xs text-muted mt-1" id="supplies-info">
@@ -770,7 +771,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                 <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DURACIÓN *</label>
-                    <select class="input" id="form-duration" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-duration" required style="border-color: var(--neutralTertiary); background: var(--white);">
                       <option value="15">15 minutos</option>
                       <option value="30" selected>30 minutos</option>
                       <option value="45">45 minutos</option>
@@ -781,7 +782,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                   ${state.editingId ? `
                     <div class="form-group">
                       <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO</label>
-                      <select class="input" id="form-status" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      <select class="input" id="form-status" style="border-color: var(--neutralTertiary); background: var(--white);">
                         <option value="scheduled">Programada</option>
                         <option value="confirmed">Confirmada</option>
                         <option value="completed">Completada</option>
@@ -801,12 +802,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                 <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MOTIVO DE LA CONSULTA</label>
-                    <textarea class="input" id="form-reason" rows="3" placeholder="Describa el motivo de la consulta..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
+                    <textarea class="input" id="form-reason" rows="3" placeholder="Describa el motivo de la consulta..." style="border-color: var(--neutralTertiary); background: var(--white);"></textarea>
                   </div>
                   
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOTAS ADICIONALES</label>
-                    <textarea class="input" id="form-notes" rows="3" placeholder="Notas importantes..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
+                    <textarea class="input" id="form-notes" rows="3" placeholder="Notas importantes..." style="border-color: var(--neutralTertiary); background: var(--white);"></textarea>
                   </div>
                 </div>
               </div>
@@ -832,13 +833,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       appointmentsCount: root.querySelector('#appointments-count'),
       emptyState: root.querySelector('#empty-state'),
       appointmentsTable: root.querySelector('#appointments-table'),
-      filterStatus: root.querySelector('#filter-status'),
-      filterPatient: root.querySelector('#filter-patient'),
-      filterDoctor: root.querySelector('#filter-doctor'),
-      filterDateFrom: root.querySelector('#filter-date-from'),
-      filterDateTo: root.querySelector('#filter-date-to'),
-      btnClearFilters: root.querySelector('#btn-clear-filters'),
-      btnApplyFilters: root.querySelector('#btn-apply-filters'),
+      filterSearch: root.querySelector('#filter-search'),
       modal: root.querySelector('#appointment-modal'),
       form: root.querySelector('#appointment-form'),
       formPatient: root.querySelector('#form-patient'),
@@ -971,13 +966,13 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (state.appointments.length === 0) {
       elements.emptyState.classList.remove('hidden');
       elements.appointmentsTable.classList.add('hidden');
-      elements.appointmentsCount.textContent = '0 citas';
+      if (elements.appointmentsCount) elements.appointmentsCount.textContent = '0 citas';
       return;
     }
 
     elements.emptyState.classList.add('hidden');
     elements.appointmentsTable.classList.remove('hidden');
-    elements.appointmentsCount.textContent = `${state.appointments.length} ${state.appointments.length === 1 ? 'cita' : 'citas'}`;
+    if (elements.appointmentsCount) elements.appointmentsCount.textContent = `${state.appointments.length} ${state.appointments.length === 1 ? 'cita' : 'citas'}`;
 
     const canEditBase = role === 'admin' ||
       role === 'receptionist' ||
@@ -1467,15 +1462,25 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       elements.dateTimeSection.classList.toggle('hidden', !!timeStr);
     }
 
-    openModal();
+    // Usar skipAutoSlot: true porque ya tenemos una fecha/hora específica
+    openModal(null, { skipAutoSlot: true });
+
     if (elements.formDate) {
       elements.formDate.value = dateStr;
-      updateDoctorsByAreaAndDate();
-      updateAvailableTimeSlots();
+
       if (timeStr && elements.formTime) {
         elements.formTime.value = timeStr;
+      }
+
+      // Actualizar áreas disponibles para ese horario específico ANTES de médicos
+      updateAvailableAreas();
+      updateDoctorsByAreaAndDate();
+      updateAvailableTimeSlots();
+
+      if (timeStr) {
         validateDoctorSchedule();
       }
+
       updateModalSubtitle();
     }
   }
@@ -1545,17 +1550,15 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
   // Configurar event listeners
   function setupEventListeners() {
-    if (elements.btnApplyFilters) {
-      elements.btnApplyFilters.addEventListener('click', applyFiltersHandler);
+    if (elements.filterSearch) {
+      elements.filterSearch.addEventListener('input', debounce(applyFiltersHandler, 300));
     }
-    if (elements.btnClearFilters) {
-      elements.btnClearFilters.addEventListener('click', clearFiltersHandler);
-    }
+    // El manejador de limpieza de filtros ha sido eliminado en la refactorización unificada.
     if (elements.btnNewAppointment) {
-      elements.btnNewAppointment.addEventListener('click', () => openModal());
+      elements.btnNewAppointment.addEventListener('click', () => openModal(null, { preselectedDoctorId: state.filters.doctorId }));
     }
     if (elements.btnCreateFirst) {
-      elements.btnCreateFirst.addEventListener('click', () => openModal());
+      elements.btnCreateFirst.addEventListener('click', () => openModal(null, { preselectedDoctorId: state.filters.doctorId }));
     }
     if (elements.btnCloseModal) {
       elements.btnCloseModal.addEventListener('click', closeModal);
@@ -1574,16 +1577,34 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
     if (elements.formDate) {
       elements.formDate.addEventListener('change', () => {
+        updateAvailableAreas();
         updateDoctorsByAreaAndDate();
         updateAvailableResources();
       });
     }
     if (elements.formDoctor) {
-      elements.formDoctor.addEventListener('change', updateAvailableTimeSlots);
+      elements.formDoctor.addEventListener('change', () => {
+        updateAvailableTimeSlots();
+
+        // Si no estamos editando, intentar buscar el primer horario libre de ese médico
+        if (!state.editingId && elements.formDoctor.value && elements.formDate.value) {
+          const slots = getAvailableTimeSlots(elements.formDoctor.value, elements.formDate.value, 30, state.editingId);
+          const currentTime = elements.formTime.value;
+
+          if (slots.length > 0) {
+            // Solo cambiar si no hay hora o la hora actual no es válida/disponible para el nuevo médico
+            if (!currentTime || !slots.includes(currentTime)) {
+              elements.formTime.value = slots[0];
+              updateModalSubtitle();
+            }
+          }
+        }
+      });
     }
     if (elements.formTime) {
       elements.formTime.addEventListener('change', () => {
         validateDoctorSchedule();
+        updateAvailableAreas();
         updateDoctorsByAreaAndDate();
         updateAvailableResources();
       });
@@ -1673,26 +1694,11 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   }
 
   function applyFiltersHandler() {
-    state.filters = {
-      status: elements.filterStatus?.value || '',
-      doctorId: elements.filterDoctor?.value || '',
-      patientId: elements.filterPatient?.value || '',
-      dateFrom: elements.filterDateFrom?.value || '',
-      dateTo: elements.filterDateTo?.value || ''
-    };
+    state.filters.search = elements.filterSearch?.value || '';
     loadAppointments();
   }
 
-  function clearFiltersHandler() {
-    if (elements.filterStatus) elements.filterStatus.value = '';
-    if (elements.filterDoctor) elements.filterDoctor.value = '';
-    if (elements.filterPatient) elements.filterPatient.value = '';
-    if (elements.filterDateFrom) elements.filterDateFrom.value = '';
-    if (elements.filterDateTo) elements.filterDateTo.value = '';
-
-    state.filters = { status: '', doctorId: '', patientId: '', dateFrom: '', dateTo: '' };
-    loadAppointments();
-  }
+  // El manejador de limpieza de filtros ha sido eliminado en la refactorización unificada.
 
   function handleListAction(event) {
     const button = event.target.closest('button[data-action]');
@@ -1709,7 +1715,45 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
   }
 
-  function openModal(appointment = null) {
+  // Encontrar próxima cita disponible para un médico
+  function findNextAvailableSlot(doctorId) {
+    const doctor = store.find('doctors', doctorId);
+    if (!doctor) return null;
+
+    const today = new Date();
+    let current = new Date(today);
+
+    // Si ya es tarde para hoy, arrancar desde mañana
+    if (today.getHours() >= 17) {
+      current.setDate(current.getDate() + 1);
+    }
+
+    // Buscar en los próximos 15 días
+    for (let i = 0; i < 15; i++) {
+      const dateStr = current.toISOString().split('T')[0];
+      const slots = getAvailableTimeSlots(doctorId, dateStr);
+
+      if (slots.length > 0) {
+        // Si es hoy, filtrar slots que ya pasaron
+        if (dateStr === today.toISOString().split('T')[0]) {
+          const nowMinutes = today.getHours() * 60 + today.getMinutes();
+          const futureSlot = slots.find(s => {
+            const [h, m] = s.split(':').map(Number);
+            return (h * 60 + m) > nowMinutes + 15; // Dar un margen de 15 min
+          });
+          if (futureSlot) return { date: dateStr, time: futureSlot };
+        } else {
+          // Si es otro día, primer slot disponible
+          return { date: dateStr, time: slots[0] };
+        }
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return null;
+  }
+
+  function openModal(appointment = null, options = {}) {
+    const { preselectedDoctorId = null, skipAutoSlot = false } = options;
     state.editingId = appointment?.id || null;
     state.showModal = true;
     if (elements.modal) elements.modal.classList.remove('hidden');
@@ -1724,6 +1768,44 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       populateForm(appointment);
     } else {
       clearForm();
+
+      // Si hay un médico preseleccionado o el usuario es un médico
+      const doctorId = preselectedDoctorId || (role === 'doctor' ? user?.doctorId : null);
+
+      if (doctorId && elements.formDoctor && !skipAutoSlot) {
+        const doctor = store.find('doctors', doctorId);
+        if (doctor) {
+          // Seleccionar médico y área
+          elements.formDoctor.value = doctor.id;
+          if (elements.formArea && doctor.areaId) {
+            elements.formArea.value = doctor.areaId;
+          }
+
+          if (role === 'doctor') {
+            elements.formDoctor.disabled = true;
+          }
+
+          // Buscar automáticamente el próximo horario disponible
+          const nextSlot = findNextAvailableSlot(doctorId);
+          if (nextSlot && elements.formDate && elements.formTime) {
+            elements.formDate.value = nextSlot.date;
+            updateAvailableTimeSlots();
+            elements.formTime.value = nextSlot.time;
+            updateModalSubtitle();
+
+            showNotification(`Proxima disponibilidad para el ${nextSlot.date} a las ${nextSlot.time}`, 'success');
+          }
+        }
+      } else if (doctorId && elements.formDoctor && skipAutoSlot) {
+        // Si saltamos el auto-slot pero hay un doctor (ej: desde filtro o rol doctor), solo pre-seleccionamos
+        const doctor = store.find('doctors', doctorId);
+        if (doctor) {
+          elements.formDoctor.value = doctor.id;
+          if (elements.formArea && doctor.areaId) elements.formArea.value = doctor.areaId;
+          if (role === 'doctor') elements.formDoctor.disabled = true;
+        }
+      }
+
       if (role === 'patient' && user?.patientId) {
         const patient = store.find('patients', user.patientId);
         if (patient && elements.formPatient) {
@@ -1732,7 +1814,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           elements.formPatient.disabled = true;
         }
       }
-      if (elements.formDate) {
+
+      // Si no se encontró slot o no había médico, poner hoy por defecto
+      if (elements.formDate && !elements.formDate.value) {
         const today = new Date().toISOString().split('T')[0];
         elements.formDate.min = today;
         elements.formDate.value = today;
@@ -1874,6 +1958,47 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.equipmentInfo) elements.equipmentInfo.textContent = 'Ctrl+clic para seleccionar múltiples equipos';
   }
 
+  function updateAvailableAreas() {
+    if (!elements.formArea) return;
+
+    const date = elements.formDate?.value;
+    const time = elements.formTime?.value;
+    const duration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
+
+    const allAreas = store.get('areas');
+
+    // Si no hay fecha y hora activas, cargar todas las áreas como de costumbre
+    if (!date || !time) {
+      const options = allAreas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      elements.formArea.innerHTML = `<option value="">Seleccionar área</option>${options}`;
+      return;
+    }
+
+    // Encontrar médicos disponibles para ese slot específico
+    const availableDoctors = getAvailableDoctorsForDate(date, null, state.editingId, time, duration);
+    const availableAreaIds = new Set();
+
+    availableDoctors.forEach(d => {
+      availableAreaIds.add(d.areaId);
+      if (d.otherAreas && Array.isArray(d.otherAreas)) {
+        d.otherAreas.forEach(aid => availableAreaIds.add(aid));
+      }
+    });
+
+    const currentArea = elements.formArea.value;
+
+    // Solo mostrar áreas con médicos disponibles
+    const filteredAreas = allAreas.filter(a => availableAreaIds.has(a.id));
+
+    elements.formArea.innerHTML = '<option value="">Seleccionar área (disponibles)</option>' +
+      filteredAreas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+    // Intentar mantener el área seleccionada si sigue disponible
+    if (availableAreaIds.has(currentArea)) {
+      elements.formArea.value = currentArea;
+    }
+  }
+
   function updateDoctorsByAreaAndDate() {
     if (!elements.formDoctor || !elements.formArea) return;
 
@@ -1885,7 +2010,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (!selectedDate) {
       const doctors = store.get('doctors');
       let filteredDoctors = doctors;
-      if (areaId) filteredDoctors = doctors.filter(d => d.areaId === areaId);
+      if (areaId) filteredDoctors = doctors.filter(d => d.areaId === areaId || (d.otherAreas && d.otherAreas.includes(areaId)));
       const options = filteredDoctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
       elements.formDoctor.innerHTML = `<option value="">Seleccionar médico</option>${options}`;
       hideNoDoctorsMessage();
@@ -1943,12 +2068,31 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     const date = elements.formDate.value;
     const duration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
 
-    const availableSlots = getAvailableTimeSlots(doctorId, date, duration);
+    const availableSlots = getAvailableTimeSlots(doctorId, date, duration, state.editingId);
+
+    if (elements.formTime) {
+      const currentTime = elements.formTime.value;
+
+      if (availableSlots.length > 0) {
+        elements.formTime.innerHTML = '<option value="">Seleccionar horario</option>' +
+          availableSlots.map(slot => `<option value="${slot}">${slot}</option>`).join('');
+
+        // Si ya había una hora seleccionada y sigue estando disponible, mantenerla
+        if (currentTime && availableSlots.includes(currentTime)) {
+          elements.formTime.value = currentTime;
+        } else if (currentTime && !availableSlots.includes(currentTime)) {
+          // Si el horario ya no está disponible, limpiar
+          elements.formTime.value = '';
+          showNotification('El horario seleccionado ya no está disponible para este médico.', 'warning');
+        }
+      } else {
+        elements.formTime.innerHTML = '<option value="">No hay disponibilidad</option>';
+        elements.formTime.value = '';
+      }
+    }
 
     if (elements.availableTimes) {
-      elements.availableTimes.innerHTML = availableSlots
-        .map(slot => `<option value="${slot}">${slot}</option>`)
-        .join('');
+      elements.availableTimes.innerHTML = ''; // Limpiar datalist legado
     }
 
     if (elements.timeSlotInfo) {
@@ -2497,7 +2641,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         </div>
         
         <div style="padding: 1rem 1.5rem; text-align: center; color: rgba(255,255,255,0.8); font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);">
-          Documento administrativo • Generado automáticamente por Hospital General
+          Documento administrativo • Generado automáticamente por Hospital Universitario Manuel Núñez Tovar
         </div>
 
         <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: space-between; gap: 0.5rem;">

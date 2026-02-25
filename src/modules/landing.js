@@ -787,7 +787,6 @@ export default function mountLanding(container, { onGetStarted, store }) {
           font-size: 0.9rem;
           color: #6b7280;
           line-height: 1.5;
-          margin-bottom: 1.25rem;
           flex-grow: 1;
         }
 
@@ -795,10 +794,10 @@ export default function mountLanding(container, { onGetStarted, store }) {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 0.75rem;
-          background: #f8fafc;
           padding: 0.75rem;
-          border-radius: 8px;
+          border-radius: var(--radius);
           margin-top: auto;
+          border-top: 1px solid var(--neutralQuaternaryAlt);
         }
 
         .landing-area-stat {

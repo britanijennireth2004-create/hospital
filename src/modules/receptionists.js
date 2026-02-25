@@ -79,62 +79,28 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     const canManage = role === 'admin';
     root.innerHTML = `
       <div class="module-doctors">
-        <!-- Header -->
-        <div class="card">
+        <div class="card" style="padding: 0.75rem 1rem;">
           <div class="flex justify-between items-center">
-            <div>
-              <h2>Cuerpo Administrativo</h2>
-              <p class="text-muted">Gestión de staff de recepción y admisión</p>
-            </div>
             ${canManage ? `
               <button class="btn btn-primary" id="btn-new-rec">
                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                   ${icons.add} Nuevo Staff
                 </span>
               </button>
-            ` : ''}
+            ` : '<div></div>'}
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                ${icons.search || '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'}
+              </span>
+              <input type="text" class="input" id="filter-search" 
+                     placeholder="Buscar por nombre, cargo, área, estado..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;">
+            </div>
           </div>
         </div>
 
         <!-- Estadísticas -->
         <div class="grid grid-4" id="stats-container"></div>
-
-        <!-- Filtros -->
-        <div class="card">
-          <h3 class="mb-3">Búsqueda y Filtros</h3>
-          <div class="grid grid-4">
-            <div class="form-group">
-              <label class="form-label">Buscar</label>
-              <input type="text" class="input" id="filter-search" placeholder="Nombre, ID, Cargo...">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Cargo / Función</label>
-              <select class="input" id="filter-specialty">
-                <option value="">Todos</option>
-                <option value="Admisión General">Admisión General</option>
-                <option value="Urgencias">Urgencias</option>
-                <option value="Caja">Caja</option>
-                <option value="Información">Información</option>
-                <option value="Archivo">Archivo</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Área</label>
-              <select class="input" id="filter-area"><option value="">Todas</option></select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Estado</label>
-              <select class="input" id="filter-status">
-                <option value="active">Activos</option>
-                <option value="inactive">Inactivos</option>
-                <option value="all">Todos</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
         <!-- Lista -->
         <div class="card">
@@ -190,13 +156,13 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
                       <option value="J">J</option>
                       <option value="P">P</option>
                     </select>
-                    <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);">
                   </div>
                 </div>
               </div>
               <div class="grid grid-2 gap-4 mb-4">
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">TELÉFONO *</label><input type="tel" class="input" id="form-phone" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">EMAIL *</label><input type="email" class="input" id="form-email" required style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">TELÉFONO *</label><input type="tel" class="input" id="form-phone" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></div>
+                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">EMAIL *</label><input type="email" class="input" id="form-email" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></div>
               </div>
 
                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
@@ -205,7 +171,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
               <div class="grid grid-2 gap-4 mb-4">
                  <div class="form-group">
                     <label class="form-label font-bold" style="color: var(--modal-text);">CARGO *</label>
-                    <select class="input" id="form-specialty" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <select class="input" id="form-specialty" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);">
                         <option value="Admisión General">Admisión General</option>
                         <option value="Urgencias">Urgencias</option>
                         <option value="Caja">Caja</option>
@@ -213,18 +179,18 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
                         <option value="Archivo">Archivo</option>
                     </select>
                  </div>
-                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">ÁREA *</label><select class="input" id="form-area" required style="border-color: var(--modal-border); background: var(--modal-bg);"></select></div>
+                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">ÁREA *</label><select class="input" id="form-area" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></select></div>
               </div>
                <div class="grid grid-2 gap-4 mb-4">
-                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">ENTRADA</label><input type="time" class="input" id="form-start" value="08:00" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
-                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">SALIDA</label><input type="time" class="input" id="form-end" value="16:00" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">ENTRADA</label><input type="time" class="input" id="form-start" value="08:00" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></div>
+                 <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">SALIDA</label><input type="time" class="input" id="form-end" value="16:00" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></div>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
                 CREDENCIALES DE ACCESO
               </div>
               <div class="grid grid-2 gap-4 mb-4">
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">USUARIO</label><input type="text" class="input" id="form-username-cre" placeholder="Email por defecto" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
-                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">CONTRASEÑA *</label><input type="password" class="input" id="form-password-cre" placeholder="Mínimo 6 caracteres" style="border-color: var(--modal-border); background: var(--modal-bg);"></div>
+                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">USUARIO</label><input type="text" class="input" id="form-username-cre" placeholder="Email por defecto" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></div>
+                <div class="form-group"><label class="form-label font-bold" style="color: var(--modal-text);">CONTRASEÑA *</label><input type="password" class="input" id="form-password-cre" placeholder="Mínimo 6 caracteres" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></div>
               </div>
             </form>
           </div>
@@ -303,9 +269,9 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
       statusReason: root.querySelector('#status-reason')
     };
 
-    const areas = store.get('areas');
+    const areas = store.get('areas') || [];
     const opts = areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-    elements.area.innerHTML += opts;
+    if (elements.area) elements.area.innerHTML += opts;
     if (elements.fArea) elements.fArea.innerHTML = `<option value="">Seleccione área</option>` + opts;
   }
 
@@ -313,7 +279,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     const start = (state.currentPage - 1) * state.itemsPerPage;
     const items = state.receptionists.slice(start, start + state.itemsPerPage);
 
-    elements.count.textContent = `${state.receptionists.length} Registros`;
+    if (elements.count) elements.count.textContent = `${state.receptionists.length} Registros`;
     elements.list.innerHTML = items.map(item => {
       const area = store.find('areas', item.areaId);
       return `

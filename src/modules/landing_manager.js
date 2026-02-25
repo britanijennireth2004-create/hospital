@@ -37,145 +37,144 @@ export default function mountLandingManager(root, { store, user, role }) {
 
     root.innerHTML = `
       <div class="module-landing-manager">
-        <div class="card mb-4">
+        <div class="card-header mb-4">
           <div class="flex justify-between items-center">
             <div>
-              <h2>Configuración del Portal Público</h2>
-              <p class="text-muted">Gestión de identidad visual y estadísticas del hospital</p>
+              <!-- Estadísticas Automatizadas -->
+                <div class="grid stats-auto-grid gap-3">
+                  <div class="stat-info-card">
+                    <span class="stat-info-label">Pacientes</span>
+                    <span class="stat-info-value">${counts.patients}</span>
+                  </div>
+                  <div class="stat-info-card">
+                    <span class="stat-info-label">Médicos</span>
+                    <span class="stat-info-value">${counts.doctors}</span>
+                  </div>
+                  <div class="stat-info-card">
+                    <span class="stat-info-label">Citas</span>
+                    <span class="stat-info-value">${counts.appointments}</span>
+                  </div>
+                  <div class="stat-info-card">
+                    <span class="stat-info-label">Áreas Médicas</span>
+                    <span class="stat-info-value">${counts.areas}</span>
+                  </div>
+                </div>
             </div>
-            <button class="btn btn-primary" id="btn-save-config">
+          </div>
+          <button class="btn btn-primary" id="btn-save-config">
               ${ICONS.save || ''} Publicar Cambios
-            </button>
-          </div>
+          </button>
         </div>
 
-        <div class="responsive-grid">
-          <!-- Sección Hero e Imagen -->
-          <div class="card">
-            <h3 class="mb-4 flex items-center gap-2">
-              <span style="color: var(--accent);">${ICONS.rocket}</span> 
-              Identidad Visual (Hero)
-            </h3>
-            
-            <div class="form-group mb-3">
-              <label class="form-label">Título Principal</label>
-              <input type="text" class="input" id="hero-title" value="${c.hero.title}">
-            </div>
-            
-            <div class="form-group mb-4">
-              <label class="form-label">Imagen de Fondo</label>
-              <div class="upload-container mb-2">
-                <div class="hero-preview-small mb-2" id="hero-preview-box" style="background-image: url('${c.hero.backgroundImage || 'img/hospital.jpg'}');">
-                  ${!c.hero.backgroundImage ? '<span>Sin imagen</span>' : ''}
+        <div class="card">
+          <div class="responsive-grid">
+            <!-- Sección Hero e Imagen -->
+            <div class="card-gestion">
+              <div class="card-gestion-header">
+                <h3 class="mb-0 flex items-center gap-2">
+                  <span style="color: var(--themeDark);">${ICONS.rocket}</span> 
+                  Identidad Visual (Hero)
+                </h3>
+              </div>
+              
+              <div class="card-body">
+                <div class="form-group mb-3">
+                  <label class="form-label">Título Principal</label>
+                  <input type="text" class="input" id="hero-title" value="${c.hero.title}">
                 </div>
-                <div class="upload-actions">
-                  <input type="file" id="hero-file-input" accept="image/*" style="display: none;">
-                  <button class="btn btn-outline flex-1" id="btn-trigger-upload">
-                    📁 <span class="btn-text">Subir Imagen</span>
-                  </button>
-                  <button class="btn btn-outline btn-reset" id="btn-reset-img" title="Restaurar por defecto">
-                    🔄
-                  </button>
+                
+                <div class="form-group mb-4">
+                  <label class="form-label">Imagen de Fondo</label>
+                  <div class="upload-container mb-2">
+                    <div class="hero-preview-small mb-2" id="hero-preview-box" style="background-image: url('${c.hero.backgroundImage || 'img/hospital.jpg'}');">
+                      ${!c.hero.backgroundImage ? '<span>Sin imagen</span>' : ''}
+                    </div>
+                    <div class="upload-actions">
+                      <input type="file" id="hero-file-input" accept="image/*" style="display: none;">
+                      <button class="btn btn-outline flex-1" id="btn-trigger-upload">
+                        📁 <span class="btn-text">Subir Imagen</span>
+                      </button>
+                      <button class="btn btn-outline btn-reset" id="btn-reset-img" title="Restaurar por defecto">
+                        🔄
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-xs text-muted">Se recomienda una imagen horizontal de alta resolución (mínimo 1200x600px).</p>
+                </div>
+
+                <div class="form-group mb-3">
+                  <label class="form-label">Subtítulo</label>
+                  <input type="text" class="input" id="hero-subtitle" value="${c.hero.subtitle}">
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Descripción</label>
+                  <textarea class="input" id="hero-description" rows="3">${c.hero.description}</textarea>
                 </div>
               </div>
-              <p class="text-xs text-muted">Se recomienda una imagen horizontal de alta resolución (mínimo 1200x600px).</p>
             </div>
 
-            <div class="form-group mb-3">
-              <label class="form-label">Subtítulo</label>
-              <input type="text" class="input" id="hero-subtitle" value="${c.hero.subtitle}">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Descripción</label>
-              <textarea class="input" id="hero-description" rows="3">${c.hero.description}</textarea>
-            </div>
-          </div>
-
-          <!-- Estadísticas Automatizadas -->
-          <div class="card">
-            <h3 class="mb-4 flex items-center gap-2">
-              <span style="color: var(--accent);">${ICONS.chart || ''}</span> 
-              Estadísticas del Sistema (Auto)
-            </h3>
-            <p class="text-sm mb-4">El portal mostrará automáticamente el total de registros detectados en cada módulo:</p>
-            
-            <div class="grid stats-auto-grid gap-3">
-              <div class="stat-info-card">
-                <span class="stat-info-label">Pacientes</span>
-                <span class="stat-info-value">${counts.patients}</span>
+            <!-- Contacto -->
+            <div class="card-gestion">
+              <div class="card-gestion-header">
+                <h3 class="mb-0 flex items-center gap-2">
+                  <span style="color: var(--themeDark);">${ICONS.phone}</span> 
+                  Información de Contacto
+                </h3>
               </div>
-              <div class="stat-info-card">
-                <span class="stat-info-label">Médicos</span>
-                <span class="stat-info-value">${counts.doctors}</span>
-              </div>
-              <div class="stat-info-card">
-                <span class="stat-info-label">Citas</span>
-                <span class="stat-info-value">${counts.appointments}</span>
-              </div>
-              <div class="stat-info-card">
-                <span class="stat-info-label">Áreas Médicas</span>
-                <span class="stat-info-value">${counts.areas}</span>
+              <div class="card-body">
+                <div class="form-group mb-3">
+                  <label class="form-label">Email</label>
+                  <input type="email" class="input" id="contact-email" value="${c.contact.email}">
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label">Teléfono</label>
+                  <input type="text" class="input" id="contact-phone" value="${c.contact.phone}">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Dirección</label>
+                  <input type="text" class="input" id="contact-address" value="${c.contact.address}">
+                </div>
               </div>
             </div>
 
-            <div class="mt-4 p-3 info-box" style="background: var(--bg-light); border-radius: 8px; border-left: 4px solid var(--accent);">
-              <p class="text-xs"><strong>Nota:</strong> No es necesario editar estos números. Se actualizan automáticamente cuando se agregan o eliminan registros en los módulos respectivos.</p>
-            </div>
-          </div>
-
-          <!-- Contacto -->
-          <div class="card">
-            <h3 class="mb-4 flex items-center gap-2">
-              <span style="color: var(--accent);">${ICONS.phone}</span> 
-              Información de Contacto
-            </h3>
-            <div class="form-group mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" class="input" id="contact-email" value="${c.contact.email}">
-            </div>
-            <div class="form-group mb-3">
-              <label class="form-label">Teléfono</label>
-              <input type="text" class="input" id="contact-phone" value="${c.contact.phone}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Dirección</label>
-              <input type="text" class="input" id="contact-address" value="${c.contact.address}">
-            </div>
-          </div>
-
-          <!-- Redes Sociales -->
-          <div class="card">
-            <h3 class="mb-4 flex items-center gap-2">
-              <span style="color: var(--accent);">${ICONS.users}</span> 
-              Redes Sociales
-            </h3>
-            <div class="form-group mb-3">
-              <label class="form-label">Instagram</label>
-              <input type="text" class="input" id="social-instagram" value="${c.social.instagram}">
-            </div>
-            <div class="form-group mb-3">
-              <label class="form-label">Telegram</label>
-              <input type="text" class="input" id="social-telegram" value="${c.social.telegram}">
-            </div>
-            <div class="form-group mb-3">
-              <label class="form-label">WhatsApp</label>
-              <input type="text" class="input" id="social-whatsapp" value="${c.social.whatsapp}">
+            <!-- Redes Sociales -->
+            <div class="card-gestion">
+              <div class="card-gestion-header">
+                <h3 class="mb-0 flex items-center gap-2">
+                  <span style="color: var(--themeDark);">${ICONS.users}</span> 
+                  Redes Sociales
+                </h3>
+              </div>
+              <div class="card-body">
+                <div class="form-group mb-3">
+                  <label class="form-label">Instagram</label>
+                  <input type="text" class="input" id="social-instagram" value="${c.social.instagram}">
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label">Telegram</label>
+                  <input type="text" class="input" id="social-telegram" value="${c.social.telegram}">
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label">WhatsApp</label>
+                  <input type="text" class="input" id="social-whatsapp" value="${c.social.whatsapp}">
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       <style>
         .responsive-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
           gap: 1.5rem;
         }
         .stats-auto-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-          gap: 0.75rem;
+          gap: 4rem;
+          width: 60vw
         }
         .hero-preview-small {
           width: 100%;
@@ -207,7 +206,6 @@ export default function mountLandingManager(root, { store, user, role }) {
           box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         .stat-info-card:hover {
-          transform: translateY(-3px);
           border-color: var(--accent);
           box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }

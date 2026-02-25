@@ -8,12 +8,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
     clinicalRecords: [],
     filteredRecords: [],
     filters: {
-      patientId: '',
-      doctorId: '',
-      dateFrom: '',
-      dateTo: '',
-      type: '',
-      status: ''
+      search: ''
     },
     editingId: null,
     isLoading: false,
@@ -183,57 +178,32 @@ export default function mountClinical(root, { bus, store, user, role }) {
   // Aplicar filtros
   function applyFilters(records) {
     return records.filter(record => {
-      // Filtro por paciente
-      if (state.filters.patientId && record.patientId !== state.filters.patientId) {
-        return false;
-      }
-
-      // Filtro por médico (solo para admin y doctor)
-      if (state.filters.doctorId && record.doctorId !== state.filters.doctorId) {
-        return false;
-      }
-
-      // Filtro por tipo
-      if (state.filters.type && record.type !== state.filters.type) {
-        return false;
-      }
-
-      // Filtro por estado
-      if (state.filters.status && record.status !== state.filters.status) {
-        return false;
-      }
-
-      // Filtro por fecha desde
-      if (state.filters.dateFrom) {
-        const fromDate = new Date(state.filters.dateFrom);
-        const recordDate = new Date(record.date);
-        if (recordDate < fromDate) return false;
-      }
-
-      // Filtro por fecha hasta
-      if (state.filters.dateTo) {
-        const toDate = new Date(state.filters.dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        const recordDate = new Date(record.date);
-        if (recordDate > toDate) return false;
-      }
-
-      // Búsqueda por texto
+      // Búsqueda unificada
       if (state.searchQuery) {
         const query = state.searchQuery.toLowerCase();
+
+        const patient = store.find('patients', record.patientId);
+        const doctor = store.find('doctors', record.doctorId);
+
+        // Traducir tipo y estado
+        const typeText = getTypeText(record.type);
+        const statusText = record.status === 'draft' ? 'borrador draft' : 'finalizado finalized finished';
+
         const searchableText = [
+          patient?.name,
+          doctor?.name,
           record.symptoms,
           record.diagnosis,
           record.treatment,
-          record.notes
+          record.notes,
+          record.type,
+          typeText,
+          statusText,
+          record.date
         ].filter(Boolean).join(' ').toLowerCase();
 
         if (!searchableText.includes(query)) {
-          // También buscar en nombre del paciente
-          const patient = store.find('patients', record.patientId);
-          if (!patient?.name.toLowerCase().includes(query)) {
-            return false;
-          }
+          return false;
         }
       }
 
@@ -248,110 +218,33 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="module-clinical">
-        <!-- Header -->
-        <div class="card">
+        <!-- Barra de búsqueda + Botón -->
+        <div class="card" style="padding: 0.75rem 1rem;">
           <div class="flex justify-between items-center">
-            <div>
-              <h2><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> Historia Clínica</h2>
-              <p class="text-muted">Registros médicos electrónicos de pacientes</p>
-            </div>
             ${canCreate ? `
               <button class="btn btn-primary" id="btn-new-record">
                 <span>+</span> Nuevo Registro
               </button>
-            ` : ''}
+            ` : '<div></div>'}
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input 
+                type="text" 
+                class="input" 
+                id="search-input" 
+                placeholder="Buscar pacientes, médicos, diagnósticos, síntomas, estado..."
+                style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; width: 100%; height: 40px;"
+                value="${state.searchQuery}"
+              >
+            </div>
           </div>
         </div>
 
         <!-- Estadísticas -->
         <div class="grid grid-4" id="stats-container">
           <!-- Se llenará dinámicamente -->
-        </div>
-
-        <!-- Barra de búsqueda y filtros -->
-        <div class="card">
-          <div class="flex justify-between items-center mb-3">
-            <h3 style="margin: 0;">Registros Clínicos</h3>
-            <div class="flex items-center gap-2">
-              <div class="relative" style="flex: 1; max-width: 500px;">
-                <input 
-                  type="text" 
-                  class="input" 
-                  id="search-input" 
-                  placeholder="Buscar síntomas, diagnósticos, pacientes..."
-                  value="${state.searchQuery}"
-                >
-                <div style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted);">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </div>
-              </div>
-              <button class="btn btn-outline btn-sm" id="btn-advanced-filters">
-                Filtros avanzados
-              </button>
-            </div>
-          </div>
-          
-          <!-- Filtros avanzados (colapsable) -->
-          <div id="advanced-filters" class="hidden">
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Paciente</label>
-                <select class="input" id="filter-patient">
-                  <option value="">Todos los pacientes</option>
-                </select>
-              </div>
-              
-              ${role !== 'doctor' && role !== 'patient' ? `
-                <div class="form-group">
-                  <label class="form-label">Médico</label>
-                  <select class="input" id="filter-doctor">
-                    <option value="">Todos los médicos</option>
-                  </select>
-                </div>
-              ` : ''}
-              
-              <div class="form-group">
-                <label class="form-label">Tipo</label>
-                <select class="input" id="filter-type">
-                  <option value="">Todos los tipos</option>
-                  <option value="consultation">Consulta</option>
-                  <option value="followup">Seguimiento</option>
-                  <option value="emergency">Urgencia</option>
-                  <option value="lab">Laboratorio</option>
-                  <option value="prescription">Receta</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Estado</label>
-                <select class="input" id="filter-status">
-                  <option value="">Todos</option>
-                  <option value="draft">Borrador</option>
-                  <option value="finalized">Finalizado</option>
-                  <option value="archived">Archivado</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Fecha desde</label>
-                <input type="date" class="input" id="filter-date-from">
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Fecha hasta</label>
-                <input type="date" class="input" id="filter-date-to">
-              </div>
-            </div>
-            
-            <div class="flex justify-end gap-2 mt-3">
-              <button class="btn btn-outline" id="btn-clear-filters">
-                Limpiar filtros
-              </button>
-              <button class="btn btn-primary" id="btn-apply-filters">
-                Aplicar filtros
-              </button>
-            </div>
-          </div>
         </div>
 
         <!-- Contenido principal -->
@@ -410,12 +303,12 @@ export default function mountClinical(root, { bus, store, user, role }) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                    <div class="form-group">
                       <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">PACIENTE *</label>
-                      <select class="input" id="form-patient" required style="border-color: #cbd5e1;"></select>
+                      <select class="input" id="form-patient" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></select>
                    </div>
                    <div class="form-group">
                       <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">MÉDICO RESPONSABLE *</label>
                       ${role !== 'doctor' ? `
-                        <select class="input" id="form-doctor" required style="border-color: #cbd5e1;"></select>
+                        <select class="input" id="form-doctor" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></select>
                       ` : `
                         <input type="text" class="input" value="${user.name}" readonly style="background: #edf2f7; border-color: #cbd5e1;">
                         <input type="hidden" id="form-doctor" value="${user?.doctorId || ''}">
@@ -426,11 +319,11 @@ export default function mountClinical(root, { bus, store, user, role }) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1.25rem;">
                    <div class="form-group">
                       <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">FECHA *</label>
-                      <input type="date" class="input" id="form-date" required value="${new Date().toISOString().split('T')[0]}" style="border-color: #cbd5e1;">
+                      <input type="date" class="input" id="form-date" required value="${new Date().toISOString().split('T')[0]}" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);">
                    </div>
                    <div class="form-group">
                       <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">TIPO DE ATENCIÓN *</label>
-                      <select class="input" id="form-type" required style="border-color: #cbd5e1;">
+                      <select class="input" id="form-type" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);">
                         <option value="consultation">Consulta General</option>
                         <option value="followup">Seguimiento</option>
                         <option value="emergency">Urgencia</option>
@@ -553,18 +446,18 @@ export default function mountClinical(root, { bus, store, user, role }) {
       recordsListContainer: root.querySelector('#records-list-container'),
       pagination: root.querySelector('#pagination'),
 
-      // Búsqueda y filtros
+      // Búsqueda
       searchInput: root.querySelector('#search-input'),
-      btnAdvancedFilters: root.querySelector('#btn-advanced-filters'),
-      advancedFilters: root.querySelector('#advanced-filters'),
-      filterPatient: root.querySelector('#filter-patient'),
-      filterDoctor: root.querySelector('#filter-doctor'),
-      filterType: root.querySelector('#filter-type'),
-      filterStatus: root.querySelector('#filter-status'),
-      filterDateFrom: root.querySelector('#filter-date-from'),
-      filterDateTo: root.querySelector('#filter-date-to'),
-      btnClearFilters: root.querySelector('#btn-clear-filters'),
-      btnApplyFilters: root.querySelector('#btn-apply-filters'),
+      btnAdvancedFilters: null,
+      advancedFilters: null,
+      filterPatient: null,
+      filterDoctor: null,
+      filterType: null,
+      filterStatus: null,
+      filterDateFrom: null,
+      filterDateTo: null,
+      btnClearFilters: null,
+      btnApplyFilters: null,
 
       // Modal
       modal: root.querySelector('#record-modal'),
@@ -610,13 +503,13 @@ export default function mountClinical(root, { bus, store, user, role }) {
     if (paginatedRecords.length === 0) {
       elements.emptyState.classList.remove('hidden');
       elements.recordsList.innerHTML = '';
-      elements.recordsCount.textContent = '0 registros';
+      if (elements.recordsCount) elements.recordsCount.textContent = '0 registros';
       elements.pagination.classList.add('hidden');
       return;
     }
 
     elements.emptyState.classList.add('hidden');
-    elements.recordsCount.textContent = `${state.filteredRecords.length} ${state.filteredRecords.length === 1 ? 'registro' : 'registros'} `;
+    if (elements.recordsCount) elements.recordsCount.textContent = `${state.filteredRecords.length} ${state.filteredRecords.length === 1 ? 'registro' : 'registros'} `;
     elements.pagination.classList.remove('hidden');
 
     const recordsHtml = paginatedRecords.map(record => {
@@ -885,35 +778,24 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
   // ===== EVENT LISTENERS =====
   function setupEventListeners() {
-    // Búsqueda en tiempo real
+    // Helper para debouncing
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Búsqueda unificada
     if (elements.searchInput) {
-      let searchTimeout;
-      elements.searchInput.addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-          state.searchQuery = e.target.value;
-          state.currentPage = 1;
-          loadClinicalRecords();
-        }, 300);
-      });
+      elements.searchInput.addEventListener('input', debounce((e) => {
+        state.searchQuery = e.target.value;
+        state.currentPage = 1;
+        loadClinicalRecords();
+      }, 300));
     }
 
-    // Filtros avanzados
-    if (elements.btnAdvancedFilters) {
-      elements.btnAdvancedFilters.addEventListener('click', () => {
-        elements.advancedFilters.classList.toggle('hidden');
-      });
-    }
-
-    // Aplicar filtros
-    if (elements.btnApplyFilters) {
-      elements.btnApplyFilters.addEventListener('click', applyFiltersHandler);
-    }
-
-    // Limpiar filtros
-    if (elements.btnClearFilters) {
-      elements.btnClearFilters.addEventListener('click', clearFiltersHandler);
-    }
 
     // Nuevo registro (solo si tiene permisos)
     if (elements.btnNewRecord) {
@@ -969,54 +851,8 @@ export default function mountClinical(root, { bus, store, user, role }) {
       elements.pagination.addEventListener('click', handlePagination);
     }
 
-    // Enter en búsqueda
-    if (elements.searchInput) {
-      elements.searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          state.searchQuery = e.target.value;
-          state.currentPage = 1;
-          loadClinicalRecords();
-        }
-      });
-    }
   }
 
-  function applyFiltersHandler() {
-    state.filters = {
-      patientId: elements.filterPatient?.value || '',
-      doctorId: elements.filterDoctor?.value || '',
-      type: elements.filterType?.value || '',
-      status: elements.filterStatus?.value || '',
-      dateFrom: elements.filterDateFrom?.value || '',
-      dateTo: elements.filterDateTo?.value || ''
-    };
-
-    state.currentPage = 1;
-    loadClinicalRecords();
-  }
-
-  function clearFiltersHandler() {
-    if (elements.filterPatient) elements.filterPatient.value = '';
-    if (elements.filterDoctor) elements.filterDoctor.value = '';
-    if (elements.filterType) elements.filterType.value = '';
-    if (elements.filterStatus) elements.filterStatus.value = '';
-    if (elements.filterDateFrom) elements.filterDateFrom.value = '';
-    if (elements.filterDateTo) elements.filterDateTo.value = '';
-    if (elements.searchInput) elements.searchInput.value = '';
-
-    state.filters = {
-      patientId: '',
-      doctorId: '',
-      type: '',
-      status: '',
-      dateFrom: '',
-      dateTo: ''
-    };
-
-    state.searchQuery = '';
-    state.currentPage = 1;
-    loadClinicalRecords();
-  }
 
   function handlePagination(event) {
     const button = event.target.closest('button[data-page]');
