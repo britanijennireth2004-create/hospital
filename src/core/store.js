@@ -748,9 +748,11 @@ export async function createStore(bus) {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      return this.query('appointments', appointment => {
-        const appointmentDate = new Date(appointment.dateTime);
-        return appointmentDate >= today && appointmentDate < tomorrow;
+      return this.query('appointments', {
+        dateTime: value => {
+          const appointmentDate = new Date(value);
+          return appointmentDate >= today && appointmentDate < tomorrow;
+        }
       });
     },
 
@@ -759,9 +761,11 @@ export async function createStore(bus) {
       const futureDate = new Date(now);
       futureDate.setDate(futureDate.getDate() + days);
 
-      return this.query('appointments', appointment => {
-        const appointmentDate = new Date(appointment.dateTime);
-        return appointmentDate >= now && appointmentDate <= futureDate;
+      return this.query('appointments', {
+        dateTime: value => {
+          const appointmentDate = new Date(value);
+          return appointmentDate >= now && appointmentDate <= futureDate;
+        }
       });
     },
 
