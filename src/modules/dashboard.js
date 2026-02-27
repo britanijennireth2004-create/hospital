@@ -23,7 +23,7 @@ const icons = {
 export default function mountDashboard(root, { bus, store, user, role }) {
   const state = {
     stats: {},
-    recentAppointments: [],
+    chartData: [],
     isLoading: true
   };
 
@@ -31,54 +31,28 @@ export default function mountDashboard(root, { bus, store, user, role }) {
   function render() {
     root.innerHTML = `
       <div class="module-dashboard">
-        <!-- Header -->
         <!-- Estadísticas -->
-        <div class="grid grid-gap-2 grid-4 mb-4" id="stats-container">
+        <div class="stats-auto-grid mb-4" id="stats-container">
           <!-- Se llenará dinámicamente -->
         </div>
 
-        <!-- Contenido principal -->
-        <div class="grid grid-2">
-          <!-- Citas recientes -->
-          <div class="card">
-            <div class="card-header">
-              <h3 style="margin: 0;">Citas recientes</h3>
-              <a href="#appointments" class="btn btn-outline btn-sm">Ver todas</a>
-            </div>
-            <div id="recent-appointments" style="min-height: 200px;">
-              <!-- Se llenará dinámicamente -->
-            </div>
+        <!-- Gráfico de Citas -->
+        <div class="card mb-4">
+          <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+              <span>${icons.calendar}</span>
+              Proyección de Citas (Próximos 30 días)
+            </h3>
+            <div class="text-muted text-sm">Frecuencia estimada de actividad asistencial</div>
           </div>
-
-          <!-- Acciones rápidas -->
-          <div class="card">
-            <div class="card-header">
-              <h3 style="margin: 0;">Acciones rápidas</h3>
-            </div>
-            <div id="quick-actions" style="padding: 0.5rem;">
-              <!-- Se llenará dinámicamente -->
-            </div>
+          <div id="appointments-chart-container" style="min-height: 350px; padding: 1rem 0;">
+            <!-- El gráfico SVG se renderizará aquí -->
           </div>
         </div>
 
-        <!-- Información del sistema -->
-        <div class="card">
-          <h3>Información del sistema</h3>
-          <div class="grid grid-3">
-            <div>
-              <div class="text-muted text-sm">Usuario</div>
-              <div class="font-bold">${user.name}</div>
-            </div>
-            <div>
-              <div class="text-muted text-sm">Rol</div>
-              <div class="font-bold">${role}</div>
-            </div>
-            <div>
-              <div class="text-muted text-sm">Último acceso</div>
-              <div class="font-bold">${new Date().toLocaleTimeString('es-ES')}</div>
-            </div>
-          </div>
-        </div>
+        <style>
+          /* El estilo de .stats-auto-grid y .stat-info-card se hereda de base.css */
+        </style>
       </div>
     `;
 
@@ -94,13 +68,9 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       // Cargar estadísticas
       await loadStats();
 
-      // Cargar citas recientes
-      await loadRecentAppointments();
-
       // Renderizar componentes
       renderStats();
-      renderRecentAppointments();
-      renderQuickActions();
+      renderAppointmentsChart();
 
     } catch (error) {
       console.error('Error cargando dashboard:', error);
@@ -154,27 +124,112 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     };
   }
 
-  // Cargar citas recientes
-  async function loadRecentAppointments() {
-    let appointments = store.get('appointments');
+  // Renderizar gráfico de citas
+  function renderAppointmentsChart() {
+    const container = root.querySelector('#appointments-chart-container');
+    if (!container) return;
+
+    const appointments = store.get('appointments');
 
     // Filtrar por rol
+    let myAppointments = appointments;
     if (role === 'patient' && user.patientId) {
-      appointments = appointments.filter(a => a.patientId === user.patientId);
+      myAppointments = appointments.filter(a => a.patientId === user.patientId);
     } else if (role === 'doctor' && user.doctorId) {
-      appointments = appointments.filter(a => a.doctorId === user.doctorId);
-    } else if (role === 'nurse') {
-      // Las enfermeras ven todas las citas
-      appointments = appointments;
-    } else if (role === 'receptionist') {
-      // Las recepcionistas ven todas las citas
-      appointments = appointments;
+      myAppointments = appointments.filter(a => a.doctorId === user.doctorId);
     }
 
-    // Ordenar por fecha y limitar
-    state.recentAppointments = appointments
-      .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime))
-      .slice(0, 5);
+    // Calcular datos para los próximos 30 días
+    const data = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 30; i++) {
+      const currentDay = new Date(today);
+      currentDay.setDate(today.getDate() + i);
+      const dayStr = currentDay.toISOString().split('T')[0];
+
+      const count = myAppointments.filter(a => {
+        const aDate = new Date(a.dateTime);
+        aDate.setHours(0, 0, 0, 0);
+        return aDate.getTime() === currentDay.getTime();
+      }).length;
+
+      data.push({
+        date: currentDay,
+        label: i % 5 === 0 ? currentDay.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '',
+        count
+      });
+    }
+
+    state.chartData = data;
+
+    // Dibujar SVG
+    const width = container.clientWidth || 800;
+    const height = 300;
+    const padding = { top: 20, right: 30, bottom: 40, left: 40 };
+
+    const maxCount = Math.max(...data.map(d => d.count), 5); // Al menos escala 5
+
+    const getX = (index) => padding.left + (index * (width - padding.left - padding.right) / (data.length - 1));
+    const getY = (count) => height - padding.bottom - (count * (height - padding.top - padding.bottom) / maxCount);
+
+    // Generar puntos para la línea
+    const points = data.map((d, i) => `${getX(i)},${getY(d.count)}`).join(' ');
+
+    // Generar etiquetas de fondo (líneas horizontales)
+    const yLines = [];
+    for (let i = 0; i <= maxCount; i += Math.ceil(maxCount / 5)) {
+      const y = getY(i);
+      yLines.push(`
+        <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--border)" stroke-dasharray="4" />
+        <text x="${padding.left - 10}" y="${y + 5}" font-size="12" fill="var(--muted)" text-anchor="end">${i}</text>
+      `);
+    }
+
+    // Generar etiquetas de fechas
+    const xLabels = data.map((d, i) => d.label ? `
+      <text x="${getX(i)}" y="${height - 10}" font-size="11" fill="var(--muted)" text-anchor="middle">${d.label}</text>
+    ` : '').join('');
+
+    container.innerHTML = `
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible;">
+        <!-- Líneas de fondo -->
+        ${yLines.join('')}
+        
+        <!-- Área bajo la curva (gradiente) -->
+        <defs>
+          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.2" />
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <polyline
+          points="${padding.left},${height - padding.bottom} ${points} ${width - padding.right},${height - padding.bottom}"
+          fill="url(#chartGradient)"
+        />
+        
+        <!-- Línea del gráfico -->
+        <polyline
+          points="${points}"
+          fill="none"
+          stroke="var(--accent)"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        
+        <!-- Puntos del gráfico -->
+        ${data.map((d, i) => `
+          <circle cx="${getX(i)}" cy="${getY(d.count)}" r="4" fill="white" stroke="var(--accent)" stroke-width="2">
+            <title>${d.date.toLocaleDateString()}: ${d.count} citas</title>
+          </circle>
+        `).join('')}
+        
+        <!-- Etiquetas de fechas -->
+        ${xLabels}
+      </svg>
+    `;
   }
 
   // Renderizar estadísticas
@@ -190,59 +245,59 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     if (role === 'patient') {
       statsHTML = `
         <div class="stat-info-card">
-          <div class="text-muted text-sm">Mis Citas</div>
-          <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
-          <div class="text-xs text-muted mt-1">${icons.calendar} Programadas</div>
+          <span class="stat-info-label">Mis Citas</span>
+          <span class="stat-info-value">${stats.totalAppointments}</span>
+          <span class="stat-info-sub">${icons.calendar} Programadas</span>
         </div>
         
         <div class="stat-info-card">
-          <div class="text-muted text-sm">Historias Clínicas</div>
-          <div class="text-2xl font-bold" style="color: var(--accent-2);">${store.get('clinicalRecords')?.filter(r => r.patientId === user.patientId).length || 0}</div>
-          <div class="text-xs text-muted mt-1">${icons.clipboard} Registros propios</div>
+          <span class="stat-info-label">Historias Clínicas</span>
+          <span class="stat-info-value">${store.get('clinicalRecords')?.filter(r => r.patientId === user.patientId).length || 0}</span>
+          <span class="stat-info-sub">${icons.clipboard} Registros propios</span>
         </div>
         
         <div class="stat-info-card">
-          <div class="text-muted text-sm">Próxima Visita</div>
-          <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments > 0 ? 'Programada' : 'No hay'}</div>
-          <div class="text-xs text-muted mt-1">${icons.info} Ver detalle abajo</div>
+          <span class="stat-info-label">Próxima Visita</span>
+          <span class="stat-info-value" style="font-size: 1.5rem;">${stats.upcomingAppointments > 0 ? 'Programada' : 'No hay'}</span>
+          <span class="stat-info-sub">${icons.info} Ver detalle abajo</span>
         </div>
       `;
     } else {
       // Estadísticas para personal (admin, doctor, nurse, receptionist)
       statsHTML = `
         <div class="stat-info-card">
-          <div class="text-muted text-sm">Citas totales</div>
-          <div class="text-2xl font-bold" style="color: var(--accent);">${stats.totalAppointments}</div>
-          <div class="text-xs text-muted mt-1">${icons.calendar} ${stats.todayAppointments} hoy</div>
+          <span class="stat-info-label">Citas totales</span>
+          <span class="stat-info-value">${stats.totalAppointments}</span>
+          <span class="stat-info-sub">${icons.calendar} ${stats.todayAppointments} hoy</span>
         </div>
         
         <div class="stat-info-card">
-          <div class="text-muted text-sm">Pacientes</div>
-          <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.totalPatients}</div>
-          <div class="text-xs text-muted mt-1">${icons.user} Registrados</div>
+          <span class="stat-info-label">Pacientes</span>
+          <span class="stat-info-value">${stats.totalPatients}</span>
+          <span class="stat-info-sub">${icons.user} Registrados</span>
         </div>
         
         <div class="stat-info-card">
-          <div class="text-muted text-sm">Médicos</div>
-          <div class="text-2xl font-bold" style="color: var(--info);">${stats.totalDoctors}</div>
-          <div class="text-xs text-muted mt-1">${icons.doctor} Activos</div>
+          <span class="stat-info-label">Médicos</span>
+          <span class="stat-info-value">${stats.totalDoctors}</span>
+          <span class="stat-info-sub">${icons.doctor} Activos</span>
         </div>
       `;
 
       if (role === 'nurse') {
         statsHTML += `
           <div class="stat-info-card">
-            <div class="text-muted text-sm">Pacientes en triage</div>
-            <div class="text-2xl font-bold" style="color: var(--warning);">${stats.triagePending || 0}</div>
-            <div class="text-xs text-muted mt-1">${icons.triage} Pendientes</div>
+            <span class="stat-info-label">Pacientes en triage</span>
+            <span class="stat-info-value">${stats.triagePending || 0}</span>
+            <span class="stat-info-sub">${icons.triage} Pendientes</span>
           </div>
         `;
       } else {
         statsHTML += `
           <div class="stat-info-card">
-            <div class="text-muted text-sm">Próximas citas</div>
-            <div class="text-2xl font-bold" style="color: var(--warning);">${stats.upcomingAppointments}</div>
-            <div class="text-xs text-muted mt-1">${icons.warning} 7 días</div>
+            <span class="stat-info-label">Próximas citas</span>
+            <span class="stat-info-value">${stats.upcomingAppointments}</span>
+            <span class="stat-info-sub">${icons.warning} 7 días</span>
           </div>
         `;
       }
@@ -251,206 +306,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     container.innerHTML = statsHTML;
   }
 
-  // Renderizar citas recientes
-  function renderRecentAppointments() {
-    const container = root.querySelector('#recent-appointments');
-    if (!container) return;
 
-    if (state.recentAppointments.length === 0) {
-      container.innerHTML = `
-        <div class="text-center" style="padding: 3rem 1rem; color: var(--muted);">
-          <div style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;">${icons.calendar}</div>
-          <p>No hay citas recientes</p>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = state.recentAppointments.map(appointment => {
-      const patient = store.find('patients', appointment.patientId);
-      const doctor = store.find('doctors', appointment.doctorId);
-
-      const date = new Date(appointment.dateTime);
-      const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-      const dateStr = date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-
-      // Badge de estado
-      const statusColor = {
-        scheduled: 'var(--triage-blue-light)',
-        confirmed: 'var(--triage-yellow-light)',
-        completed: 'var(--triage-green-light)',
-        cancelled: 'var(--triage-red-light)'
-      };
-
-      // Icon for status (use check/alert/info)
-      let statusIcon = '';
-      switch (appointment.status) {
-        case 'completed':
-          statusIcon = icons.successCheck;
-          break;
-        case 'scheduled':
-          statusIcon = icons.info;
-          break;
-        case 'confirmed':
-          statusIcon = icons.warning;
-          break;
-        case 'cancelled':
-          statusIcon = '';
-          break;
-      }
-
-      return `
-        <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border);">
-          <div style="width: 40px; height: 40px; background: ${statusColor[appointment.status] || 'var(--muted)'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem;">
-            ${statusIcon || timeStr}
-          </div>
-          <div style="flex: 1;">
-            <div style="font-weight: 500;">${patient?.name || 'Paciente'}</div>
-            <div style="font-size: 0.875rem; color: var(--muted);">${doctor?.name || 'Médico'}</div>
-          </div>
-          <div style="font-size: 0.875rem; color: var(--muted);">${dateStr}</div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // Renderizar acciones rápidas
-  function renderQuickActions() {
-    const container = root.querySelector('#quick-actions');
-    if (!container) return;
-
-    const actions = [];
-
-    // Acciones según rol
-    if (role === 'admin') {
-      // Admin tiene acceso completo
-      actions.push({
-        label: 'Nueva cita',
-        icon: icons.calendar,
-        href: '#appointments',
-        color: 'var(--accent)'
-      });
-      actions.push({
-        label: 'Registrar paciente',
-        icon: icons.patient,
-        href: '#patients',
-        color: 'var(--accent-2)'
-      });
-      actions.push({
-        label: 'Gestionar médicos',
-        icon: icons.doctor,
-        href: '#doctors',
-        color: 'var(--info)'
-      });
-      actions.push({
-        label: 'Gestionar áreas',
-        icon: icons.area,
-        href: '#areas',
-        color: 'var(--warning)'
-      });
-      actions.push({
-        label: 'Historia Clínica',
-        icon: icons.clipboard,
-        href: '#clinical',
-        color: 'var(--triage-red)'
-      });
-      actions.push({
-        label: 'Seguridad',
-        icon: icons.settings,
-        href: '#security',
-        color: 'var(--muted)'
-      });
-    }
-    else if (role === 'doctor') {
-      // Doctor: todas las acciones excepto seguridad
-      actions.push({
-        label: 'Nueva cita',
-        icon: icons.calendar,
-        href: '#appointments',
-        color: 'var(--accent)'
-      });
-      actions.push({
-        label: 'Registrar paciente',
-        icon: icons.patient,
-        href: '#patients',
-        color: 'var(--accent-2)'
-      });
-      actions.push({
-        label: 'Historia Clínica',
-        icon: icons.clipboard,
-        href: '#clinical',
-        color: 'var(--info)'
-      });
-      actions.push({
-        label: 'Realizar Triaje',
-        icon: icons.triage,
-        href: '#triage',
-        color: 'var(--warning)'
-      });
-    }
-    else if (role === 'nurse') {
-      // Enfermera: ver historial clínico y realizar triaje
-      actions.push({
-        label: 'Realizar Triaje',
-        icon: icons.triage,
-        href: '#triage',
-        color: 'var(--warning)'
-      });
-      actions.push({
-        label: 'Ver Historial Clínico',
-        icon: icons.clipboard,
-        href: '#clinical',
-        color: 'var(--info)'
-      });
-    }
-    else if (role === 'receptionist') {
-      // Recepcionista: crear paciente, agendar cita, ver historial
-      actions.push({
-        label: 'Nuevo Paciente',
-        icon: icons.plus,
-        href: '#patients',
-        color: 'var(--accent-2)'
-      });
-      actions.push({
-        label: 'Agendar Cita',
-        icon: icons.calendar,
-        href: '#appointments',
-        color: 'var(--accent)'
-      });
-      actions.push({
-        label: 'Realizar Triaje',
-        icon: icons.triage,
-        href: '#triage',
-        color: 'var(--warning)'
-      });
-    }
-    else if (role === 'patient') {
-      // Paciente: solo ver historial clínico y citas
-      actions.push({
-        label: 'Mis Citas',
-        icon: icons.calendar,
-        href: '#appointments',
-        color: 'var(--accent)'
-      });
-      actions.push({
-        label: 'Mi Historial Clínico',
-        icon: icons.history,
-        href: '#clinical',
-        color: 'var(--success)'
-      });
-    }
-
-    container.innerHTML = `
-      <div class="grid grid-2" style="gap: 0.5rem;">
-        ${actions.map(action => `
-          <a href="${action.href}" class="btn btn-outline" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; text-align: left; border-color: ${action.color}20;">
-            <span style="font-size: 1.25rem; display:inline-block;vertical-align:middle">${action.icon}</span>
-            <span style="color: ${action.color};">${action.label}</span>
-          </a>
-        `).join('')}
-      </div>
-    `;
-  }
 
   // Mostrar error
   function showError(message) {

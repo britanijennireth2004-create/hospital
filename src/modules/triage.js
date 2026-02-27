@@ -85,37 +85,215 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // Función auxiliar para convertir colores de forma segura
   function parseColor(color) {
     if (!color) return [0, 0, 0];
-
-    // Si ya es un array, devolverlo
-    if (Array.isArray(color) && color.length === 3) {
-      return color;
-    }
-
-    // Si es una clave de TRIAGE_LEVELS_RGB
-    if (typeof color === 'string' && TRIAGE_LEVELS_RGB[color]) {
-      return TRIAGE_LEVELS_RGB[color];
-    }
-
-    // Si es string hexadecimal
+    if (Array.isArray(color) && color.length === 3) return color;
+    if (typeof color === 'string' && TRIAGE_LEVELS_RGB[color]) return TRIAGE_LEVELS_RGB[color];
     if (typeof color === 'string' && color.startsWith('#')) {
       const hex = color.replace('#', '');
-
-      // Expandir formato corto si es necesario
-      const fullHex = hex.length === 3
-        ? hex.split('').map(c => c + c).join('')
-        : hex;
-
-      // Convertir a RGB
+      const fullHex = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
       const r = parseInt(fullHex.substring(0, 2), 16);
       const g = parseInt(fullHex.substring(2, 4), 16);
       const b = parseInt(fullHex.substring(4, 6), 16);
-
       return [isNaN(r) ? 0 : r, isNaN(g) ? 0 : g, isNaN(b) ? 0 : b];
     }
-
-    // Por defecto negro
     return [0, 0, 0];
   }
+
+  // Función para cargar scripts dinámicamente (NECESARIA PARA PDF)
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  // Estilos Fluent UI para Triage
+  const CSS = `
+    <style>
+      .module-triage { max-width: 1400px; margin: 0 auto; color: var(--neutralPrimary); }
+      
+      .f-command-bar {
+        background: var(--white);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        height: 44px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        border-radius: 4px;
+      }
+      .f-command-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        height: 100%;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--neutralPrimary);
+        transition: background 0.1s;
+        border: none;
+        background: transparent;
+      }
+      .f-command-item:hover { background: var(--neutralLighter); }
+      .f-command-item svg { color: var(--themePrimary); }
+      .f-command-item.danger:hover { background: #fde7e9; color: var(--redDark); }
+      
+      .f-pivot-container {
+        display: flex;
+        gap: 20px;
+        border-bottom: 1px solid var(--neutralLight);
+        margin-bottom: 1rem;
+        padding: 0 4px;
+      }
+      .f-pivot-item {
+        padding: 12px 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--neutralSecondary);
+        position: relative;
+        transition: color 0.2s;
+        border: none;
+        background: transparent;
+      }
+      .f-pivot-item.active {
+        color: var(--neutralPrimary);
+        font-weight: 600;
+      }
+      .f-pivot-item.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--themePrimary);
+      }
+      
+      .f-table { width: 100%; border-collapse: collapse; }
+      .f-table th { 
+        padding: 12px 16px; 
+        text-align: left; 
+        font-size: 12px; 
+        font-weight: 600; 
+        color: var(--neutralSecondary);
+        border-bottom: 1px solid var(--neutralLight);
+      }
+      .f-table td { padding: 12px 16px; border-bottom: 1px solid var(--neutralLighter); font-size: 14px; }
+      .f-table tr:hover { background: var(--neutralLighterAlt); }
+      
+      .f-priority-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin: 0 auto;
+      }
+      
+      .f-priority-label {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        display: inline-block;
+      }
+      
+      .f-row { transition: background 0.1s; }
+      .f-row:hover { background: #f3f2f1; cursor: default; }
+
+      .suggestion-badge {
+         background: white;
+         border-radius: 50%;
+         width: 20px;
+         height: 20px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+         border: 1px solid var(--neutralLight);
+      }
+
+      .f-stat-card {
+        background: white;
+        border: 1px solid var(--border);
+        padding: 1.5rem 1rem;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .f-stat-card:hover {
+        border-color: var(--themePrimary);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+      }
+      .f-stat-label {
+        font-size: 0.75rem;
+        color: var(--neutralSecondary);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+      }
+      .f-stat-value {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--neutralPrimary);
+        line-height: 1;
+        margin-bottom: 0.5rem;
+      }
+      .f-stat-sub {
+        font-size: 0.7rem;
+        color: var(--neutralSecondary);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      
+      .f-search-box {
+        position: relative;
+        flex: 1;
+        max-width: 450px;
+        margin-left: auto;
+      }
+      .f-search-box input {
+        width: 100%;
+        height: 40px;
+        padding-left: 2.8rem;
+        border-radius: 20px;
+        background: rgba(0,0,0,0.05);
+        border: 1px solid transparent;
+        transition: all 0.3s;
+        font-size: 14px;
+      }
+      .f-search-box input:focus {
+        background: white;
+        border-color: var(--themePrimary);
+        box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.1);
+        outline: none;
+      }
+      .f-search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--neutralSecondary);
+        opacity: 0.7;
+        pointer-events: none;
+      }
+    </style>
+  `;
 
   // Referencias a elementos DOM
   let elements = {};
@@ -455,543 +633,389 @@ export default function mountTriage(root, { bus, store, user, role }) {
     const canCreate = ['admin', 'doctor', 'nurse', 'receptionist'].includes(role);
     const canProcess = ['admin', 'doctor', 'nurse', 'receptionist'].includes(role);
 
-    root.innerHTML = `
-      <div class="module-triage">
-        <!-- Barra de Búsqueda + Botón -->
-        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
-          <div class="flex justify-between items-center">
-            ${canCreate ? `
-            <button class="btn btn-primary" id="btn-new-triage">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo Triage
-            </button>
-            ` : '<div></div>'}
-            <div class="search-input-wrapper" style="position: relative; width: 450px;">
-              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </span>
-              <input type="text" class="input" id="filter-search" 
-                     placeholder="Buscar paciente por nombre, cédula..." 
-                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
-                     value="${state.filters.search}">
-            </div>
-          </div>
-        </div>
-
+    root.innerHTML = CSS + `
+      <div class="module-triage animated-fade-in">
         <!-- Estadísticas -->
-        <div class="grid grid-4" id="stats-container">
-          <!-- Se llenará dinámicamente -->
+        <div class="stats-auto-grid mb-4" id="stats-container">
+          <!-- Dinámico -->
         </div>
 
-        <!-- Panel de control -->
-        <div class="grid grid-2">
-          <!-- Niveles de triage -->
-          <div class="card">
-            <h3>Niveles de Triage</h3>
-            <div class="triage-levels" id="triage-levels">
-              <!-- Se llenará dinámicamente -->
-            </div>
-          </div>
-
-          <!-- Acciones rápidas -->
-          <div class="card">
-            <h3>Acciones Rápidas</h3>
-            <div class="quick-actions">
-              ${canProcess ? `
-              <button class="btn btn-danger" id="btn-emergency-alert">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Alerta de Emergencia
-              </button>
-              ` : ''}
-              <button class="btn btn-outline" id="btn-export-pdf">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar Reporte
-              </button>
-              ${canProcess ? `
-              <button class="btn btn-outline" id="btn-next-patient">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg> Siguiente Paciente
-              </button>
-              ` : ''}
-              ${role === 'admin' ? `
-                <button class="btn btn-outline" id="btn-clear-completed">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Limpiar Completados
-                </button>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-
-        <!-- Filtros y lista -->
-        <div class="card">
+        <!-- Fluent Command Bar -->
+        <div class="f-command-bar" style="margin-bottom: 1.5rem;">
+          ${canCreate ? `
+          <button class="f-command-item" id="btn-new-triage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Triage
+          </button>
+          ` : ''}
           
-          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-            <div class="form-group">
-              <label class="form-label">Filtrar por estado</label>
-              <select class="input" id="filter-status">
-                <option value="all" ${state.filters.status === 'all' ? 'selected' : ''}>Todos los estados</option>
-                <option value="waiting" ${state.filters.status === 'waiting' ? 'selected' : ''}>Esperando</option>
-                <option value="in_progress" ${state.filters.status === 'in_progress' ? 'selected' : ''}>En atención</option>
-                <option value="completed" ${state.filters.status === 'completed' ? 'selected' : ''}>Atendido</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Filtrar por prioridad</label>
-              <select class="input" id="filter-priority">
-                <option value="all" ${state.filters.priority === 'all' ? 'selected' : ''}>Todas las prioridades</option>
-                ${Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
-                  <option value="${key}" ${state.filters.priority === key ? 'selected' : ''}>${level.name}</option>
-                `).join('')}
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Ordenar por</label>
-              <select class="input" id="sort-by">
-                <option value="priority" ${state.sortBy === 'priority' ? 'selected' : ''}>Prioridad</option>
-                <option value="waitingTime" ${state.sortBy === 'waitingTime' ? 'selected' : ''}>Tiempo de espera</option>
-                <option value="name" ${state.sortBy === 'name' ? 'selected' : ''}>Nombre</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Acciones</label>
-              <button class="btn btn-outline" id="btn-refresh" style="width: 100%;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Actualizar
-              </button>
-            </div>
+          ${canProcess ? `
+          <button class="f-command-item danger" id="btn-emergency-alert" style="color: var(--red);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Alerta de Emergencia
+          </button>
+          ` : ''}
+
+          <button class="f-command-item" id="btn-export-pdf">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar reporte
+          </button>
+
+          <button class="f-command-item" id="btn-refresh">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Actualizar
+          </button>
+
+          <div class="f-search-box">
+            <span class="f-search-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="text" id="filter-search" placeholder="Buscar por nombre, prioridad o síntomas..." value="${state.filters.search}">
           </div>
         </div>
 
-        <!-- Contenido principal -->
-        <div class="card">
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Prioridad</th>
-                  <th>Paciente</th>
-                  <th>Síntomas</th>
-                  <th>Tiempo de espera</th>
-                  <th>Estado</th>
-                  <th>Vitales</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="triage-queue">
-                <!-- Se llenará dinámicamente -->
-              </tbody>
-            </table>
+        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
+          <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <h3 style="margin-top: 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--themePrimary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Protocolo de Clasificación
+            </h3>
+            <div id="triage-levels" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Dinámico -->
+            </div>
+          </div>
+
+          <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;">
+            <div class="f-pivot-container" id="pivot-filters">
+              <button class="f-pivot-item ${state.filters.status === 'all' ? 'active' : ''}" data-status="all">Todos</button>
+              <button class="f-pivot-item ${state.filters.status === 'waiting' ? 'active' : ''}" data-status="waiting">En Espera</button>
+              <button class="f-pivot-item ${state.filters.status === 'in_progress' ? 'active' : ''}" data-status="in_progress">En Atención</button>
+              <button class="f-pivot-item ${state.filters.status === 'completed' ? 'active' : ''}" data-status="completed">Completados</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="f-table">
+                <thead>
+                  <tr>
+                    <th style="width:10px"></th>
+                    <th>Prioridad</th>
+                    <th>Paciente</th>
+                    <th>Síntomas</th>
+                    <th>Espera</th>
+                    <th style="text-align: right;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="triage-queue">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-
-        <!-- Modal para nuevo triage -->
+        
+        <!-- Modales Fluent -->
         <div class="modal-overlay hidden" id="triage-modal">
-          <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-            <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-              <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-              <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">SISTEMA DE TRIAGE Y PRIORIZACIÓN</div>
-              <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+          <div class="modal-content" style="max-width: 900px; border-radius: 4px; border: none; box-shadow: 0 32px 64px rgba(0,0,0,0.24), 0 2px 21px rgba(0,0,0,0.22);">
+            <div class="modal-header" style="background: var(--themePrimary); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+              <h2 style="margin: 0; color: white; font-size: 20px; font-weight: 600;">Nuevo Registro de Triage</h2>
+              <button class="btn-close-modal" id="btn-close-modal" style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
             </div>
             
-            <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
-              <!-- Pestañas para elegir paciente existente o crear nuevo -->
-              <div class="flex border-b mb-6" style="gap: 1rem; justify-content: center;">
-                <button type="button" class="tab-btn ${!state.isCreatingPatient ? 'active' : ''}" id="tab-existing-patient" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer;">
-                  PACIENTE EXISTENTE
-                </button>
-                <button type="button" class="tab-btn ${state.isCreatingPatient ? 'active' : ''}" id="tab-new-patient" style="padding: 0.5rem 1.5rem; border-radius: 20px 20px 0 0; font-weight: 600; border: none; background: transparent; cursor: pointer;">
-                  + NUEVO PACIENTE
-                </button>
+            <div class="modal-body" style="padding: 24px; background: #faf9f8;">
+              <div class="f-pivot-container" style="margin-bottom: 24px;">
+                <button type="button" class="f-pivot-item ${!state.isCreatingPatient ? 'active' : ''}" id="tab-existing-patient">PACIENTE EXISTENTE</button>
+                <button type="button" class="f-pivot-item ${state.isCreatingPatient ? 'active' : ''}" id="tab-new-patient">+ NUEVO PACIENTE</button>
               </div>
               
-              <!-- Formulario para paciente existente -->
-              <div id="existing-patient-form" style="${state.isCreatingPatient ? 'display: none;' : ''}">
-                <form id="triage-form">
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">SELECCIONAR PACIENTE *</label>
-                    <div class="flex gap-2">
-                      <select class="input" id="patient-select" required style="flex: 1;">
-                        <option value="">Seleccione un paciente</option>
-                      </select>
-                      <button type="button" class="btn btn-outline" id="btn-switch-to-new">
-                        + Nuevo
-                      </button>
+              <div style="background: white; padding: 24px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div id="existing-patient-form" style="${state.isCreatingPatient ? 'display: none;' : ''}">
+                  <form id="triage-form">
+                    <div class="form-group mb-4">
+                      <label class="form-label" style="font-weight: 600; color: var(--neutralPrimary);">SELECCIONAR PACIENTE *</label>
+                      <select class="input" id="patient-select" required></select>
                     </div>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">SÍNTOMAS PRINCIPALES *</label>
-                    <textarea class="input" id="symptoms" rows="3" required 
-                              placeholder="Describa los síntomas..." 
-                              oninput="window.triageModule?.updatePrioritySuggestion()"></textarea>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">OBSERVACIONES</label>
-                    <textarea class="input" id="observations" rows="2" placeholder="Observaciones adicionales..."></textarea>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">SIGNOS VITALES</label>
-                    <div class="grid grid-3">
-                      <input type="text" class="input" id="blood-pressure" placeholder="PA (120/80)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="heart-rate" placeholder="FC (72)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" step="0.1" class="input" id="temperature" placeholder="T° (36.5)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="spo2" placeholder="SpO₂ (98)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="respiratory-rate" placeholder="FR (16)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="pain-level" min="0" max="10" placeholder="Dolor (0-10)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
+                    <!-- Resto de campos con estilo minimalista -->
+                    <div class="grid grid-2 gap-4 mb-4">
+                       <div class="form-group">
+                          <label class="form-label">Síntomas Principales *</label>
+                          <textarea class="input" id="symptoms" rows="3" required oninput="window.triageModule?.updatePrioritySuggestion()"></textarea>
+                       </div>
+                       <div class="form-group">
+                          <label class="form-label">Observaciones</label>
+                          <textarea class="input" id="observations" rows="3"></textarea>
+                       </div>
                     </div>
-                  </div>
-                  
-                  <!-- Sugerencia de prioridad MEJORADA -->
-                  <div class="form-group" id="priority-suggestion-container" style="display: none;">
-                    <label class="form-label">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg> Sugerencia de Prioridad
-                      <span id="suggestion-confidence" style="font-size: 0.75rem; color: var(--muted);"></span>
-                    </label>
-                    <div class="priority-suggestion" id="priority-suggestion">
-                      <!-- Se llenará dinámicamente -->
-                    </div>
-                    <div class="text-xs text-muted mt-1" id="suggestion-reason">
-                      <!-- Razón de la sugerencia -->
-                    </div>
-                    <div class="mt-2 text-xs text-muted">
-                        Esta sugerencia es solo informativa. Seleccione manualmente el nivel de prioridad.
-                    </div>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">PRIORIDAD *</label>
-                    <div style="display: flex; gap: 0.5rem; justify-content: space-between; margin-top: 0.5rem;">
-                      ${Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
-                        <div class="priority-option compact" data-priority="${key}" 
-                             style="flex: 1; border: 2px solid ${level.color}; background: ${level.lightColor}; border-radius: var(--radius); padding: 0.5rem; text-align: center; cursor: pointer; position: relative; min-width: 0;">
-                          <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">${level.icon}</div>
-                          <div style="font-size: 0.7rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${key.toUpperCase()}</div>
-                          <div style="font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem;">${level.time}</div>
+
+                    <div class="form-group mb-4">
+                      <label class="form-label" style="font-weight: 600;">SIGNOS VITALES INICIALES</label>
+                      <div class="grid grid-4 gap-3">
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">PA (mmHg)</label>
+                           <input type="text" class="input" id="blood-pressure" placeholder="120/80" oninput="window.triageModule?.updatePrioritySuggestion()">
                         </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                </form>
-              </div>
-              
-              <!-- Formulario para nuevo paciente rápido -->
-              <div id="new-patient-form" style="${state.isCreatingPatient ? '' : 'display: none;'}">
-                <form id="quick-patient-form">
-                  <!-- Pestañas internas para nuevo paciente -->
-                  <div class="flex border-b mb-4" style="margin-top: 1rem;">
-                    <button type="button" class="tab-btn-sm active" data-tab="quick-basic">
-                      Datos Básicos
-                    </button>
-                    <button type="button" class="tab-btn-sm" data-tab="quick-contact">
-                      Contacto
-                    </button>
-                    <button type="button" class="tab-btn-sm" data-tab="quick-medical">
-                      Información Médica
-                    </button>
-                  </div>
-                  
-                  <!-- Pestaña: Datos Básicos -->
-                  <div class="tab-pane-sm active" data-tab="quick-basic">
-                    <div class="grid grid-2">
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
-                        <input type="text" class="input" id="quick-name" required>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
-                        <div class="doc-group">
-                          <select class="input" id="quick-doc-type" required>
-                            <option value="V">V</option>
-                            <option value="E">E</option>
-                            <option value="J">J</option>
-                            <option value="P">P</option>
-                          </select>
-                          <input type="text" class="input" id="quick-dni" placeholder="Número de cédula" required>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">FC (LPM)</label>
+                           <input type="number" class="input" id="heart-rate" placeholder="80" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">T° (°C)</label>
+                           <input type="number" step="0.1" class="input" id="temperature" placeholder="37.0" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">SpO2 (%)</label>
+                           <input type="number" class="input" id="spo2" placeholder="98" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">FR (RPM)</label>
+                           <input type="number" class="input" id="respiratory-rate" placeholder="18" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">DOLOR (0-10)</label>
+                           <input type="number" class="input" id="pain-level" placeholder="0" oninput="window.triageModule?.updatePrioritySuggestion()">
                         </div>
                       </div>
                     </div>
-                    
-                    <div class="grid grid-3">
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO *</label>
-                        <input type="date" class="input" id="quick-birthdate" required>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO *</label>
-                        <select class="input" id="quick-gender" required>
-                          <option value="">Seleccionar</option>
-                          <option value="M">Masculino</option>
-                          <option value="F">Femenino</option>
-                          <option value="O">Otro</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TIPO DE SANGRE</label>
-                        <select class="input" id="quick-blood-type">
-                          <option value="">Desconocido</option>
-                          <option value="O+">O+</option>
-                          <option value="O-">O-</option>
-                          <option value="A+">A+</option>
-                          <option value="A-">A-</option>
-                          <option value="B+">B+</option>
-                          <option value="B-">B-</option>
-                          <option value="AB+">AB+</option>
-                          <option value="AB-">AB-</option>
-                        </select>
-                      </div>
+
+                    <!-- AI Suggestion Area -->
+                    <div id="priority-suggestion-container" class="mb-4" style="display:none; padding: 12px; border-radius: 4px; border-left: 4px solid var(--themePrimary); background: var(--neutralLighter);">
+                       <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">Sugerencia de Inteligencia del Sistema:</div>
+                       <div id="priority-suggestion"></div>
+                       <div id="suggestion-reason" style="font-size: 12px; color: var(--neutralSecondary); margin-top: 4px;"></div>
                     </div>
-                  </div>
-                  
-                  <!-- Pestaña: Contacto -->
-                  <div class="tab-pane-sm" data-tab="quick-contact">
-                    <div class="grid grid-2">
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO *</label>
-                        <input type="tel" class="input" id="quick-phone" required>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL</label>
-                        <input type="email" class="input" id="quick-email">
-                      </div>
-                    </div>
-                    
+
                     <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DIRECCIÓN</label>
-                      <textarea class="input" id="quick-address" rows="2"></textarea>
-                    </div>
-                    
-                    <div class="grid grid-2">
-                      <div class="form-group">
-                        <label class="form-label">Ciudad</label>
-                        <input type="text" class="input" id="quick-city">
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Código postal</label>
-                        <input type="text" class="input" id="quick-zip">
+                      <label class="form-label" style="font-weight: 600;">ASIGNAR PRIORIDAD MANUAL *</label>
+                      <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        ${Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
+                          <div class="priority-option compact" data-priority="${key}" 
+                               style="flex: 1; border: 1px solid ${level.color}40; background: ${level.color}05; border-radius: 4px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                            <div style="color: ${level.color}; font-weight: 700; font-size: 12px;">${key.toUpperCase()}</div>
+                            <div style="font-size: 10px; color: var(--neutralSecondary);">${level.time}</div>
+                          </div>
+                        `).join('')}
                       </div>
                     </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Contacto de emergencia</label>
-                      <div class="grid grid-2">
-                        <input type="text" class="input" id="quick-emergency-name" placeholder="Nombre">
-                        <input type="tel" class="input" id="quick-emergency-phone" placeholder="Teléfono">
-                      </div>
-                      <textarea class="input mt-2" id="quick-emergency-relation" rows="1" 
-                                placeholder="Parentesco/Relación"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Seguro médico</label>
-                      <div class="grid grid-2">
-                        <input type="text" class="input" id="quick-insurance-company" placeholder="Compañía">
-                        <input type="text" class="input" id="quick-insurance-number" placeholder="Número de póliza">
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Pestaña: Información Médica -->
-                  <div class="tab-pane-sm" data-tab="quick-medical">
-                    <div class="form-group">
-                      <label class="form-label">Alergias conocidas</label>
-                      <div id="quick-allergies-container">
-                        <!-- Alergias se agregarán dinámicamente -->
-                      </div>
-                      <button type="button" class="btn btn-outline btn-sm mt-2" id="btn-quick-add-allergy">
-                        + Agregar alergia
-                      </button>
-                    </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Enfermedades crónicas</label>
-                      <textarea class="input" id="quick-chronic-diseases" rows="2" 
-                                placeholder="Ej: Hipertensión, Diabetes, Asma..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Medicación habitual</label>
-                      <textarea class="input" id="quick-regular-meds" rows="2" 
-                                placeholder="Medicamentos que toma regularmente..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Cirugías previas</label>
-                      <textarea class="input" id="quick-surgeries" rows="2" 
-                                placeholder="Cirugías realizadas, fechas..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Observaciones médicas</label>
-                      <textarea class="input" id="quick-medical-notes" rows="2" 
-                                placeholder="Otras observaciones importantes..."></textarea>
-                    </div>
-                  </div>
-                  
-                  <div class="form-group mt-4">
-                    <label class="form-label">Síntomas principales *</label>
-                    <textarea class="input" id="quick-symptoms" rows="3" required 
-                              placeholder="Describa los síntomas..."
-                              oninput="window.triageModule?.updatePrioritySuggestion()"></textarea>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label class="form-label">Signos vitales</label>
-                    <div class="grid grid-3">
-                      <input type="text" class="input" id="quick-bp" placeholder="PA (120/80)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="quick-hr" placeholder="FC (72)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" step="0.1" class="input" id="quick-temp" placeholder="T° (36.5)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="quick-spo2" placeholder="SpO₂ (98)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="quick-rr" placeholder="FR (16)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                      <input type="number" class="input" id="quick-pain" min="0" max="10" placeholder="Dolor (0-10)"
-                             oninput="window.triageModule?.updatePrioritySuggestion()">
-                    </div>
-                  </div>
-                  
-                  <!-- Sugerencia de prioridad para nuevo paciente -->
-                  <div class="form-group" id="quick-priority-suggestion-container" style="display: none;">
-                    <label class="form-label">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.15rem;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg> Sugerencia de Prioridad
-                      <span id="quick-suggestion-confidence" style="font-size: 0.75rem; color: var(--muted);"></span>
-                    </label>
-                    <div class="priority-suggestion" id="quick-priority-suggestion">
-                      <!-- Se llenará dinámicamente -->
-                    </div>
-                    <div class="text-xs text-muted mt-1" id="quick-suggestion-reason">
-                      <!-- Razón de la sugerencia -->
-                    </div>
-                    <div class="mt-2 text-xs text-muted">
-                        Esta sugerencia es solo informativa. Seleccione manualmente el nivel de prioridad.
-                    </div>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label class="form-label">Prioridad *</label>
-                    <div style="display: flex; gap: 0.5rem; justify-content: space-between; margin-top: 0.5rem;">
-                      ${Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
-                        <div class="priority-option quick compact" data-priority="${key}" 
-                             style="flex: 1; border: 2px solid ${level.color}; background: ${level.lightColor}; border-radius: var(--radius); padding: 0.5rem; text-align: center; cursor: pointer; position: relative; min-width: 0;">
-                          <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">${level.icon}</div>
-                          <div style="font-size: 0.7rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${key.toUpperCase()}</div>
-                          <div style="font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem;">${level.time}</div>
+                  </form>
+                </div>
+
+                <div id="new-patient-form" style="${state.isCreatingPatient ? '' : 'display: none;'}">
+                  <form id="quick-patient-form" style="padding: 10px 0;">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 20px;">
+                      <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: var(--neutralPrimary); display: flex; align-items: center; gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        DATOS IDENTIFICATIVOS
+                      </h4>
+                      
+                      <div class="grid grid-2 gap-4 mb-4">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; font-size: 12px;">NOMBRE COMPLETO *</label>
+                          <input type="text" class="input" id="quick-name" placeholder="Ej: Juan Antonio Pérez" required style="height: 38px;">
                         </div>
-                      `).join('')}
+                        
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 600; font-size: 12px;">DOCUMENTO DE IDENTIDAD *</label>
+                          <div class="doc-group" style="display: flex; gap: 0;">
+                            <select class="input" id="quick-doc-type" required style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px;">
+                              <option value="V">V</option>
+                              <option value="E">E</option>
+                              <option value="P">P</option>
+                              <option value="J">J</option>
+                            </select>
+                            <input type="text" class="input" id="quick-dni" placeholder="Número de cédula" required style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="grid grid-3 gap-4">
+                         <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 11px;">FECHA NACIMIENTO *</label>
+                            <input type="date" class="input" id="quick-birthdate" required style="height: 38px;">
+                         </div>
+                         <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 11px;">GÉNERO *</label>
+                            <select class="input" id="quick-gender" required style="height: 38px;">
+                               <option value="M">Masculino</option>
+                               <option value="F">Femenino</option>
+                               <option value="O">Otro</option>
+                            </select>
+                         </div>
+                         <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 11px;">GRUPO SANGUÍNEO</label>
+                            <select class="input" id="quick-blood-type" style="height: 38px;">
+                               <option value="">Desconocido</option>
+                               <option value="ORH+">O+</option>
+                               <option value="ORH-">O-</option>
+                               <option value="ARH+">A+</option>
+                               <option value="ARH-">A-</option>
+                               <option value="BRH+">B+</option>
+                               <option value="BRH-">B-</option>
+                               <option value="ABRH+">AB+</option>
+                               <option value="ABRH-">AB-</option>
+                            </select>
+                         </div>
+                      </div>
                     </div>
-                  </div>
-                </form>
+
+                    <div style="background: #f0f7ff; padding: 20px; border-radius: 8px; border: 1px solid #c2e0ff; margin-bottom: 20px;">
+                      <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #005a9e; display: flex; align-items: center; gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        INFORMACIÓN DE CONTACTO
+                      </h4>
+                      <div class="grid grid-2 gap-4">
+                         <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 12px;">TELÉFONO *</label>
+                            <input type="tel" class="input" id="quick-phone" placeholder="Ej: 0412 1234567" required style="height: 38px;">
+                         </div>
+                         <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 12px;">CORREO ELECTRÓNICO</label>
+                            <input type="email" class="input" id="quick-email" placeholder="ejemplo@correo.com" style="height: 38px;">
+                         </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group mb-4">
+                       <label class="form-label" style="font-weight: 700; color: var(--themePrimary);">MOTIVO DE CONSULTA / SÍNTOMAS *</label>
+                       <textarea class="input" id="quick-symptoms" rows="3" placeholder="Describa el motivo de la urgencia de forma detallada..." required oninput="window.triageModule?.updatePrioritySuggestion()" style="resize: none; border-left: 4px solid var(--themePrimary); padding: 10px;"></textarea>
+                    </div>
+
+                    <!-- Campos Ocultos/Adicionales para evitar errores de referencia -->
+                    <div style="display:none;">
+                      <input type="text" id="quick-address" value="">
+                      <input type="text" id="quick-city" value="">
+                      <input type="text" id="quick-zip" value="">
+                      <input type="text" id="quick-emergency-name" value="">
+                      <input type="text" id="quick-emergency-phone" value="">
+                      <input type="text" id="quick-emergency-relation" value="">
+                      <input type="text" id="quick-insurance-company" value="">
+                      <input type="text" id="quick-insurance-number" value="">
+                      <input type="text" id="quick-chronic-diseases" value="">
+                      <input type="text" id="quick-regular-meds" value="">
+                      <input type="text" id="quick-surgeries" value="">
+                      <input type="text" id="quick-medical-notes" value="">
+                    </div>
+                    <div class="form-group mb-4">
+                      <label class="form-label" style="font-weight: 600;">SIGNOS VITALES INICIALES</label>
+                      <div class="grid grid-4 gap-3">
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">PA (mmHg)</label>
+                           <input type="text" class="input" id="quick-bp" placeholder="120/80" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">FC (LPM)</label>
+                           <input type="number" class="input" id="quick-hr" placeholder="80" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">T° (°C)</label>
+                           <input type="number" step="0.1" class="input" id="quick-temp" placeholder="37.0" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">SpO2 (%)</label>
+                           <input type="number" class="input" id="quick-spo2" placeholder="98" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">FR (RPM)</label>
+                           <input type="number" class="input" id="quick-rr" placeholder="18" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                        <div class="form-group-sm">
+                           <label style="font-size: 10px; color: var(--neutralSecondary); font-weight: 600;">DOLOR (0-10)</label>
+                           <input type="number" class="input" id="quick-pain" placeholder="0" oninput="window.triageModule?.updatePrioritySuggestion()">
+                        </div>
+                      </div>
+                    </div>
+                    <div id="quick-priority-suggestion-container" class="mb-4" style="display:none; padding: 12px; border-radius: 4px; border-left: 4px solid var(--themePrimary); background: var(--neutralLighter);">
+                       <div id="quick-priority-suggestion"></div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 600;">PRIORIDAD *</label>
+                      <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        ${Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
+                          <div class="priority-option quick compact" data-priority="${key}" 
+                               style="flex: 1; border: 1px solid ${level.color}40; background: ${level.color}05; border-radius: 4px; padding: 12px; text-align: center; cursor: pointer;">
+                            <div style="color: ${level.color}; font-weight: 700; font-size: 11px;">${key.toUpperCase()}</div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
             
-            <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-              ${state.isCreatingPatient ? `
-                <button class="btn" id="btn-back-to-existing" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; font-weight: 600;">
-                  ← VOLVER
-                </button>
-              ` : ''}
-              <button class="btn" id="btn-cancel-triage" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-              <button class="btn" id="btn-save-triage" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                ${state.isCreatingPatient ? 'REGISTRAR PACIENTE Y TRIAGE' : 'GUARDAR TRIAGE'}
+            <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--neutralLight); background: #f3f2f1; display: flex; justify-content: flex-end; gap: 12px;">
+              <button class="btn-circle btn-circle-cancel" id="btn-cancel-triage" title="Cancelar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="btn-circle btn-circle-save" id="btn-save-triage" title="Guardar Registro">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Modal de alerta de emergencia -->
+        <!-- Emergency Alert Modal (Diseño Simplificado y Claro) -->
         <div class="modal-overlay hidden" id="emergency-modal">
-          <div class="modal-content" style="max-width: 550px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
-            <div class="modal-header" style="background: #e53e3e; flex-direction: column; align-items: center; padding: 2rem; position: relative;">
-               <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-               </div>
-               <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 800;">ALERTA DE EMERGENCIA</h2>
-               <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500;">SISTEMA DE NOTIFICACIÓN CRÍTICA</div>
-               <button class="btn-close-modal" id="btn-close-emergency" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
-            </div>
-            
-            <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
-              <div style="background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; margin-bottom: 1.5rem; text-align: center;">
-                ATENCIÓN: Esta acción notificará a todo el personal de guardia de forma inmediata.
-              </div>
-              
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.85rem;">TIPO DE EMERGENCIA / CÓDIGO *</label>
-                <select class="input" id="emergency-type" style="border-color: #feb2b2; background: #fffaf0; font-weight: 700; color: #c53030;">
-                  <option value="code_blue">Código Azul - Paro cardiorrespiratorio</option>
-                  <option value="code_red">Código Rojo - Incendio / Fuego</option>
-                  <option value="code_black">Código Negro - Amenaza Violenta</option>
-                  <option value="mass_casualty">Múltiples Víctimas / Triaje Masivo</option>
-                  <option value="evacuation">Evacuación Inmediata</option>
-                </select>
-              </div>
-              
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.85rem;">UBICACIÓN EXACTA *</label>
-                <input type="text" class="input" id="emergency-location" required 
-                       placeholder="Ej: Quirófano 2, Pasillo Ala Norte, Piso 3" style="border-color: #e2e8f0;">
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.85rem;">DESCRIPCIÓN DE LA SITUACIÓN</label>
-                <textarea class="input" id="emergency-description" rows="3" 
-                          placeholder="Indique detalles relevantes para el equipo de respuesta..." style="border-color: #e2e8f0;"></textarea>
-              </div>
-            </div>
-            
-            <div class="modal-footer" style="background: #f7fafc; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #edf2f7;">
-              <button class="btn" id="btn-cancel-emergency" style="background: #feb2b2; color: var(--danger); border: 1px solid var(--danger); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-              <button class="btn" id="btn-activate-emergency" style="background: #e53e3e; color: white; border: none; padding: 0.75rem 2rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 12px rgba(229, 62, 62, 0.4);">
-                ACTIVAR ALERTA AHORA
-              </button>
-            </div>
+          <div class="modal-content" style="max-width: 450px; border-radius: 8px; border: none; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+             <div class="modal-header" style="background: var(--red); padding: 16px 20px; color: white; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">ALERTA DE EMERGENCIA</h2>
+                <button class="btn-close-modal" id="btn-close-emergency" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+             </div>
+             <div class="modal-body" style="padding: 24px; background: white;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                   <div style="color: var(--red); margin-bottom: 10px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                   </div>
+                   <p style="font-size: 14px; font-weight: 600; color: var(--neutralPrimary);">¿Activar protocolo de respuesta inmediata?</p>
+                </div>
+                
+                <div class="form-group mb-4">
+                   <label class="form-label" style="font-size: 12px; font-weight: 700;">TIPO DE EMERGENCIA</label>
+                   <select class="input" id="emergency-type" style="border-radius: 4px;">
+                      <option value="code_blue">CÓDIGO AZUL (Cardiorrespiratorio)</option>
+                      <option value="trauma">TRAUMA SHOCK / ACCIDENTE</option>
+                      <option value="mass_casualty">TRIAGE MASIVO</option>
+                      <option value="other">OTRA EMERGENCIA CRÍTICA</option>
+                   </select>
+                </div>
+                
+                <div class="form-group">
+                   <label class="form-label" style="font-size: 12px; font-weight: 700;">UBICACIÓN EXACTA *</label>
+                   <input type="text" class="input" id="emergency-location" placeholder="Ej: Pasillo B, Triaje, Entrada" style="border-radius: 4px;">
+                </div>
+             </div>
+             <div class="modal-footer" style="padding: 16px 20px; background: #fdf2f2; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #fee2e2;">
+                <button class="btn-circle btn-circle-cancel" id="btn-cancel-emergency" title="Cancelar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <button class="btn-circle" id="btn-activate-emergency" style="background: var(--red); color: white;" title="Activar Alerta de Emergencia">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </button>
+             </div>
           </div>
         </div>
       </div>
     `;
 
-    // Guardar referencias a elementos importantes
+    // Guardar referencias (Mapeo Completo para evitar errores funcionales)
     elements = {
       statsContainer: root.querySelector('#stats-container'),
       triageLevels: root.querySelector('#triage-levels'),
       contentContainer: root.querySelector('#triage-queue'),
-
-      // Filtros
+      pivotFilters: root.querySelector('#pivot-filters'),
       filterSearch: root.querySelector('#filter-search'),
-      filterStatus: root.querySelector('#filter-status'),
-      filterPriority: root.querySelector('#filter-priority'),
-      sortBy: root.querySelector('#sort-by'),
-      btnSearch: root.querySelector('#btn-search'),
-      btnRefresh: root.querySelector('#btn-refresh'),
-
-      // Botones principales
       btnNewTriage: root.querySelector('#btn-new-triage'),
       btnEmergencyAlert: root.querySelector('#btn-emergency-alert'),
       btnExportPdf: root.querySelector('#btn-export-pdf'),
-      btnNextPatient: root.querySelector('#btn-next-patient'),
-      btnClearCompleted: root.querySelector('#btn-clear-completed'),
-
-      // Modales
+      btnRefresh: root.querySelector('#btn-refresh'),
       triageModal: root.querySelector('#triage-modal'),
       emergencyModal: root.querySelector('#emergency-modal'),
 
-      // Elementos del modal de triage
+      // Tabs y Contenedores de Formulario
       tabExistingPatient: root.querySelector('#tab-existing-patient'),
       tabNewPatient: root.querySelector('#tab-new-patient'),
       existingPatientForm: root.querySelector('#existing-patient-form'),
       newPatientForm: root.querySelector('#new-patient-form'),
-      btnSwitchToNew: root.querySelector('#btn-switch-to-new'),
-      btnBackToExisting: root.querySelector('#btn-back-to-existing'),
 
-      // Formulario paciente existente
+      // Campos Formulario Existente
       patientSelect: root.querySelector('#patient-select'),
       symptoms: root.querySelector('#symptoms'),
       observations: root.querySelector('#observations'),
@@ -1001,11 +1025,15 @@ export default function mountTriage(root, { bus, store, user, role }) {
       spo2: root.querySelector('#spo2'),
       respiratoryRate: root.querySelector('#respiratory-rate'),
       painLevel: root.querySelector('#pain-level'),
+      prioritySuggestionContainer: root.querySelector('#priority-suggestion-container'),
+      prioritySuggestion: root.querySelector('#priority-suggestion'),
+      suggestionReason: root.querySelector('#suggestion-reason'),
+      suggestionConfidence: root.querySelector('#suggestion-confidence'),
 
-      // Formulario paciente nuevo
+      // Campos Formulario Nuevo (Quick)
       quickName: root.querySelector('#quick-name'),
-      quickDocType: root.querySelector('#quick-doc-type'),
       quickDni: root.querySelector('#quick-dni'),
+      quickDocType: root.querySelector('#quick-doc-type'),
       quickBirthdate: root.querySelector('#quick-birthdate'),
       quickGender: root.querySelector('#quick-gender'),
       quickBloodType: root.querySelector('#quick-blood-type'),
@@ -1019,11 +1047,6 @@ export default function mountTriage(root, { bus, store, user, role }) {
       quickEmergencyRelation: root.querySelector('#quick-emergency-relation'),
       quickInsuranceCompany: root.querySelector('#quick-insurance-company'),
       quickInsuranceNumber: root.querySelector('#quick-insurance-number'),
-      quickAllergiesContainer: root.querySelector('#quick-allergies-container'),
-      quickChronicDiseases: root.querySelector('#quick-chronic-diseases'),
-      quickRegularMeds: root.querySelector('#quick-regular-meds'),
-      quickSurgeries: root.querySelector('#quick-surgeries'),
-      quickMedicalNotes: root.querySelector('#quick-medical-notes'),
       quickSymptoms: root.querySelector('#quick-symptoms'),
       quickBp: root.querySelector('#quick-bp'),
       quickHr: root.querySelector('#quick-hr'),
@@ -1031,22 +1054,24 @@ export default function mountTriage(root, { bus, store, user, role }) {
       quickSpo2: root.querySelector('#quick-spo2'),
       quickRr: root.querySelector('#quick-rr'),
       quickPain: root.querySelector('#quick-pain'),
-      btnQuickAddAllergy: root.querySelector('#btn-quick-add-allergy'),
-
-      // Sugerencias de prioridad
-      prioritySuggestionContainer: root.querySelector('#priority-suggestion-container'),
-      prioritySuggestion: root.querySelector('#priority-suggestion'),
-      suggestionReason: root.querySelector('#suggestion-reason'),
-      suggestionConfidence: root.querySelector('#suggestion-confidence'),
+      quickChronicDiseases: root.querySelector('#quick-chronic-diseases'),
+      quickRegularMeds: root.querySelector('#quick-regular-meds'),
+      quickSurgeries: root.querySelector('#quick-surgeries'),
+      quickMedicalNotes: root.querySelector('#quick-medical-notes'),
       quickPrioritySuggestionContainer: root.querySelector('#quick-priority-suggestion-container'),
       quickPrioritySuggestion: root.querySelector('#quick-priority-suggestion'),
       quickSuggestionReason: root.querySelector('#quick-suggestion-reason'),
-      quickSuggestionConfidence: root.querySelector('#quick-suggestion-confidence')
+      quickSuggestionConfidence: root.querySelector('#quick-suggestion-confidence'),
+      btnQuickAddAllergy: root.querySelector('#btn-quick-add-allergy'),
+      quickAllergiesContainer: root.querySelector('#quick-allergies-container'),
+
+      // Botones Alerta de Emergencia
+      btnCancelEmergency: root.querySelector('#btn-cancel-emergency'),
+      btnActivateEmergency: root.querySelector('#btn-activate-emergency'),
+      btnCloseEmergency: root.querySelector('#btn-close-emergency')
     };
 
-    // Inicializar datos
-    loadData();
-    setupEventListeners();
+    updateUI();
   }
 
   // FUNCIÓN MEJORADA: Actualizar sugerencia de prioridad
@@ -1325,28 +1350,37 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!elements.statsContainer) return;
 
     elements.statsContainer.innerHTML = `
-      <div class="card">
-        <div class="text-muted text-sm">Total en espera</div>
-        <div class="text-2xl font-bold" style="color: var(--warning);">${state.stats.waiting || 0}</div>
-        <div class="text-xs text-muted mt-1">de ${state.stats.total || 0} pacientes</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">EN ESPERA</span>
+        <span class="stat-info-value">${state.stats.waiting || 0}</span>
+        <span class="stat-info-sub">
+          <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Total: ${state.stats.total || 0} registrados
+        </span>
       </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">En atención</div>
-        <div class="text-2xl font-bold" style="color: var(--info);">${state.stats.in_progress || 0}</div>
-        <div class="text-xs text-muted mt-1">Pacientes activos</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">EN ATENCIÓN</span>
+        <span class="stat-info-value">${state.stats.in_progress || 0}</span>
+        <span class="stat-info-sub">
+          <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Pacientes activos
+        </span>
       </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">Tiempo promedio</div>
-        <div class="text-2xl font-bold" style="color: var(--accent);">${state.stats.averageWaitingTime || 0}m</div>
-        <div class="text-xs text-muted mt-1">de espera</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">ESPERA PROMEDIO</span>
+        <span class="stat-info-value">${state.stats.averageWaitingTime || 0}<span style="font-size: 1rem; margin-left: 2px;">min</span></span>
+        <span class="stat-info-sub">
+          <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Flujo de hoy
+        </span>
       </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">Máximo esperando</div>
-        <div class="text-2xl font-bold" style="color: var(--danger);">${state.stats.maxWaitingTime || 0}m</div>
-        <div class="text-xs text-muted mt-1">Tiempo crítico</div>
+      <div class="stat-info-card" style="border-bottom: 4px solid var(--red);">
+        <span class="stat-info-label" style="color: var(--red);">TIEMPO MÁXIMO</span>
+        <span class="stat-info-value" style="color: var(--red);">${state.stats.maxWaitingTime || 0}<span style="font-size: 1rem; margin-left: 2px;">min</span></span>
+        <span class="stat-info-sub" style="color: var(--red);">
+          <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Requiere atención
+        </span>
       </div>
     `;
   }
@@ -1356,25 +1390,16 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!elements.triageLevels) return;
 
     elements.triageLevels.innerHTML = Object.entries(TRIAGE_LEVELS).map(([key, level]) => `
-      <div class="triage-level" style="border-left: 6px solid ${level.color}; background: ${level.lightColor};">
-        <div class="flex justify-between items-center">
-          <div>
-            <div style="font-weight: 600;">${level.icon} ${level.name}</div>
-            <div style="font-size: 0.875rem; color: var(--muted);">${level.description}</div>
+      <div style="border-left: 4px solid ${level.color}; padding: 12px; background: #faf9f8; border-radius: 2px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">${level.icon}</span>
+            ${level.name}
           </div>
-          <div style="text-align: right;">
-            <div style="font-weight: 600; font-size: 1.25rem;" class="priority-count" data-priority="${key}">
-              ${state.stats.byPriority?.[key] || 0}
-            </div>
-            <div style="font-size: 0.75rem; color: var(--muted);">pacientes</div>
-          </div>
+          <div style="font-size: 12px; color: var(--neutralSecondary); margin-top: 2px;">${level.time} de respuesta</div>
         </div>
-        <div class="flex justify-between items-center mt-2" style="font-size: 0.875rem;">
-          <span style="color: var(--muted);">Tiempo objetivo:</span>
-          <span style="font-weight: 500;">${level.time}</span>
-        </div>
-        <div style="font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; line-height: 1.2;">
-          ${level.criteria.slice(0, 2).join(', ')}...
+        <div style="padding: 4px 10px; background: white; border: 1px solid var(--neutralLight); border-radius: 12px; font-weight: 600; font-size: 14px;">
+          ${state.stats.byPriority?.[key] || 0}
         </div>
       </div>
     `).join('');
@@ -1387,104 +1412,52 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!state.filteredPatients || state.filteredPatients.length === 0) {
       elements.contentContainer.innerHTML = `
         <tr>
-          <td colspan="7">
-            <div class="text-center" style="padding: 3rem;">
-              <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              </div>
-              <h3>No hay pacientes en triage</h3>
-              <p class="text-muted">No hay pacientes en la cola de urgencias con los filtros aplicados</p>
-              <button class="btn btn-primary mt-3" id="btn-add-first-triage">
-                Registrar primer paciente
-              </button>
+          <td colspan="7" style="padding: 4rem; text-align: center;">
+            <div style="opacity: 0.5; margin-bottom: 1rem;">
+               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             </div>
+            <div style="color: var(--neutralSecondary); font-size: 14px;">No hay pacientes en la cola</div>
           </td>
         </tr>
       `;
-
-      // Configurar evento para el botón
-      const btn = root.querySelector('#btn-add-first-triage');
-      if (btn) {
-        btn.addEventListener('click', openNewTriageModal);
-      }
-
       return;
     }
 
     elements.contentContainer.innerHTML = state.filteredPatients.map(patient => {
       const triageLevel = TRIAGE_LEVELS[patient.priority];
 
-      // Determinar clase de estado
-      let statusClass = 'badge-secondary';
-      let statusText = 'Esperando';
-
-      if (patient.status === 'in_progress') {
-        statusClass = 'badge-info';
-        statusText = 'En atención';
-      } else if (patient.status === 'completed') {
-        statusClass = 'badge-success';
-        statusText = 'Atendido';
-      }
-
-      // Formatear signos vitales
-      const vitalSigns = patient.vitalSigns ? `
-        <div style="font-size: 0.875rem;">
-          <div>PA: ${patient.vitalSigns.bloodPressure || 'N/A'}</div>
-          <div>FC: ${patient.vitalSigns.heartRate || 'N/A'} lpm</div>
-        </div>
-      ` : 'No registrados';
+      let timeColor = 'var(--neutralSecondary)';
+      if (patient.waitingTime > 3600000) timeColor = 'var(--red)';
+      else if (patient.waitingTime > 1800000) timeColor = 'var(--orange)';
 
       return `
-        <tr>
-          <td data-label="Prioridad">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <div style="width: 12px; height: 12px; background: ${triageLevel.color}; border-radius: 50%;"></div>
-              <span style="font-weight: 500;">${patient.priority.toUpperCase()}</span>
+        <tr class="f-row" data-id="${patient.id}">
+          <td>
+            <div class="f-priority-dot" style="background: ${triageLevel.color};"></div>
+          </td>
+          <td>
+            <span class="f-priority-label" style="background: ${triageLevel.color}20; color: ${triageLevel.color};">
+              ${patient.priority.toUpperCase()}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight: 600;">${patient.fullName}</div>
+            <div style="font-size: 12px; color: var(--neutralSecondary);">${patient.age} años • ${patient.gender}</div>
+          </td>
+          <td style="max-width: 250px;">
+            <div style="font-size: 13px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+              ${patient.symptoms || '—'}
             </div>
           </td>
-          <td data-label="Paciente">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div style="width: 40px; height: 40px; background: var(--triage-gray); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
-                ${patient.fullName.charAt(0)}
-              </div>
-              <div>
-                <div style="font-weight: 500;">${patient.fullName}</div>
-                <div style="font-size: 0.75rem; color: var(--muted);">
-                  ${patient.age} años • ${patient.gender === 'M' ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px;"><circle cx="9" cy="15" r="5"/><path d="M13 11l6-6"/><path d="M14 5h5v5"/></svg>' : patient.gender === 'F' ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px;"><circle cx="12" cy="9" r="6"/><path d="M12 15v7"/><path d="M9 19h6"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px;"><circle cx="12" cy="12" r="4"/><path d="M12 16v6"/><path d="M9 20h6"/><path d="M12 8V2"/><path d="M9 4l3-2 3 2"/><path d="M16 8l5-5"/><path d="M17 3h4v4"/></svg>'}
-                </div>
-              </div>
-            </div>
+          <td>
+            <div style="font-weight: 600; color: ${timeColor};">${patient.waitingTimeFormatted}</div>
           </td>
-          <td data-label="Síntomas">
-            <div>${patient.symptoms?.substring(0, 50) || 'No especificado'}${patient.symptoms?.length > 50 ? '...' : ''}</div>
-          </td>
-          <td data-label="Espera">
-            <div style="font-weight: 500; ${patient.waitingTime > 7200000 ? 'color: var(--danger);' : ''}">
-              ${patient.waitingTimeFormatted}
-            </div>
-            <div style="font-size: 0.75rem; color: var(--muted);">
-              ${new Date(patient.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          </td>
-          <td data-label="Estado">
-            <span class="badge ${statusClass}">${statusText}</span>
-          </td>
-          <td data-label="Signos">${vitalSigns}</td>
-          <td data-label="Acciones">
-            <div class="flex gap-2">
-              ${patient.status === 'waiting' ? `
-                <button class="btn btn-outline btn-sm" data-action="start" data-id="${patient.id}">
-                  Iniciar
-                </button>
-              ` : patient.status === 'in_progress' ? `
-                <button class="btn btn-outline btn-sm" data-action="complete" data-id="${patient.id}">
-                  Completar
-                </button>
-              ` : ''}
-              <button class="btn btn-outline btn-sm" data-action="view" data-id="${patient.id}">
-                Ver
-              </button>
-            </div>
+          <td style="text-align: right;">
+             <div class="flex justify-end gap-2">
+                ${patient.status === 'waiting' ? `<button class="btn-circle btn-circle-save" data-action="start" data-id="${patient.id}" title="Atender">${ICONS.check || 'Atender'}</button>` : ''}
+                ${patient.status === 'in_progress' ? `<button class="btn-circle btn-circle-status" data-action="complete" data-id="${patient.id}" title="Cerrar">${ICONS.close || 'Cerrar'}</button>` : ''}
+                <button class="btn-circle btn-circle-view" data-action="view" data-id="${patient.id}" title="Ver">${ICONS.eye || 'Ver'}</button>
+             </div>
           </td>
         </tr>
       `;
@@ -1493,28 +1466,17 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
   // Configurar event listeners
   function setupEventListeners() {
-    // Filtros
-    if (elements.filterStatus) {
-      elements.filterStatus.addEventListener('change', () => {
-        state.filters.status = elements.filterStatus.value;
-        applyFilters();
-        renderContent();
-      });
-    }
-
-    if (elements.filterPriority) {
-      elements.filterPriority.addEventListener('change', () => {
-        state.filters.priority = elements.filterPriority.value;
-        applyFilters();
-        renderContent();
-      });
-    }
-
-    if (elements.sortBy) {
-      elements.sortBy.addEventListener('change', () => {
-        state.sortBy = elements.sortBy.value;
-        applyFilters();
-        renderContent();
+    // Pivot Filters (Status)
+    if (elements.pivotFilters) {
+      elements.pivotFilters.addEventListener('click', (e) => {
+        const item = e.target.closest('.f-pivot-item');
+        if (item) {
+          state.filters.status = item.dataset.status;
+          elements.pivotFilters.querySelectorAll('.f-pivot-item').forEach(b => b.classList.remove('active'));
+          item.classList.add('active');
+          applyFilters();
+          renderContent();
+        }
       });
     }
 
@@ -1569,6 +1531,22 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
     // Modales
     setupModalListeners();
+
+    // Botones Alerta Emergencia Listeners adicionales
+    if (elements.btnCancelEmergency) {
+      elements.btnCancelEmergency.addEventListener('click', closeEmergencyModal);
+    }
+    if (elements.btnCloseEmergency) {
+      elements.btnCloseEmergency.addEventListener('click', closeEmergencyModal);
+    }
+    if (elements.btnActivateEmergency) {
+      elements.btnActivateEmergency.addEventListener('click', activateEmergency);
+    }
+  }
+
+  // Cerrar modal de emergencia
+  function closeEmergencyModal() {
+    if (elements.emergencyModal) elements.emergencyModal.classList.add('hidden');
   }
 
   // Configurar listeners de modales
@@ -2099,214 +2077,299 @@ export default function mountTriage(root, { bus, store, user, role }) {
     }
   }
 
-  // Ver detalles de triage (FUNCIÓN COMPLETA)
+  // Ver detalles de triage (DISEÑO FLUENT UI)
   function viewTriageDetails(triageRecord) {
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-triage-modal';
-    modalContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    `;
+    modalContainer.className = 'modal-overlay';
+    modalContainer.style.zIndex = '1000';
 
     const triageLevel = TRIAGE_LEVELS[triageRecord.priority];
 
     modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">INFORME DE CLASIFICACIÓN DE TRIAGE</div>
-          <button class="btn-close-modal" id="close-view-triage-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+      <div class="modal-content" style="max-width: 800px; border-radius: 4px; border: none; box-shadow: 0 32px 64px rgba(0,0,0,0.24);">
+        <div class="modal-header" style="background: ${triageLevel.color}; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="margin: 0; color: white; font-size: 18px; font-weight: 600;">Informe de Clasificación: ${triageRecord.fullName}</h2>
+          <button id="close-view-triage-btn" style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
         </div>
         
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
-          <!-- Encabezado de Clasificación -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1.5rem;">
-            <div style="display: flex; align-items: center; gap: 1.5rem;">
-              <div style="width: 70px; height: 70px; background: ${triageLevel.color}; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; box-shadow: 0 4px 10px ${triageLevel.color}44;">
-                ${triageLevel.icon}
-              </div>
-              <div>
-                <div style="font-size: 0.75rem; font-weight: 700; color: #666; letter-spacing: 0.05em;"> NIVEL DE PRIORIDAD</div>
-                <h3 style="margin: 0; color: ${triageLevel.color}; font-size: 1.75rem; font-weight: 800;">${triageLevel.name}</h3>
-                <div style="font-size: 0.85rem; color: #888; margin-top: 0.25rem;">Tiempo objetivo: ${triageLevel.time}</div>
-              </div>
+        <div class="modal-body" style="padding: 24px; background: #faf9f8; max-height: 80vh; overflow-y: auto;">
+          <!-- Cabecera de Clasificación -->
+          <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid ${triageLevel.color};">
+            <div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--neutralSecondary); text-transform: uppercase;">Prioridad Asignada</div>
+              <div style="font-size: 24px; font-weight: 700; color: ${triageLevel.color};">${triageLevel.icon} ${triageLevel.name}</div>
+              <div style="font-size: 13px; color: var(--neutralSecondary); margin-top: 4px;">Tiempo de respuesta objetivo: <strong>${triageLevel.time}</strong></div>
             </div>
             <div style="text-align: right;">
-              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">FECHA DE REGISTRO</div>
-              <div style="font-size: 1.1rem; font-weight: 700;">${new Date(triageRecord.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-              <div style="font-size: 0.9rem; color: #555;">${new Date(triageRecord.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--neutralSecondary);">FECHA Y HORA</div>
+              <div style="font-size: 16px; font-weight: 600;">${new Date(triageRecord.createdAt).toLocaleString()}</div>
+              <div style="font-size: 12px; color: var(--neutralSecondary); margin-top: 4px;">ID Registro: #${triageRecord.id.substring(0, 8)}</div>
             </div>
           </div>
 
-          <!-- Información del Paciente -->
-          <div style="background: var(--card-patient); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; border-left: 5px solid rgba(0,0,0,0.1);">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-              <div style="width: 45px; height: 45px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              </div>
-              <div>
-                <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">DATOS DEL PACIENTE</div>
-                <div style="font-weight: 700; font-size: 1.25rem; color: var(--modal-text);">${triageRecord.fullName}</div>
-              </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; font-size: 0.85rem;">
-              <div>
-                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">EDAD</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Información Personal -->
+            <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; border-bottom: 1px solid var(--neutralLight); padding-bottom: 8px;">Datos del Paciente</h4>
+              <div style="display: grid; grid-template-columns: 100px 1fr; gap: 10px; font-size: 13px;">
+                <div style="color: var(--neutralSecondary);">Nombre:</div>
+                <div style="font-weight: 600;">${triageRecord.fullName}</div>
+                <div style="color: var(--neutralSecondary);">Edad:</div>
                 <div style="font-weight: 600;">${triageRecord.age} años</div>
-              </div>
-              <div>
-                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">GÉNERO</div>
-                <div style="font-weight: 600;">${triageRecord.gender === 'M' ? 'Masculino' : triageRecord.gender === 'F' ? 'Femenino' : 'Otro'}</div>
-              </div>
-              <div>
-                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">SANGRE</div>
-                <div style="font-weight: 600;">${triageRecord.bloodType || 'N/A'}</div>
-              </div>
-              <div>
-                <div style="font-weight: 700; color: var(--modal-text-muted); font-size: 0.7rem;">ESTADO</div>
+                <div style="color: var(--neutralSecondary);">Género:</div>
+                <div style="font-weight: 600;">${triageRecord.gender === 'M' ? 'Masculino' : 'Femenino'}</div>
+                <div style="color: var(--neutralSecondary);">Estado:</div>
                 <div>
-                   <span class="badge ${triageRecord.status === 'waiting' ? 'badge-secondary' : triageRecord.status === 'in_progress' ? 'badge-info' : 'badge-success'}" style="font-size: 0.7rem; padding: 2px 8px;">
-                     ${triageRecord.status === 'waiting' ? 'En Espera' : triageRecord.status === 'in_progress' ? 'Atendiendo' : 'Completado'}
+                   <span style="padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; background: ${triageRecord.status === 'completed' ? '#dff6dd' : '#deecf9'}; color: ${triageRecord.status === 'completed' ? '#107c10' : '#0078d4'};">
+                     ${triageRecord.status.toUpperCase()}
                    </span>
                 </div>
               </div>
             </div>
-            
-            ${triageRecord.allergies && triageRecord.allergies.length > 0 ? `
-              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dotted rgba(0,0,0,0.1);">
-                <div style="font-weight: 700; color: #e53e3e; font-size: 0.7rem;">ALERGIAS</div>
-                <div style="font-weight: 600; color: #e53e3e;">${triageRecord.allergies.join(', ')}</div>
-              </div>
-            ` : ''}
-          </div>
 
-          <!-- Cuadro Clínico -->
-          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
-            <div>
-              <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> SÍNTOMAS Y MOTIVO
-              </div>
-              <div style="background: var(--modal-section-gold-light); border: 1px solid var(--modal-section-gold); border-radius: 6px; padding: 1.25rem;">
-                <div style="font-size: 0.95rem; line-height: 1.6; color: #444;">${triageRecord.symptoms || 'No especificado'}</div>
-                ${triageRecord.observations ? `
-                  <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(184, 134, 11, 0.2);">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--modal-highlight); margin-bottom: 0.5rem;">OBSERVACIONES MÉDICAS</div>
-                    <div style="font-size: 0.9rem; font-style: italic;">${triageRecord.observations}</div>
-                  </div>
-                ` : ''}
-              </div>
-            </div>
-
-            <div>
-              <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9-4-18-3 9H2"/></svg> SIGNOS VITALES
-              </div>
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                  ${triageRecord.vitalSigns?.bloodPressure ? `
-                    <div>
-                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">TENSIÓN ART.</div>
-                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.bloodPressure}</div>
-                    </div>
-                  ` : ''}
-                  ${triageRecord.vitalSigns?.heartRate ? `
-                    <div>
-                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">FRECUENCIA C.</div>
-                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.heartRate} LPM</div>
-                    </div>
-                  ` : ''}
-                  ${triageRecord.vitalSigns?.temperature ? `
-                    <div>
-                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">TEMPERATURA</div>
-                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.temperature} °C</div>
-                    </div>
-                  ` : ''}
-                  ${triageRecord.vitalSigns?.spo2 ? `
-                    <div>
-                      <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SAT. O₂</div>
-                      <div style="font-weight: 700; font-family: monospace;">${triageRecord.vitalSigns.spo2} %</div>
-                    </div>
-                  ` : ''}
+            <!-- Signos Vitales -->
+            <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; border-bottom: 1px solid var(--neutralLight); padding-bottom: 8px;">Signos Vitales</h4>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <div style="padding: 10px; background: #f3f2f1; border-radius: 2px; text-align: center;">
+                  <div style="font-size: 10px; color: var(--neutralSecondary);">TENSIÓN ART.</div>
+                  <div style="font-weight: 700;">${triageRecord.vitalSigns?.bloodPressure || '—'}</div>
+                </div>
+                <div style="padding: 10px; background: #f3f2f1; border-radius: 2px; text-align: center;">
+                  <div style="font-size: 10px; color: var(--neutralSecondary);">FC (LPM)</div>
+                  <div style="font-weight: 700;">${triageRecord.vitalSigns?.heartRate || '—'}</div>
+                </div>
+                <div style="padding: 10px; background: #f3f2f1; border-radius: 2px; text-align: center;">
+                  <div style="font-size: 10px; color: var(--neutralSecondary);">TEMP (°C)</div>
+                  <div style="font-weight: 700;">${triageRecord.vitalSigns?.temperature || '—'}</div>
+                </div>
+                <div style="padding: 10px; background: #f3f2f1; border-radius: 2px; text-align: center;">
+                  <div style="font-size: 10px; color: var(--neutralSecondary);">SPO2 (%)</div>
+                  <div style="font-weight: 700;">${triageRecord.vitalSigns?.spo2 || '—'}</div>
+                </div>
+                <div style="padding: 10px; background: #f3f2f1; border-radius: 2px; text-align: center;">
+                  <div style="font-size: 10px; color: var(--neutralSecondary);">FR (RPM)</div>
+                  <div style="font-weight: 700;">${triageRecord.vitalSigns?.respiratoryRate || '—'}</div>
+                </div>
+                <div style="padding: 10px; background: #f3f2f1; border-radius: 2px; text-align: center;">
+                  <div style="font-size: 10px; color: var(--neutralSecondary);">DOLOR (0-10)</div>
+                  <div style="font-weight: 700;">${triageRecord.vitalSigns?.painLevel !== undefined ? triageRecord.vitalSigns.painLevel : '—'}</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Auditoría -->
-          <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; justify-content: space-between; font-size: 0.75rem; color: #999;">
-            <div>
-              <div style="font-weight: 700; color: #666;">REALIZADO POR</div>
-              <div style="font-weight: 500;">${triageRecord.triagedByName || 'Personal de Urgencias'}</div>
+          <!-- Evaluación Clínica -->
+          <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px;">
+            <h4 style="margin: 0 0 12px 0; font-size: 14px;">Evaluación y Motivo</h4>
+            <div style="font-size: 14px; line-height: 1.5; color: var(--neutralPrimary); background: #f8f8f8; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+              <strong>Síntomas:</strong><br>
+              ${triageRecord.symptoms}
             </div>
-            <div style="text-align: right;">
-              <div style="font-weight: 700; color: #666;">TIEMPO EN ESPERA</div>
-              <div style="font-weight: 600; color: #4a5568;">${triageRecord.waitingTimeFormatted}</div>
-            </div>
+            ${triageRecord.observations ? `
+              <div style="font-size: 13px; line-height: 1.5; color: var(--neutralSecondary); border-left: 3px solid var(--neutralTertiary); padding-left: 12px;">
+                <strong>Observaciones:</strong><br>
+                ${triageRecord.observations}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Personal Responsable -->
+          <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 40px; border-top: 1px solid var(--neutralLight); padding-top: 16px; font-size: 12px; color: var(--neutralSecondary);">
+            <div><strong>Personal de Triage:</strong> ${triageRecord.triagedByName || 'Sistema'}</div>
+            ${triageRecord.attendedBy ? `<div><strong>Atendido por:</strong> ID:${triageRecord.attendedBy}</div>` : ''}
           </div>
         </div>
         
-        <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-          <button class="btn" id="close-view-triage-btn-2" style="background: var(--danger); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CERRAR</button>
-          
-          ${triageRecord.status === 'waiting' ? `
-            <button class="btn" id="btn-start-from-view" data-id="${triageRecord.id}" style="background: var(--info); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-              INICIAR ATENCIÓN
-            </button>
-          ` : triageRecord.status === 'in_progress' ? `
-            <button class="btn" id="btn-complete-from-view" data-id="${triageRecord.id}" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-              COMPLETAR ATENCIÓN
-            </button>
-          ` : ''}
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--neutralLight); background: #f3f2f1; display: flex; justify-content: flex-end; gap: 12px;">
+          <button class="btn-circle btn-circle-view" id="btn-print-record-details" title="Imprimir Informe">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          </button>
+          <button class="btn-circle btn-circle-cancel" id="btn-close-view-triage" title="Cerrar Informe">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
     `;
 
-    // Agregar al DOM
-    document.body.appendChild(modalContainer);
+    root.appendChild(modalContainer);
 
-    // Configurar event listeners
-    const closeModal = () => modalContainer.remove();
+    // Eventos
+    const closeBtn = modalContainer.querySelector('#close-view-triage-btn');
+    const closeBtnFooter = modalContainer.querySelector('#btn-close-view-triage');
+    const printBtn = modalContainer.querySelector('#btn-print-record-details');
 
-    const closeBtn1 = modalContainer.querySelector('#close-view-triage-btn');
-    const closeBtn2 = modalContainer.querySelector('#close-view-triage-btn-2');
-    const startBtn = modalContainer.querySelector('#btn-start-from-view');
-    const completeBtn = modalContainer.querySelector('#btn-complete-from-view');
+    const closeModal = () => {
+      modalContainer.classList.add('hidden');
+      setTimeout(() => modalContainer.remove(), 200);
+    };
 
-    if (closeBtn1) closeBtn1.addEventListener('click', closeModal);
-    if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
-
-    if (startBtn) {
-      startBtn.addEventListener('click', () => {
-        closeModal();
-        startTriage(triageRecord);
-      });
+    if (closeBtn) closeBtn.onclick = closeModal;
+    if (closeBtnFooter) closeBtnFooter.onclick = closeModal;
+    if (printBtn) {
+      printBtn.onclick = () => generateIndividualPDF(triageRecord);
     }
 
-    if (completeBtn) {
-      completeBtn.addEventListener('click', () => {
-        closeModal();
-        completeTriage(triageRecord);
-      });
+    // FUNCIÓN: Generar PDF Individual (Diseño Oficial Blanco y Negro)
+    async function generateIndividualPDF(record) {
+      if (!record) return;
+      try {
+        showNotification('Generando informe oficial...', 'info');
+
+        // Cargar dependencias si no están presentes
+        if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        if (!window.jspdf_autotable) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js');
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const triageLevel = TRIAGE_LEVELS[record.priority] || { name: 'Desconocido', time: 'N/A' };
+        const dateStr = new Date(record.createdAt || Date.now()).toLocaleString();
+        const patientName = record.fullName || 'Paciente Sin Nombre';
+
+        // --- ENCABEZADO (Estilo Tradicional) ---
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text('HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR', 105, 15, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text('DEPARTAMENTO DE EMERGENCIAS Y SERVICIO DE TRIAGE', 105, 21, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.text('Maturín, Estado Monagas - Venezuela', 105, 26, { align: 'center' });
+
+        doc.setLineWidth(0.5);
+        doc.line(20, 30, 190, 30);
+        doc.setLineWidth(0.2);
+        doc.line(20, 31.5, 190, 31.5); // Doble línea
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text('INFORME INDIVIDUAL DE CLASIFICACIÓN CLÍNICA', 105, 40, { align: 'center' });
+
+        // --- DATOS DEL REGISTRO ---
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`NRO. REGISTRO: #${(record.id || '').substring(0, 8).toUpperCase()}`, 20, 50);
+        doc.text(`FECHA/HORA: ${dateStr}`, 190, 50, { align: 'right' });
+
+        // --- SECCIÓN: DATOS DEL PACIENTE ---
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, 55, 170, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.text('I. INFORMACIÓN DEL PACIENTE', 25, 60);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Nombre Completo:`, 20, 70);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${patientName}`, 55, 70);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Cédula / ID:`, 20, 76);
+        const dniText = record.patient?.dni || record.dni || 'N/A';
+        const docType = record.patient?.docType || record.docType || 'V';
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${docType}-${dniText}`, 55, 76);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Edad:`, 120, 70);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${record.age || 'N/A'} años`, 145, 70);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Género:`, 120, 76);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${record.gender === 'M' ? 'Masculino' : 'Femenino'}`, 145, 76);
+
+        // --- SECCIÓN: CLASIFICACIÓN (TRIAGE) ---
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, 85, 170, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.text('II. NIVEL DE PRIORIDAD ASIGNADO', 25, 90);
+
+        doc.setFontSize(12);
+        doc.rect(20, 95, 170, 12);
+        doc.text(`${triageLevel.name.toUpperCase()}`, 105, 103, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Tiempo de respuesta esperado: ${triageLevel.time || 'N/A'}`, 105, 112, { align: 'center' });
+
+        // --- SECCIÓN: SIGNOS VITALES ---
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, 118, 170, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.text('III. VALORACIÓN DE SIGNOS VITALES', 25, 123);
+
+        const vs = record.vitalSigns || {};
+        const vsRows = [
+          ['PARÁMETRO', 'VALOR REGISTRADO', 'RANGO NORMAL'],
+          ['Presión Arterial', vs.bloodPressure || '—', '120/80 mmHg'],
+          ['Frecuencia Cardíaca', vs.heartRate ? `${vs.heartRate} LPM` : '—', '60-100 LPM'],
+          ['Temperatura Corp.', vs.temperature ? `${vs.temperature} °C` : '—', '36.5 - 37.5 °C'],
+          ['Saturación O2', vs.spo2 ? `${vs.spo2} %` : '—', '95 - 100 %'],
+          ['Frec. Respiratoria', vs.respiratoryRate ? `${vs.respiratoryRate} RPM` : '—', '12 - 20 RPM'],
+          ['Escala de Dolor', vs.painLevel !== undefined ? `${vs.painLevel} / 10` : '—', '0 / 10']
+        ];
+
+        doc.autoTable({
+          startY: 128,
+          head: [vsRows[0]],
+          body: vsRows.slice(1),
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2, textColor: 0 },
+          headStyles: { fillColor: 0, textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: 250 }
+        });
+
+        // --- SECCIÓN: EVALUACIÓN CLÍNICA ---
+        const lastY = doc.lastAutoTable.finalY + 10;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, lastY, 170, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.text('IV. EVALUACIÓN Y MOTIVO DE CONSULTA', 25, lastY + 5);
+
+        doc.setFont('helvetica', 'normal');
+        const symptomsText = doc.splitTextToSize(`SÍNTOMAS REPORTADOS: ${record.symptoms || 'No descritos'}`, 170);
+        doc.text(symptomsText, 20, lastY + 15);
+
+        let obsY = lastY + 15 + (symptomsText.length * 5) + 5;
+        if (record.observations) {
+          const obsText = doc.splitTextToSize(`OBSERVACIONES ADICIONALES: ${record.observations}`, 170);
+          doc.text(obsText, 20, obsY);
+          obsY += (obsText.length * 5) + 10;
+        }
+
+        // --- FINALIZACIÓN Y FIRMAS ---
+        const signatureY = 260;
+        doc.setLineWidth(0.1);
+        doc.line(25, signatureY, 85, signatureY);
+        doc.line(125, signatureY, 185, signatureY);
+
+        doc.setFontSize(8);
+        doc.text('PERSONAL RESPONSABLE DE TRIAGE', 55, signatureY + 5, { align: 'center' });
+        doc.text(`${record.triagedByName || 'Personal de Guardia'}`, 55, signatureY + 9, { align: 'center' });
+
+        doc.text('FIRMA DEL PACIENTE / REPRESENTANTE', 155, signatureY + 5, { align: 'center' });
+
+        // Pie de Página
+        doc.setFontSize(7);
+        doc.setTextColor(100);
+        doc.text('Este documento es una valoración inicial de urgencias y no sustituye el diagnóstico médico final ni la historia clínica.', 105, 285, { align: 'center' });
+        doc.text('Sistema de Gestión Hospitalaria HUMNT - 2026', 105, 290, { align: 'center' });
+
+        // Guardar
+        const fileName = `INFORME_TRIAGE_${patientName.replace(/\s+/g, '_').toUpperCase()}.pdf`;
+        doc.save(fileName);
+        showNotification('Informe oficial generado y descargado', 'success');
+
+      } catch (err) {
+        console.error('Error Generando Reporte:', err);
+        showNotification('No se pudo generar el reporte en PDF', 'error');
+      }
     }
 
-    // Cerrar al hacer clic fuera o con ESC
-    modalContainer.addEventListener('click', (e) => {
+    // Cerrar al hacer clic fuera
+    modalContainer.onclick = (e) => {
       if (e.target === modalContainer) closeModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
-    });
+    };
   }
 
   // Abrir modal de emergencia
@@ -2392,11 +2455,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
     `;
 
     alertDiv.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
       ${alertInfo.title} - ${location}
-      <button onclick="this.parentElement.remove()" 
-              style="position: absolute; right: 1rem; background: transparent; border: 1px solid white; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-        ×
+      <button onclick="this.parentElement.remove()" style="position: absolute; right: 1rem; background: transparent; border: 1px solid white; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+        &times;
       </button>
     `;
 
@@ -2534,7 +2600,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
       doc.setFont('helvetica', 'normal');
       const reportInfo = [
-        `Fecha de generación: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`,
+        `Fecha de generación: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} `,
         `Generado por: ${user.name} (${user.role || 'Personal médico'})`,
         `Período: Últimas 24 horas`,
         `Hospital: Hospital Universitario Manuel Nuñez Tovar - Servicio de Urgencias`
@@ -2558,10 +2624,10 @@ export default function mountTriage(root, { bus, store, user, role }) {
       // Tabla de estadísticas
       const statsData = [
         ['MÉTRICA', 'VALOR', 'OBSERVACIÓN'],
-        ['Pacientes totales', `${state.stats.total || 0}`, 'Todos los casos'],
-        ['En espera', `${state.stats.waiting || 0}`, 'Pendientes de atención'],
-        ['En atención', `${state.stats.in_progress || 0}`, 'Actualmente siendo atendidos'],
-        ['Atendidos', `${state.stats.completed || 0}`, 'Finalizados'],
+        ['Pacientes totales', `${state.stats.total || 0} `, 'Todos los casos'],
+        ['En espera', `${state.stats.waiting || 0} `, 'Pendientes de atención'],
+        ['En atención', `${state.stats.in_progress || 0} `, 'Actualmente siendo atendidos'],
+        ['Atendidos', `${state.stats.completed || 0} `, 'Finalizados'],
         ['Tiempo promedio', `${state.stats.averageWaitingTime || 0} min`, 'Espera promedio'],
         ['Tiempo máximo', `${state.stats.maxWaitingTime || 0} min`, 'Caso más crítico']
       ];
@@ -2665,7 +2731,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         // Porcentaje
         const percentage = totalPriorityPatients > 0 ?
           Math.round((item.count / totalPriorityPatients) * 100) : 0;
-        doc.text(`${percentage}%`, margin + 142, yPos);
+        doc.text(`${percentage}% `, margin + 142, yPos);
 
         // Barra de porcentaje visual
         const barWidth = 30;
@@ -2811,19 +2877,19 @@ export default function mountTriage(root, { bus, store, user, role }) {
 
       // Análisis basado en estadísticas
       if (state.stats.waiting > 10) {
-        recommendations.push(`• Alto volumen de pacientes en espera (${state.stats.waiting}). Considere activar personal adicional.`);
+        recommendations.push(`• Alto volumen de pacientes en espera(${state.stats.waiting}).Considere activar personal adicional.`);
       }
 
       if (state.stats.maxWaitingTime > 120) {
-        recommendations.push(`• Paciente(s) con espera crítica (>${state.stats.maxWaitingTime} min). Revisión inmediata requerida.`);
+        recommendations.push(`• Paciente(s) con espera crítica(> ${state.stats.maxWaitingTime} min).Revisión inmediata requerida.`);
       }
 
       if (state.stats.byPriority?.red > 0) {
-        recommendations.push(`• ${state.stats.byPriority.red} paciente(s) en nivel ROJO. Atención inmediata obligatoria.`);
+        recommendations.push(`• ${state.stats.byPriority.red} paciente(s) en nivel ROJO.Atención inmediata obligatoria.`);
       }
 
       if (state.stats.byPriority?.orange > 3) {
-        recommendations.push(`• ${state.stats.byPriority.orange} paciente(s) en nivel NARANJA. Atención prioritaria recomendada.`);
+        recommendations.push(`• ${state.stats.byPriority.orange} paciente(s) en nivel NARANJA.Atención prioritaria recomendada.`);
       }
 
       // Recomendaciones generales si no hay específicas
@@ -2865,7 +2931,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       doc.text('Válido como documentación interna del servicio de urgencias',
         pageWidth / 2, yPos, { align: 'center' });
       yPos += 4;
-      doc.text(`ID de reporte: TRI-${Date.now().toString().slice(-8)}`,
+      doc.text(`ID de reporte: TRI - ${Date.now().toString().slice(-8)} `,
         pageWidth / 2, yPos, { align: 'center' });
 
       // --- PIE DE PÁGINA EN TODAS LAS PÁGINAS ---
@@ -2877,7 +2943,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         // Número de página
         doc.setFontSize(8);
         doc.setTextColor(102, 102, 102);
-        doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin - 10, 290, { align: 'right' });
+        doc.text(`Página ${i} de ${totalPages} `, pageWidth - margin - 10, 290, { align: 'right' });
 
         // Sello del hospital
         doc.setFontSize(6);
@@ -2892,7 +2958,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
           hour: '2-digit',
           minute: '2-digit'
         });
-        doc.text(`Generado: ${formattedDate}`, pageWidth / 2, 290, { align: 'center' });
+        doc.text(`Generado: ${formattedDate} `, pageWidth / 2, 290, { align: 'center' });
       }
 
       // --- GUARDAR PDF ---
@@ -2934,17 +3000,17 @@ export default function mountTriage(root, { bus, store, user, role }) {
     report += 'REPORTE OFICIAL DE TRIAGE\n';
     report += '='.repeat(80) + '\n\n';
 
-    report += `Fecha de generación: ${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}\n`;
-    report += `Generado por: ${user.name}\n`;
+    report += `Fecha de generación: ${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} \n`;
+    report += `Generado por: ${user.name} \n`;
     report += `Hospital: Hospital Universitario Manuel Nuñez Tovar - Servicio de Urgencias\n`;
     report += '-'.repeat(80) + '\n\n';
 
     report += 'RESUMEN ESTADÍSTICO:\n';
     report += '-'.repeat(40) + '\n';
-    report += `Total de pacientes: ${state.stats.total || 0}\n`;
-    report += `En espera: ${state.stats.waiting || 0}\n`;
-    report += `En atención: ${state.stats.in_progress || 0}\n`;
-    report += `Atendidos: ${state.stats.completed || 0}\n`;
+    report += `Total de pacientes: ${state.stats.total || 0} \n`;
+    report += `En espera: ${state.stats.waiting || 0} \n`;
+    report += `En atención: ${state.stats.in_progress || 0} \n`;
+    report += `Atendidos: ${state.stats.completed || 0} \n`;
     report += `Tiempo promedio de espera: ${state.stats.averageWaitingTime || 0} minutos\n`;
     report += `Tiempo máximo de espera: ${state.stats.maxWaitingTime || 0} minutos\n\n`;
 
@@ -2973,7 +3039,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
         report += `${patient.age.toString().padStart(4)} | `;
         report += `${patient.priority.toUpperCase().padStart(9)} | `;
         report += `${shortSymptoms.padEnd(35)} | `;
-        report += `${patient.waitingTimeFormatted}\n`;
+        report += `${patient.waitingTimeFormatted} \n`;
       });
       report += '\n';
     }
@@ -2982,13 +3048,13 @@ export default function mountTriage(root, { bus, store, user, role }) {
     report += '-'.repeat(40) + '\n';
 
     if (state.stats.waiting > 10) {
-      report += `• Alto volumen de pacientes en espera (${state.stats.waiting}). Considere activar personal adicional.\n`;
+      report += `• Alto volumen de pacientes en espera(${state.stats.waiting}).Considere activar personal adicional.\n`;
     }
     if (state.stats.maxWaitingTime > 120) {
-      report += `• Paciente(s) con espera crítica (>${state.stats.maxWaitingTime} min). Revisión inmediata requerida.\n`;
+      report += `• Paciente(s) con espera crítica(> ${state.stats.maxWaitingTime} min).Revisión inmediata requerida.\n`;
     }
     if (state.stats.byPriority?.red > 0) {
-      report += `• ${state.stats.byPriority.red} paciente(s) en nivel ROJO. Atención inmediata obligatoria.\n`;
+      report += `• ${state.stats.byPriority.red} paciente(s) en nivel ROJO.Atención inmediata obligatoria.\n`;
     }
 
     report += '\n';
@@ -2996,7 +3062,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     report += '-'.repeat(40) + '\n';
     report += 'Documento generado automáticamente por el Sistema de Triage\n';
     report += 'Válido como documentación interna del servicio de urgencias\n';
-    report += `ID de reporte: TRI-${Date.now().toString().slice(-8)}\n\n`;
+    report += `ID de reporte: TRI - ${Date.now().toString().slice(-8)} \n\n`;
 
     report += '='.repeat(80) + '\n';
     report += 'HOSPITAL CENTRAL - CONFIDENCIAL\n';
@@ -3053,19 +3119,20 @@ export default function mountTriage(root, { bus, store, user, role }) {
   function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 1rem 1.5rem;
-      background: ${type === 'success' ? 'var(--success)' :
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  background: ${type === 'success' ? 'var(--success)' :
         type === 'error' ? 'var(--danger)' :
-          type === 'warning' ? 'var(--warning)' : 'var(--info)'};
-      color: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      z-index: 10000;
-      animation: slideIn 0.3s ease;
-    `;
+          type === 'warning' ? 'var(--warning)' : 'var(--info)'
+      };
+  color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 10000;
+  animation: slideIn 0.3s ease;
+  `;
 
     notification.textContent = message;
     document.body.appendChild(notification);

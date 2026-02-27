@@ -119,6 +119,97 @@ p {
   width: 100%;
 }
 
+.btn-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.btn-circle:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.1);
+}
+
+.btn-circle svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+
+/* ── Guardar / Confirmar / Registrar → verde oscuro institucional ── */
+.btn-circle-save {
+  background-color: var(--themeDark);
+}
+
+/* ── Cancelar / Cerrar → rojo ── */
+.btn-circle-cancel {
+  background-color: var(--red);
+}
+
+/* ── Ver / Consultar → azul ── */
+.btn-circle-view {
+  background-color: var(--blue);
+}
+
+/* ── Cambiar Estado / Acción positiva → verde primario ── */
+.btn-circle-status {
+  background-color: var(--themePrimary);
+}
+
+/* ── Acción peligrosa (eliminar) → rojo Fluent ── */
+.btn-circle-danger {
+  background-color: var(--red);
+}
+
+/* ── Cerrar explícito → rojo ── */
+.btn-circle-close {
+  background-color: var(--red);
+}
+
+/* ── Editar → ámbar oscuro ── */
+.btn-circle-edit {
+  background-color: var(--yellowDark);
+}
+
+/* ── Éxito ── */
+.btn-circle-success {
+  background-color: var(--themePrimary);
+}
+
+/* ── Tooltip nativo con estilos consistentes ── */
+.btn-circle[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--themeDark);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-circle[title] {
+  position: relative;
+}
+
 /* ===== FORMULARIOS ===== */
 .form-group {
   margin-bottom: 1rem;
@@ -221,13 +312,43 @@ textarea.error {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  text-align: center;
 }
 
 .stat-info-card:hover {
   border-color: var(--accent);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.stat-info-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.stat-info-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat-info-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  opacity: 0.8;
 }
 
 .card {
@@ -276,7 +397,34 @@ textarea.error {
 
 .grid-gap-2 {
   display: grid;
-  gap: 8rem;
+  gap: 4rem;
+  width: 60vw;
+}
+
+.stats-auto-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1.5rem;
+  width: 100%;
+  margin: 0 auto;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Forzado de 4 columnas incluso en móvil según requerimiento del usuario */
+@media (max-width: 768px) {
+  .stats-auto-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+}
+
+.alineado {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  align-items: center;
 }
 
 .grid-2 {
@@ -530,11 +678,19 @@ textarea.error {
 }
 
 .modal-footer {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Footer con fondo del header (verde institucional) */
+.modal-footer[style*="modal-header"],
+.modal-footer[style*="var(--modal-header)"] {
+  border-top: none;
+  gap: 1rem;
 }
 
 /* ===== APP SHELL ===== */

@@ -2,6 +2,14 @@
  * Módulo de Áreas/Servicios - Gestión completa
  */
 
+const icons = {
+  area: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  successCheck: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  plus: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+};
+
 export default function mountAreas(root, { bus, store, user, role }) {
   const state = {
     areas: [],
@@ -168,55 +176,55 @@ export default function mountAreas(root, { bus, store, user, role }) {
         .area-badge { padding: 0.4rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem; }
         .area-type-pill { background: #f1f5f9; color: #475569; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
         .area-icon-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.1rem; }
+        
+        /* Modal Utilities */
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track { background: #f1f1f1; }
+        .modal-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+        .modal-body::-webkit-scrollbar-thumb:hover { background: #bbb; }
       </style>
 
       <div class="module-areas animated-fade-in">
         <!-- Estadísticas -->
-        <div class="grid grid-4" id="stats-container" style="gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="stats-auto-grid mb-4" id="stats-container">
           <!-- Se llenará dinámicamente -->
         </div>
 
-        <div class="areas-header-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
-            <div>
-              <h1 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 0.75rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/></svg>
-                Gestión de Áreas Médicas
-              </h1>
-              <p style="margin: 0.5rem 0 0; color: #64748b; font-size: 0.95rem;" id="list-view-count">Organiza y administra los departamentos del hospital</p>
-            </div>
+        <!-- Barra de Búsqueda + Botón -->
+        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1.5rem;">
+          <div class="flex justify-between items-center">
+            ${canManage ? `
+              <button class="btn btn-primary" id="btn-new-area" style="border-radius: 20px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: var(--themePrimary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nueva Área
+              </button>
+            ` : '<div></div>'}
             
-            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; justify-content: flex-end; min-width: 300px;">
-              <div class="search-container">
-                <span class="search-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </span>
-                <input type="text" class="search-input" id="filter-search" placeholder="Búscar por nombre, código o ubicación..." value="${state.filters.search}">
-              </div>
-              
-              ${canManage ? `
-                <button class="btn btn-primary" id="btn-new-area" style="padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: var(--accent); box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Nueva Área
-                </button>
-              ` : ''}
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input type="text" class="input" id="filter-search" 
+                     placeholder="Buscar por nombre, código o ubicación..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
+                     value="${state.filters.search}">
             </div>
           </div>
         </div>
 
         <!-- Vista de lista -->
         <div class="areas-table-card">
-          <div class="table-responsive">
-            <table class="areas-table" id="areas-table">
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="areas-table" style="width: 100%; border-collapse: collapse;">
               <thead>
                 <tr>
-                  <th style="width: 300px;">Área / Servicio</th>
-                  <th>Ubicación</th>
-                  <th style="text-align: center;">Médicos</th>
-                  <th style="text-align: center;">Citas (Mes)</th>
-                  <th>Tipo</th>
-                  <th>Estado</th>
-                  <th style="text-align: right;">Acciones</th>
+                  <th style="padding: 1.25rem 1rem; text-align: left; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Área / Servicio</th>
+                  <th style="padding: 1.25rem 1rem; text-align: left; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Ubicación</th>
+                  <th style="padding: 1.25rem 1rem; text-align: center; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Médicos</th>
+                  <th style="padding: 1.25rem 1rem; text-align: center; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Citas</th>
+                  <th style="padding: 1.25rem 1rem; text-align: left; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Tipo</th>
+                  <th style="padding: 1.25rem 1rem; text-align: left; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Estado</th>
+                  <th style="padding: 1.25rem 1rem; text-align: right; background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Acciones</th>
                 </tr>
               </thead>
               <tbody id="areas-list">
@@ -224,6 +232,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
               </tbody>
             </table>
           </div>
+        </div>
           
           <!-- Paginación y Estados Vacíos -->
           <div id="pagination" style="padding: 1.5rem; border-top: 1px solid #f1f5f9;"></div>
@@ -254,7 +263,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
             <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
+          <div class="modal-body" style="background: white; padding: 2rem; max-height: 65vh; overflow-y: auto;">
             <form id="area-form">
               <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M15 18h.01"/><path d="M9 18h.01"/></svg>
@@ -383,9 +392,60 @@ export default function mountAreas(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save" style="background: var(--success); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? 'GUARDANDO...' : (state.editingId ? 'ACTUALIZAR ÁREA' : 'CONFIRMAR ÁREA')}
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
+              ${ICONS.close}
+            </button>
+            <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Área' : 'Confirmar Área'}" ${state.isLoading ? 'disabled' : ''}>
+              ${state.isLoading ? '<span class="loading-spinner"></span>' : ICONS.check}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal para cambiar estado -->
+      <div class="modal-overlay hidden" id="status-modal">
+        <div class="modal-content" style="max-width: 500px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+          <div class="modal-header" style="background: var(--warning); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">CAMBIAR ESTADO OPERATIVO</h2>
+            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;" id="status-area-name">
+              Área Seleccionada
+            </div>
+            <button class="btn-close-modal" id="btn-close-status-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              ×
+            </button>
+          </div>
+          
+          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <form id="status-form">
+              <div class="form-group mb-4">
+                <label class="form-label font-bold" style="color: var(--modal-text); font-size: 0.85rem;">ESTADO ACTUAL</label>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+                  <div id="status-modal-badge" style="width: 12px; height: 12px; border-radius: 50%; background: var(--success);"></div>
+                  <span id="status-modal-text" style="font-weight: 600;">ACTIVO</span>
+                  <span id="status-modal-subtext" class="hidden" style="margin-left: 0.5rem;"></span>
+                </div>
+              </div>
+              <div class="form-group mb-4">
+                <label class="form-label font-bold" style="color: var(--modal-text); font-size: 0.85rem;">NUEVO ESTADO *</label>
+                <select class="input" id="status-form-state" required style="border-color: var(--neutralTertiary); background: var(--white); height:38px;">
+                  <option value="active">Activa</option>
+                  <option value="inactive">Inactiva</option>
+                  <option value="maintenance">En mantenimiento</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label font-bold" style="color: var(--modal-text); font-size: 0.85rem;">MOTIVO DEL CAMBIO / OBSERVACIONES</label>
+                <textarea class="input" id="status-form-reason" rows="3" placeholder="Ej: Remodelación, cierre temporal..." style="border-color: var(--neutralTertiary); background: var(--white);"></textarea>
+              </div>
+            </form>
+          </div>
+          
+          <div class="modal-footer" style="background: #f8f9fa; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e9ecef;">
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel-status" title="Cancelar">
+              ${ICONS.close}
+            </button>
+            <button class="btn-circle btn-circle-status" id="btn-save-status" title="Confirmar Cambio">
+              ${ICONS.check}
             </button>
           </div>
         </div>
@@ -397,7 +457,6 @@ export default function mountAreas(root, { bus, store, user, role }) {
       statsContainer: root.querySelector('#stats-container'),
       listViewCount: root.querySelector('#list-view-count'),
       areasList: root.querySelector('#areas-list'),
-      areasTable: root.querySelector('#areas-table'),
       pagination: root.querySelector('#pagination'),
       emptyState: root.querySelector('#empty-state'),
       filterSearch: root.querySelector('#filter-search'),
@@ -424,7 +483,15 @@ export default function mountAreas(root, { bus, store, user, role }) {
       btnCancel: root.querySelector('#btn-cancel'),
       btnSave: root.querySelector('#btn-save'),
       btnNewArea: root.querySelector('#btn-new-area'),
-      btnCreateFirst: root.querySelector('#btn-create-first')
+      btnCreateFirst: root.querySelector('#btn-create-first'),
+
+      statusModal: root.querySelector('#status-modal'),
+      btnCancelStatus: root.querySelector('#btn-cancel-status'),
+      btnSaveStatus: root.querySelector('#btn-save-status'),
+      btnCloseStatusModal: root.querySelector('#btn-close-status-modal'),
+      statusFormState: root.querySelector('#status-form-state'),
+      statusFormReason: root.querySelector('#status-form-reason'),
+      statusAreaName: root.querySelector('#status-area-name')
     };
 
     // Cargar datos iniciales
@@ -469,14 +536,14 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     if (paginatedAreas.length === 0) {
       elements.emptyState.classList.remove('hidden');
-      elements.areasTable.classList.add('hidden');
+      elements.areasList.classList.add('hidden');
       elements.pagination.classList.add('hidden');
       if (elements.listViewCount) elements.listViewCount.textContent = '0 áreas';
       return;
     }
 
     elements.emptyState.classList.add('hidden');
-    elements.areasTable.classList.remove('hidden');
+    elements.areasList.classList.remove('hidden');
     elements.pagination.classList.remove('hidden');
     if (elements.listViewCount) elements.listViewCount.textContent = `${state.areas.length} ${state.areas.length === 1 ? 'área' : 'áreas'}`;
 
@@ -488,52 +555,55 @@ export default function mountAreas(root, { bus, store, user, role }) {
       const typeNames = { clinical: 'Clínica', diagnostic: 'Diagnóstico', surgical: 'Quirúrgica', administrative: 'Admin', support: 'Soporte' };
 
       return `
-        <tr>
-          <td>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div class="area-icon-box" style="background: ${area.color || '#2196F3'};">
+        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+          <td style="padding: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="area-icon-box" style="width: 38px; height: 38px; background: ${area.color || '#2196F3'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
                 ${area.code ? area.code.charAt(0) : area.name.charAt(0)}
               </div>
               <div>
-                <div style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">${area.name}</div>
-                <div style="font-family: monospace; font-size: 0.75rem; color: #94a3b8; font-weight: 600;">${area.code || 'S/C'}</div>
+                <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">${area.name}</div>
+                <div style="font-family: monospace; font-size: 0.7rem; color: #94a3b8; font-weight: 600;">${area.code || 'S/C'}</div>
               </div>
             </div>
           </td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 0.5rem; color: #64748b; font-size: 0.85rem;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <td style="padding: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; color: #64748b; font-size: 0.8rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               ${area.location || '<span style="opacity: 0.5;">No asignada</span>'}
             </div>
           </td>
-          <td style="text-align: center;">
-            <span style="font-weight: 700; color: #334155; background: #f1f5f9; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
+          <td style="padding: 1rem; text-align: center;">
+            <span style="font-weight: 700; color: #334155; background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.8rem;">
               ${stats.totalDoctors}
             </span>
           </td>
-          <td style="text-align: center;">
-            <span style="font-weight: 700; color: var(--accent); font-size: 0.85rem;">
+          <td style="padding: 1rem; text-align: center;">
+            <span style="font-weight: 700; color: var(--accent); font-size: 0.8rem;">
               ${stats.monthAppointments}
             </span>
           </td>
-          <td>
-            <span class="area-type-pill">${typeNames[area.type] || 'Clínica'}</span>
+          <td style="padding: 1rem;">
+            <span class="area-type-pill" style="background: #f1f5f9; color: #475569; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${typeNames[area.type] || 'Clínica'}</span>
             ${parentName ? `<div style="font-size: 0.65rem; color: #94a3b8; margin-top: 2px;">Sub de: ${parentName}</div>` : ''}
           </td>
-          <td>
-            <span class="area-badge" style="background: ${area.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${area.isActive ? '#10b981' : '#ef4444'};">
-              <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+          <td style="padding: 1rem;">
+            <span class="area-badge" style="background: ${area.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${area.isActive ? '#10b981' : '#ef4444'}; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 6px; font-weight: 600;">
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 4px;"></span>
               ${area.isActive ? 'Activa' : (area.status === 'maintenance' ? 'Mantenimiento' : 'Inactiva')}
             </span>
           </td>
-          <td>
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-              <button class="btn btn-outline btn-sm" data-action="view" data-id="${area.id}" title="Ver detalles" style="padding: 0.4rem; border-radius: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <td style="padding: 1rem; text-align: right;">
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button class="btn-circle btn-circle-view" data-action="view" data-id="${area.id}" title="Ver detalles">
+                ${ICONS.eye}
               </button>
               ${canEdit ? `
-                <button class="btn btn-outline btn-sm" data-action="edit" data-id="${area.id}" title="Editar área" style="padding: 0.4rem; border-radius: 8px; color: var(--accent);">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                 <button class="btn-circle btn-circle-status" data-action="status" data-id="${area.id}" title="Cambiar Estado">
+                  ${ICONS.sync}
+                </button>
+                <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${area.id}" title="Editar área">
+                  ${ICONS.edit}
                 </button>
               ` : ''}
             </div>
@@ -543,6 +613,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
     }).join('');
 
     elements.areasList.innerHTML = rows;
+
     renderPagination();
   }
 
@@ -605,70 +676,57 @@ export default function mountAreas(root, { bus, store, user, role }) {
     const doctors = store.get('doctors') || [];
     const appointments = store.get('appointments') || [];
 
+    const now = new Date();
+    const monthlyCount = appointments.filter(a => {
+      const d = new Date(a.dateTime);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+
     const stats = {
       total: areas.length,
       active: areas.filter(a => a.isActive).length,
       mainAreas: areas.filter(a => !a.parentId).length,
       subAreas: areas.filter(a => a.parentId).length,
-      totalDoctors: doctors.length,
       areaAssignments: doctors.filter(d => d.areaId).length +
-        doctors.reduce((sum, d) => sum + (d.otherAreas ? d.otherAreas.length : 0), 0)
+        doctors.reduce((sum, d) => sum + (d.otherAreas ? d.otherAreas.length : 0), 0),
+      monthlyAppointments: monthlyCount
     };
 
     elements.statsContainer.innerHTML = `
-      <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-red);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="color: #64748b; font-size: 0.875rem; font-weight: 600; text-transform: uppercase;">Total Áreas</div>
-            <div style="font-size: 2rem; font-weight: 800; color: #1e293b; margin: 0.25rem 0;">${stats.total}</div>
-          </div>
-          <div style="background: transparent; padding: 0.5rem; border-radius: 8px; color: var(--triage-red);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/></svg>
-          </div>
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted);">${stats.mainAreas} principales, ${stats.subAreas} sub-áreas</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Total Áreas</span>
+        <span class="stat-info-value">${stats.total}</span>
+        <span class="stat-info-sub">
+          ${icons.area || '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'}
+          ${stats.mainAreas} principales, ${stats.subAreas} sub
+        </span>
       </div>
       
-      <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-green);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="color: #64748b; font-size: 0.875rem; font-weight: 600; text-transform: uppercase;">Áreas Activas</div>
-            <div style="font-size: 2rem; font-weight: 800; color: #1e293b; margin: 0.25rem 0;">${stats.active}</div>
-          </div>
-          <div style="background: transparent; padding: 0.5rem; border-radius: 8px; color: var(--triage-green);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          </div>
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted); font-weight: 600;">${stats.total ? Math.round((stats.active / stats.total) * 100) : 0}% en funcionamiento</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Áreas Activas</span>
+        <span class="stat-info-value">${stats.active}</span>
+        <span class="stat-info-sub">
+          ${icons.successCheck || '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'}
+          ${stats.total ? Math.round((stats.active / stats.total) * 100) : 0}% operativa
+        </span>
       </div>
       
-      <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-yellow);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="color: #64748b; font-size: 0.875rem; font-weight: 600; text-transform: uppercase;">Médicos</div>
-            <div style="font-size: 2rem; font-weight: 800; color: #1e293b; margin: 0.25rem 0;">${stats.areaAssignments}</div>
-          </div>
-          <div style="background: transparent; padding: 0.5rem; border-radius: 8px; color: var(--triage-yellow);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted);">Asignados a departamentos</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Asignaciones</span>
+        <span class="stat-info-value">${stats.areaAssignments}</span>
+        <span class="stat-info-sub">
+          ${icons.doctor || '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'}
+          Capacidad instalada
+        </span>
       </div>
       
-      <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-blue);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="color: #64748b; font-size: 0.875rem; font-weight: 600; text-transform: uppercase;">Citas Hoy</div>
-            <div style="font-size: 2rem; font-weight: 800; color: #1e293b; margin: 0.25rem 0;">${appointments.filter(a => {
-      const d = new Date(a.dateTime);
-      return d.toDateString() === new Date().toDateString();
-    }).length}</div>
-          </div>
-          <div style="background: transparent; padding: 0.5rem; border-radius: 8px; color: var(--triage-blue);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted);">En todos los servicios</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Citas del Mes</span>
+        <span class="stat-info-value">${stats.monthlyAppointments}</span>
+        <span class="stat-info-sub">
+          ${icons.calendar || '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'}
+          Rendimiento mensual
+        </span>
       </div>
     `;
   }
@@ -723,6 +781,18 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     if (elements.btnAddSpecialty) {
       elements.btnAddSpecialty.addEventListener('click', addSpecialty);
+    }
+
+    if (elements.btnCloseStatusModal) {
+      elements.btnCloseStatusModal.addEventListener('click', closeStatusModal);
+    }
+
+    if (elements.btnCancelStatus) {
+      elements.btnCancelStatus.addEventListener('click', closeStatusModal);
+    }
+
+    if (elements.btnSaveStatus) {
+      elements.btnSaveStatus.addEventListener('click', saveStatus);
     }
 
     // Paginación (event delegation)
@@ -803,6 +873,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
       case 'edit':
         editArea(area);
         break;
+      case 'status':
+        openStatusModal(area);
+        break;
     }
   }
 
@@ -832,6 +905,59 @@ export default function mountAreas(root, { bus, store, user, role }) {
     }
 
     clearForm();
+  }
+
+  // Lógica Modal Estado
+  function openStatusModal(area) {
+    state.editingId = area.id;
+    if (elements.statusAreaName) elements.statusAreaName.textContent = area.name;
+
+    const badge = root.querySelector('#status-modal-badge');
+    const text = root.querySelector('#status-modal-text');
+    const subtext = root.querySelector('#status-modal-subtext');
+
+    if (badge) badge.style.background = area.isActive ? 'var(--success)' : 'var(--danger)';
+    if (text) text.textContent = area.isActive ? 'ACTIVO' : 'INACTIVO';
+
+    if (subtext) {
+      if (area.status === 'maintenance') {
+        subtext.innerHTML = '<span class="badge badge-warning">Mantenimiento</span>';
+        subtext.classList.remove('hidden');
+      } else {
+        subtext.innerHTML = '';
+        subtext.classList.add('hidden');
+      }
+    }
+
+    if (elements.statusFormState) elements.statusFormState.value = area.status || (area.isActive ? 'active' : 'inactive');
+    if (elements.statusFormReason) elements.statusFormReason.value = area.statusReason || '';
+    if (elements.statusModal) elements.statusModal.classList.remove('hidden');
+  }
+
+  function closeStatusModal() {
+    state.editingId = null;
+    if (elements.statusModal) elements.statusModal.classList.add('hidden');
+  }
+
+  function saveStatus() {
+    const areaId = state.editingId;
+    if (!areaId) return;
+
+    const area = store.find('areas', areaId);
+    if (!area) return;
+
+    const newStatus = elements.statusFormState.value;
+    const reason = elements.statusFormReason.value;
+
+    area.isActive = newStatus === 'active';
+    area.status = newStatus;
+    area.statusReason = reason;
+    area.updatedAt = new Date().toISOString();
+
+    store.update('areas', areaId, area);
+    showNotification('Estado del área actualizado correctamente', 'success');
+    closeStatusModal();
+    loadAreas();
   }
 
   // Rellenar formulario
@@ -901,10 +1027,10 @@ export default function mountAreas(root, { bus, store, user, role }) {
     badge.style.cssText = 'display: inline-flex; align-items: center; padding-right: 0.25rem;';
     badge.innerHTML = `
       ${specialty}
-      <button type="button" class="badge-remove" style="margin-left: 0.25rem; background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.25rem;">
-        ×
-      </button>
-    `;
+<button type="button" class="badge-remove" style="margin-left: 0.25rem; background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.25rem;">
+  ×
+</button>
+`;
 
     elements.specialtiesContainer.appendChild(badge);
 
@@ -1106,7 +1232,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
           <button class="close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
         </div>
         
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
+        <div class="modal-body" style="background: white; padding: 2rem; max-height: 65vh; overflow-y: auto;">
           <!-- Encabezado del área -->
           <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 2rem;">
             <div style="width: 80px; height: 80px; background: ${area.color || '#2196F3'}; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 800; box-shadow: 0 4px 10px ${area.color || '#2196F3'}44; flex-shrink: 0;">
@@ -1124,22 +1250,22 @@ export default function mountAreas(root, { bus, store, user, role }) {
           </div>
 
           <!-- Estadísticas rápidas -->
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
-            <div style="background: #f0f9ff; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #bae6fd;">
-              <div style="font-size: 1.75rem; font-weight: 800; color: #0369a1;">${stats.totalDoctors}</div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: #0c4a6e; text-transform: uppercase; letter-spacing: 0.05em;">Médicos</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div style="background: #f0f9ff; border-radius: 12px; padding: 1.25rem; text-align: center; border: 1px solid #bae6fd; box-shadow: 0 2px 4px rgba(0,104,255,0.05);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #0369a1; line-height: 1;">${stats.totalDoctors}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #0c4a6e; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">Médicos</div>
             </div>
-            <div style="background: #f0fdf4; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #bbf7d0;">
-              <div style="font-size: 1.75rem; font-weight: 800; color: #15803d;">${stats.todayAppointments}</div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: #14532d; text-transform: uppercase; letter-spacing: 0.05em;">Citas Hoy</div>
+            <div style="background: #f0fdf4; border-radius: 12px; padding: 1.25rem; text-align: center; border: 1px solid #bbf7d0; box-shadow: 0 2px 4px rgba(16,185,129,0.05);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #15803d; line-height: 1;">${stats.todayAppointments}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #14532d; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">Citas Hoy</div>
             </div>
-            <div style="background: #fefce8; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #fef08a;">
-              <div style="font-size: 1.75rem; font-weight: 800; color: #a16207;">${stats.monthAppointments}</div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: #713f12; text-transform: uppercase; letter-spacing: 0.05em;">Citas Mes</div>
+            <div style="background: #fefce8; border-radius: 12px; padding: 1.25rem; text-align: center; border: 1px solid #fef08a; box-shadow: 0 2px 4px rgba(234,179,8,0.05);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #a16207; line-height: 1;">${stats.monthAppointments}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #713f12; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">Citas Mes</div>
             </div>
-            <div style="background: #faf5ff; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #e9d5ff;">
-              <div style="font-size: 1.75rem; font-weight: 800; color: #7e22ce;">${subAreas.length}</div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: #581c87; text-transform: uppercase; letter-spacing: 0.05em;">Sub-áreas</div>
+            <div style="background: #faf5ff; border-radius: 12px; padding: 1.25rem; text-align: center; border: 1px solid #e9d5ff; box-shadow: 0 2px 4px rgba(168,85,247,0.05);">
+              <div style="font-size: 1.75rem; font-weight: 800; color: #7e22ce; line-height: 1;">${subAreas.length}</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: #581c87; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">Sub-áreas</div>
             </div>
           </div>
 
@@ -1231,10 +1357,18 @@ export default function mountAreas(root, { bus, store, user, role }) {
           ` : ''}
         </div>
         
-        <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-          <button class="btn" id="btn-view-doctors" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">VER EQUIPO MÉDICO</button>
-          <button class="btn" id="close-view-area" style="background: var(--danger); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CERRAR</button>
-          ${role === 'admin' ? `<button class="btn" id="edit-area-from-view" style="background: var(--success); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">EDITAR ÁREA</button>` : ''}
+        <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
+          <button class="btn-circle btn-circle-view" id="btn-view-doctors" title="Ver Equipo Médico">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </button>
+          ${role === 'admin' ? `
+            <button class="btn-circle btn-circle-edit" id="edit-area-from-view" title="Editar Área">
+              ${ICONS.edit}
+            </button>
+          ` : ''}
+          <button class="btn-circle btn-circle-cancel" id="close-view-area" title="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
     `;
@@ -1277,7 +1411,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
     modal.style.cssText = `
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center; 
+      display: flex; align-items: center; justify-content: center;
       z-index: 6000; padding: 1rem;
     `;
 
@@ -1350,20 +1484,20 @@ export default function mountAreas(root, { bus, store, user, role }) {
   function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.style.cssText = `
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 1rem 1.5rem;
-  background: ${type === 'success' ? 'var(--success)' :
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      background: ${type === 'success' ? 'var(--success)' :
         type === 'error' ? 'var(--danger)' :
           type === 'warning' ? 'var(--warning)' : 'var(--info)'
       };
-  color: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
-  z-index: 10000;
-  animation: slideIn 0.3s ease;
-  `;
+      color: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+    `;
 
     notification.textContent = message;
     document.body.appendChild(notification);

@@ -301,10 +301,13 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
 
     return filteredDoctors.filter(doctor => {
-      // Disponibilidad general (cupos)
+      // 1. Verificar si el médico trabaja ese día (independiente de la hora)
+      if (!isDoctorWorkingAt(doctor, date)) return false;
+
+      // 2. Disponibilidad general por cupos diarios
       if (!hasDoctorAvailability(doctor.id, date, excludeAppointmentId)) return false;
 
-      // Si hay una hora específica, verificar conflicto
+      // 3. Si hay una hora específica, verificar horario y conflictos
       if (time) {
         if (!isDoctorWorkingAt(doctor, date, time, duration)) return false;
         if (hasScheduleConflict(doctor.id, date, time, duration, excludeAppointmentId)) return false;
@@ -427,7 +430,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       });
 
       if (!hasConflict) slots.push(timeStr);
-      currentMin += 30; // Intervalos de 30 minutos para selección
+      currentMin += 60; // Intervalos de 60 minutos (hora en hora) para selección
     }
 
     return slots;
@@ -542,6 +545,11 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="module-appointments">
+        <!-- Estadísticas -->
+        <div class="stats-auto-grid mb-4" id="stats-container">
+          <!-- Se llenará dinámicamente -->
+        </div>
+
         <!-- Barra de Búsqueda + Botón -->
         <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
           <div class="flex justify-between items-center">
@@ -814,12 +822,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
-            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">
-              CANCELAR
+          <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
+              ${icons.close || ICONS.close}
             </button>
-            <button class="btn btn-primary" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? 'GUARDANDO...' : (state.editingId ? 'ACTUALIZAR CITA' : 'REGISTRAR CITA')}
+            <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Cita' : 'Registrar Cita'}" ${state.isLoading ? 'disabled' : ''}>
+              ${state.isLoading ? '<span class="loading-spinner"></span>' : ICONS.check}
             </button>
           </div>
         </div>
@@ -1023,17 +1031,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <td data-label="Acciones">
             <div class="flex gap-2">
               ${canEdit ? `
-                <button class="btn btn-outline btn-sm" data-action="edit" data-id="${appointment.id}">
-                  ${icons.edit} Editar
+                <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${appointment.id}" title="Editar">
+                  ${icons.edit}
                 </button>
               ` : ''}
               ${canCancel ? `
-                <button class="btn btn-outline btn-sm" data-action="cancel" data-id="${appointment.id}">
-                  ${icons.cancel} Cancelar
+                <button class="btn-circle btn-circle-cancel" data-action="cancel" data-id="${appointment.id}" title="Cancelar">
+                  ${icons.cancel || ICONS.close}
                 </button>
               ` : ''}
-              <button class="btn btn-outline btn-sm" data-action="view" data-id="${appointment.id}">
-                ${icons.view} Ver
+              <button class="btn-circle btn-circle-view" data-action="view" data-id="${appointment.id}" title="Ver">
+                ${icons.view || ICONS.eye}
               </button>
             </div>
           </td>
@@ -1058,22 +1066,28 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     };
 
     elements.statsContainer.innerHTML = `
-      <div class="card">
-        <div class="text-muted text-sm">Total de citas</div>
-        <div class="text-2xl font-bold" style="color: var(--accent);">${stats.total}</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Total de citas</span>
+        <span class="stat-info-value">${stats.total}</span>
+        <span class="stat-info-sub">${icons.clipboard} Registradas</span>
       </div>
-      <div class="card">
-        <div class="text-muted text-sm">Citas hoy</div>
-        <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.today}</div>
+      
+      <div class="stat-info-card">
+        <span class="stat-info-label">Citas hoy</span>
+        <span class="stat-info-value">${stats.today}</span>
+        <span class="stat-info-sub">${icons.calendar} Sesiones para hoy</span>
       </div>
-      <div class="card">
-        <div class="text-muted text-sm">Próximos 7 días</div>
-        <div class="text-2xl font-bold" style="color: var(--info);">${stats.upcoming}</div>
+      
+      <div class="stat-info-card">
+        <span class="stat-info-label">Próximos 7 días</span>
+        <span class="stat-info-value">${stats.upcoming}</span>
+        <span class="stat-info-sub">${icons.clock} Pendientes</span>
       </div>
-      <div class="card">
-        <div class="text-muted text-sm">Completadas</div>
-        <div class="text-2xl font-bold" style="color: var(--success);">${stats.completed}</div>
-        <span style="opacity: 0.6;">${icons.successCheck}</span>
+      
+      <div class="stat-info-card">
+        <span class="stat-info-label">Completadas</span>
+        <span class="stat-info-value">${stats.completed}</span>
+        <span class="stat-info-sub">${icons.successCheck} Atendidas</span>
       </div>
     `;
   }
@@ -1370,7 +1384,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         </div>
         
         <div class="modal-footer" style="padding: 1.25rem; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: center;">
-          <button id="close-schedule-footer" class="btn btn-danger" style="width: 100%; border-radius: 10px; padding: 0.75rem;">Cerrar Calendario</button>
+          <button id="close-schedule-footer" class="btn-circle btn-circle-cancel" title="Cerrar Calendario">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
     `;
@@ -1468,14 +1484,31 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.formDate) {
       elements.formDate.value = dateStr;
 
-      if (timeStr && elements.formTime) {
-        elements.formTime.value = timeStr;
-      }
-
-      // Actualizar áreas disponibles para ese horario específico ANTES de médicos
+      // Actualizar áreas y médicos ANTES de intentar poner la hora
       updateAvailableAreas();
       updateDoctorsByAreaAndDate();
+
+      // Cargar los slots disponibles para que el SELECT tenga opciones antes de asignar el valor
       updateAvailableTimeSlots();
+
+      if (timeStr && elements.formTime) {
+        // Verificar si el slot seleccionado está ocupado y buscar el siguiente si es necesario
+        let finalTime = timeStr;
+        const doctorId = elements.formDoctor ? elements.formDoctor.value : null;
+
+        if (doctorId) {
+          const slots = getAvailableTimeSlots(doctorId, dateStr, 30, state.editingId);
+          if (slots.length > 0) {
+            if (!slots.includes(timeStr)) {
+              // Si el slot original está ocupado, buscar el primero disponible a partir de esa hora
+              const nextAvailable = slots.find(s => s >= timeStr) || slots[0];
+              finalTime = nextAvailable;
+            }
+          }
+        }
+
+        elements.formTime.value = finalTime;
+      }
 
       if (timeStr) {
         validateDoctorSchedule();
@@ -1592,9 +1625,11 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           const currentTime = elements.formTime.value;
 
           if (slots.length > 0) {
-            // Solo cambiar si no hay hora o la hora actual no es válida/disponible para el nuevo médico
+            // Si no hay hora o la hora actual no es válida/disponible para el nuevo médico
             if (!currentTime || !slots.includes(currentTime)) {
-              elements.formTime.value = slots[0];
+              // Si había una hora seleccionada pero está ocupada para este médico, buscar la siguiente disponible
+              const nextBest = currentTime ? (slots.find(s => s >= currentTime) || slots[0]) : slots[0];
+              elements.formTime.value = nextBest;
               updateModalSubtitle();
             }
           }
@@ -2644,41 +2679,36 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           Documento administrativo • Generado automáticamente por Hospital Universitario Manuel Núñez Tovar
         </div>
 
-        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: space-between; gap: 0.5rem;">
-          <div style="display: flex; gap: 0.5rem;">
+        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: center;">
+          <div style="display: flex; gap: 0.75rem;">
             ${canCancel ? `
-              <button class="btn" style="background: #e53e3e; border: none; color: white; padding: 0.5rem 1rem;" 
-                id="cancel-appointment-btn" data-id="${appointment.id}">
-                ${icons.cancel} Cancelar Cita
+              <button class="btn-circle btn-circle-cancel" id="cancel-appointment-btn" data-id="${appointment.id}" title="Cancelar Cita">
+                ${icons.cancel || ICONS.close}
               </button>
             ` : ''}
             
             ${canEdit ? `
-              <button class="btn" style="background: var(--modal-section-olive); border: none; color: white; padding: 0.5rem 1rem;" 
-                id="edit-appointment-btn" data-id="${appointment.id}">
-                ${icons.edit} Editar Cita
+              <button class="btn-circle btn-circle-edit" id="edit-appointment-btn" data-id="${appointment.id}" title="Editar Cita">
+                ${icons.edit || ICONS.edit}
               </button>
             ` : ''}
           </div>
           
-          <div style="display: flex; gap: 0.5rem;">
+          <div style="display: flex; gap: 0.75rem;">
             ${canCreateClinical ? `
-              <button class="btn" style="background: var(--modal-section-forest); border: none; color: white; padding: 0.5rem 1rem;" 
-                id="create-clinical-from-appointment" data-id="${appointment.id}">
-                ${icons.clinical} Crear Consulta
+              <button class="btn-circle btn-circle-save" id="create-clinical-from-appointment" data-id="${appointment.id}" title="Crear Consulta Clínica">
+                ${icons.clinical || ICONS.clipboard}
               </button>
             ` : ''}
             
             ${hasClinicalRecord(appointment.id) ? `
-              <button class="btn" style="background: var(--modal-section-sage); border: none; color: white; padding: 0.5rem 1rem;" 
-                id="view-clinical-record" data-id="${appointment.id}">
-                ${icons.view} Ver Historia
+              <button class="btn-circle btn-circle-view" id="view-clinical-record" data-id="${appointment.id}" title="Ver Historia Clínica">
+                ${icons.view || ICONS.eye}
               </button>
             ` : ''}
             
-            <button class="btn" style="background: #495057; border: none; color: white; padding: 0.5rem 1rem;" 
-              id="close-appointment-modal">
-              ${icons.close} Cerrar
+            <button class="btn-circle btn-circle-cancel" id="close-appointment-modal" title="Cerrar">
+              ${icons.close || ICONS.close}
             </button>
           </div>
         </div>

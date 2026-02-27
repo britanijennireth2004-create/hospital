@@ -290,7 +290,9 @@ export default function mountAudit(container, { store, bus, user }) {
         </div>
 
         <div style="padding: 1rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
-          <button class="btn btn-primary close-modal" style="width: 100%; padding: 0.75rem;">Cerrar Informe</button>
+          <button class="btn-circle btn-circle-cancel close-modal" title="Cerrar Informe">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
       `;

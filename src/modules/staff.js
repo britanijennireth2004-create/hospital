@@ -22,7 +22,9 @@ export default function mountStaff(root, { bus, store, user, role }) {
   const icons = {
     edit: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
     trash: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
-    plus: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+    plus: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    cancel: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+    save: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
   };
 
   let elements = {};
@@ -66,7 +68,7 @@ export default function mountStaff(root, { bus, store, user, role }) {
   function render() {
     root.innerHTML = `
       <div class="staff-module">
-        <div class="grid grid-3 mb-4" id="staff-stats"></div>
+        <div class="stats-auto-grid mb-4" id="staff-stats"></div>
 
         <div class="card p-0 overflow-hidden">
           <div class="tabs-header" style="border-bottom: 1px solid var(--border); padding: 0 1.5rem; background: #f8fafc;">
@@ -141,8 +143,8 @@ export default function mountStaff(root, { bus, store, user, role }) {
             </form>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline" id="btn-cancel">CANCELAR</button>
-            <button class="btn btn-primary" id="btn-save">GUARDAR</button>
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">${icons.cancel}</button>
+            <button class="btn-circle btn-circle-save" id="btn-save" title="Guardar">${icons.save}</button>
           </div>
         </div>
       </div>
@@ -237,8 +239,8 @@ export default function mountStaff(root, { bus, store, user, role }) {
           <td><span class="badge badge-success">Activo</span></td>
           <td class="text-right">
              <div class="flex justify-end gap-1">
-               <button class="btn-icon" onclick="window.staffAction('edit', '${item.id}')">${icons.edit}</button>
-               <button class="btn-icon" onclick="window.staffAction('delete', '${item.id}')">${icons.trash}</button>
+               <button class="btn-circle btn-circle-edit" onclick="window.staffAction('edit', '${item.id}')" title="Editar">${icons.edit}</button>
+               <button class="btn-circle btn-circle-danger" onclick="window.staffAction('delete', '${item.id}')" title="Eliminar">${icons.trash}</button>
              </div>
           </td>
         </tr>
@@ -261,17 +263,20 @@ export default function mountStaff(root, { bus, store, user, role }) {
     const n = (store.get('nurses') || []).length;
     const r = (store.get('receptionists') || []).length;
     elements.statsContainer.innerHTML = `
-      <div class="card p-4">
-        <div class="text-muted text-xs font-bold uppercase">Enfermería</div>
-        <div class="text-2xl font-bold">${n}</div>
+      <div class="stat-info-card" style="--accent: var(--info);">
+        <span class="stat-info-label">Enfermería</span>
+        <span class="stat-info-value">${n}</span>
+        <span class="stat-info-sub">Personal de asistencia</span>
       </div>
-      <div class="card p-4">
-        <div class="text-muted text-xs font-bold uppercase">Recepción</div>
-        <div class="text-2xl font-bold">${r}</div>
+      <div class="stat-info-card" style="--accent: var(--warning);">
+        <span class="stat-info-label">Recepción</span>
+        <span class="stat-info-value">${r}</span>
+        <span class="stat-info-sub">Gestión administrativa</span>
       </div>
-      <div class="card p-4 bg-accent text-white">
-        <div class="text-xs font-bold uppercase opacity-80">Total Staff</div>
-        <div class="text-2xl font-bold">${n + r}</div>
+      <div class="stat-info-card" style="--accent: var(--accent);">
+        <span class="stat-info-label">Total Staff</span>
+        <span class="stat-info-value">${n + r}</span>
+        <span class="stat-info-sub">Talento humano</span>
       </div>
     `;
   }

@@ -968,8 +968,8 @@
   width: 100%;
   padding: 0.8rem;
   border: none;
-  border-radius: var(--radius);
-  background: var(--greenDark);
+  border-radius: var(--radius-sm);
+  background: var(--themeDark);
   color: white;
   font-family: var(--font);
   font-size: 0.95rem;
@@ -981,8 +981,7 @@
 }
 
 .login-submit-btn:hover {
-  background: var(--accent-dark);
-  transform: translateY(-1px);
+  background: var(--greenDark);
   box-shadow: 0 4px 14px rgba(15, 141, 58, 0.25);
 }
 
@@ -1238,4 +1237,50 @@ textarea.error-field {
     opacity: 0;
     transform: scale(0.95);
   }
+}
+
+/* Botones de acción redondos (Estilo ejemplo.html) */
+.action-btn-round {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% !important;
+  background-color: var(--neutralLighter);
+  border: none;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+  padding: 0;
+}
+
+.action-btn-round:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn-round.view {
+  background-color: var(--themePrimary);
+  color: white;
+}
+
+.action-btn-round.history {
+  background-color: var(--modal-section-gold);
+  color: white;
+}
+
+.action-btn-round.edit {
+  background-color: #2a9d8f;
+  color: white;
+}
+
+.action-btn-round.delete {
+  background-color: var(--danger);
+  color: white;
+}
+
+.action-btn-round svg {
+  width: 18px;
+  height: 18px;
 }

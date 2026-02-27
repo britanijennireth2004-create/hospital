@@ -37,47 +37,49 @@ export default function mountLandingManager(root, { store, user, role }) {
 
     root.innerHTML = `
       <div class="module-landing-manager">
-        <div class="card-header mb-4">
-          <div class="flex justify-between items-center">
-            <div>
-              <!-- Estadísticas Automatizadas -->
-                <div class="grid stats-auto-grid gap-3">
-                  <div class="stat-info-card">
-                    <span class="stat-info-label">Pacientes</span>
-                    <span class="stat-info-value">${counts.patients}</span>
-                  </div>
-                  <div class="stat-info-card">
-                    <span class="stat-info-label">Médicos</span>
-                    <span class="stat-info-value">${counts.doctors}</span>
-                  </div>
-                  <div class="stat-info-card">
-                    <span class="stat-info-label">Citas</span>
-                    <span class="stat-info-value">${counts.appointments}</span>
-                  </div>
-                  <div class="stat-info-card">
-                    <span class="stat-info-label">Áreas Médicas</span>
-                    <span class="stat-info-value">${counts.areas}</span>
-                  </div>
-                </div>
-            </div>
+        <!-- Estadísticas Automatizadas -->
+        <div class="stats-auto-grid mb-4">
+          <div class="stat-info-card">
+            <span class="stat-info-label">Pacientes</span>
+            <span class="stat-info-value">${counts.patients}</span>
+            <span class="stat-info-sub">${ICONS.user || ''} Total registrados</span>
           </div>
-          <button class="btn btn-primary" id="btn-save-config">
-              ${ICONS.save || ''} Publicar Cambios
+          <div class="stat-info-card">
+            <span class="stat-info-label">Médicos</span>
+            <span class="stat-info-value">${counts.doctors}</span>
+            <span class="stat-info-sub">${ICONS.doctor || ''} Personal activo</span>
+          </div>
+          <div class="stat-info-card">
+            <span class="stat-info-label">Citas</span>
+            <span class="stat-info-value">${counts.appointments}</span>
+            <span class="stat-info-sub">${ICONS.calendar || ''} Gestionadas</span>
+          </div>
+          <div class="stat-info-card">
+            <span class="stat-info-label">Áreas Médicas</span>
+            <span class="stat-info-value">${counts.areas}</span>
+            <span class="stat-info-sub">${ICONS.area || ''} Servicios disponibles</span>
+          </div>
+        </div>
+
+        <div class="alineado mb-4">
+          <button class="btn-circle btn-circle-cancel" id="btn-reset-config" title="Reiniciar Cambios">
+            ${ICONS.sync}
+          </button>
+          <button class="btn-circle btn-circle-save" id="btn-save-config" title="Guardar Cambios">
+              ${ICONS.save}
           </button>
         </div>
 
-        <div class="card">
-          <div class="responsive-grid">
+        <div class="responsive-grid">
             <!-- Sección Hero e Imagen -->
-            <div class="card-gestion">
-              <div class="card-gestion-header">
-                <h3 class="mb-0 flex items-center gap-2">
+            <div class="card mb-4">
+              <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h3 class="mb-0 flex items-center gap-2" style="margin: 0;">
                   <span style="color: var(--themeDark);">${ICONS.rocket}</span> 
                   Identidad Visual (Hero)
                 </h3>
               </div>
               
-              <div class="card-body">
                 <div class="form-group mb-3">
                   <label class="form-label">Título Principal</label>
                   <input type="text" class="input" id="hero-title" value="${c.hero.title}">
@@ -111,18 +113,16 @@ export default function mountLandingManager(root, { store, user, role }) {
                   <label class="form-label">Descripción</label>
                   <textarea class="input" id="hero-description" rows="3">${c.hero.description}</textarea>
                 </div>
-              </div>
             </div>
 
             <!-- Contacto -->
-            <div class="card-gestion">
-              <div class="card-gestion-header">
-                <h3 class="mb-0 flex items-center gap-2">
+            <div class="card mb-4">
+              <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h3 class="mb-0 flex items-center gap-2" style="margin: 0;">
                   <span style="color: var(--themeDark);">${ICONS.phone}</span> 
                   Información de Contacto
                 </h3>
               </div>
-              <div class="card-body">
                 <div class="form-group mb-3">
                   <label class="form-label">Email</label>
                   <input type="email" class="input" id="contact-email" value="${c.contact.email}">
@@ -135,18 +135,16 @@ export default function mountLandingManager(root, { store, user, role }) {
                   <label class="form-label">Dirección</label>
                   <input type="text" class="input" id="contact-address" value="${c.contact.address}">
                 </div>
-              </div>
             </div>
 
             <!-- Redes Sociales -->
-            <div class="card-gestion">
-              <div class="card-gestion-header">
-                <h3 class="mb-0 flex items-center gap-2">
+            <div class="card mb-4">
+              <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h3 class="mb-0 flex items-center gap-2" style="margin: 0;">
                   <span style="color: var(--themeDark);">${ICONS.users}</span> 
                   Redes Sociales
                 </h3>
               </div>
-              <div class="card-body">
                 <div class="form-group mb-3">
                   <label class="form-label">Instagram</label>
                   <input type="text" class="input" id="social-instagram" value="${c.social.instagram}">
@@ -159,7 +157,6 @@ export default function mountLandingManager(root, { store, user, role }) {
                   <label class="form-label">WhatsApp</label>
                   <input type="text" class="input" id="social-whatsapp" value="${c.social.whatsapp}">
                 </div>
-              </div>
             </div>
           </div>
         </div>
@@ -167,14 +164,9 @@ export default function mountLandingManager(root, { store, user, role }) {
       <style>
         .responsive-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
           gap: 1.5rem;
-        }
-        .stats-auto-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-          gap: 4rem;
-          width: 60vw
+          width: 100%;
         }
         .hero-preview-small {
           width: 100%;
@@ -194,46 +186,41 @@ export default function mountLandingManager(root, { store, user, role }) {
           display: flex;
           gap: 0.5rem;
         }
-        .stat-info-card {
-          background: white;
-          border: 1px solid var(--border);
-          padding: 1.25rem 0.75rem;
-          border-radius: 12px;
+        .alineado {
           display: flex;
-          flex-direction: column;
+          justify-content: flex-end;
+          gap: 1rem;
           align-items: center;
-          transition: all 0.2s ease;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        .stat-info-card:hover {
-          border-color: var(--accent);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        .btn-save-custom {
+          background-color: var(--themePrimary) !important;
+          color: white !important;
+          border-radius: 50px !important;
+          width: 45px;
+          height: 45px;
+          padding: 0;
         }
-        .stat-info-label {
-          font-size: 0.7rem;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          margin-bottom: 0.25rem;
-          font-weight: 600;
-        }
-        .stat-info-value {
-          font-size: 1.75rem;
-          font-weight: 800;
-          color: var(--accent);
-          line-height: 1;
+        .btn-reset-custom {
+          background-color: var(--red) !important;
+          color: white !important;
+          border-radius: 50px !important;
+          width: 45px;
+          height: 45px;
+          padding: 0;
+          border: none;
         }
         @media (max-width: 768px) {
           .responsive-grid {
             grid-template-columns: 1fr;
           }
-          .card .flex.justify-between {
+          .card-header .flex.justify-between {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
+            align-items: center;
+            gap: 1.5rem;
           }
-          .btn-save-config {
+          .alineado {
             width: 100%;
+            justify-content: center;
           }
           .btn-text {
             display: none;
@@ -248,6 +235,7 @@ export default function mountLandingManager(root, { store, user, role }) {
     // Guardar referencias
     elements = {
       btnSave: root.querySelector('#btn-save-config'),
+      btnReset: root.querySelector('#btn-reset-config'),
       btnTriggerUpload: root.querySelector('#btn-trigger-upload'),
       btnResetImg: root.querySelector('#btn-reset-img'),
       fileInput: root.querySelector('#hero-file-input'),
@@ -277,6 +265,15 @@ export default function mountLandingManager(root, { store, user, role }) {
 
     if (elements.fileInput) {
       elements.fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    if (elements.btnReset) {
+      elements.btnReset.addEventListener('click', () => {
+        state.config = store.get('landingConfig');
+        state.tempBackgroundImage = null;
+        render();
+        window.hospitalAlert('Cambios descartados. Configuración recargada.', 'info');
+      });
     }
 
     if (elements.btnResetImg) {

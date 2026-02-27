@@ -218,8 +218,13 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="module-clinical">
+        <!-- Estadísticas -->
+        <div class="stats-auto-grid mb-4" id="stats-container">
+          <!-- Se llenará dinámicamente -->
+        </div>
+
         <!-- Barra de búsqueda + Botón -->
-        <div class="card" style="padding: 0.75rem 1rem;">
+        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
           <div class="flex justify-between items-center">
             ${canCreate ? `
               <button class="btn btn-primary" id="btn-new-record">
@@ -240,11 +245,6 @@ export default function mountClinical(root, { bus, store, user, role }) {
               >
             </div>
           </div>
-        </div>
-
-        <!-- Estadísticas -->
-        <div class="grid grid-4" id="stats-container">
-          <!-- Se llenará dinámicamente -->
         </div>
 
         <!-- Contenido principal -->
@@ -419,9 +419,11 @@ export default function mountClinical(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2.5rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-              ${state.editingId ? 'ACTUALIZAR REGISTRO' : 'FINALIZAR HISTORIA CLÍNICA'}
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
+              ${ICONS.close}
+            </button>
+            <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Registro' : 'Finalizar Historia Clínica'}">
+              ${ICONS.check}
             </button>
           </div>
         </div>
@@ -642,7 +644,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
     `;
   }
 
-  // Actualizar estadísticas
+  // Actualizar estadísticas - CORREGIDO: SVG con path completo
   function updateStats() {
     if (!elements.statsContainer) return;
 
@@ -660,26 +662,40 @@ export default function mountClinical(root, { bus, store, user, role }) {
     };
 
     elements.statsContainer.innerHTML = `
-      <div class="card">
-        <div class="text-muted text-sm">Total registros</div>
-        <div class="text-2xl font-bold" style="color: var(--accent);">${stats.total}</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Total registros</span>
+        <span class="stat-info-value">${stats.total}</span>
+        <span class="stat-info-sub">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Hojas médicas
+        </span>
       </div>
       
-      <div class="card">
-        <div class="text-muted text-sm">Consultas</div>
-        <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.consultations}</div>
-        <div class="text-xs text-muted mt-1">${stats.total > 0 ? Math.round((stats.consultations / stats.total) * 100) : 0}% del total</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Consultas</span>
+        <span class="stat-info-value">${stats.consultations}</span>
+        <span class="stat-info-sub">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          ${stats.total > 0 ? Math.round((stats.consultations / stats.total) * 100) : 0}% efectividad
+        </span>
       </div>
       
-      <div class="card">
-        <div class="text-muted text-sm">Controles pendientes</div>
-        <div class="text-2xl font-bold" style="color: var(--warning);">${stats.pendingFollowups}</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Seguimientos</span>
+        <span class="stat-info-value">${stats.pendingFollowups}</span>
+        <span class="stat-info-sub">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Próximos controles
+        </span>
       </div>
       
-      <div class="card">
-        <div class="text-muted text-sm">Pacientes con HC</div>
-        <div class="text-2xl font-bold" style="color: var(--info);">${stats.patientsWithRecords}</div>
-        <div class="text-xs text-muted mt-1">de ${patients.length} pacientes</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Pacientes con HC</span>
+        <span class="stat-info-value">${stats.patientsWithRecords}</span>
+        <span class="stat-info-sub">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          de ${patients.length} pacientes
+        </span>
       </div>
     `;
   }
@@ -1424,12 +1440,18 @@ export default function mountClinical(root, { bus, store, user, role }) {
             Documento clínico electrónico • Generado automáticamente por Hospital Universitario Manuel Nuñez Tovar
         </div>
 
-        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
-          <button class="btn btn-primary" style="background: #4a7963; border: none; padding: 0.5rem 1rem;" id="print-record-btn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg> Imprimir</button>
+        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+          <button class="btn-circle btn-circle-view" id="print-record-btn" title="Imprimir Informe">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+          </button>
           ${canEditThisRecord ? `
-            <button class="btn btn-primary" style="background: #7c9b1f; border: none; padding: 0.5rem 1rem;" id="edit-record-btn" data-id="${record.id}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>
+            <button class="btn-circle btn-circle-edit" id="edit-record-btn" data-id="${record.id}" title="Editar Registro">
+              ${ICONS.edit}
+            </button>
           ` : ''}
-          <button class="btn btn-danger" style="background: #d55050; border: none; padding: 0.5rem 1rem;" id="close-modal-btn">✕ Cerrar</button>
+          <button class="btn-circle btn-circle-cancel" id="close-detail-modal-btn" title="Cerrar">
+            ${ICONS.close}
+          </button>
         </div>
       </div>
       `;
@@ -1702,7 +1724,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
 
     // Botones de cerrar
     const closeBtnHeader = modalContainer.querySelector('#close-record-modal');
-    const closeBtnFooter = modalContainer.querySelector('#close-modal-btn');
+    const closeBtnFooter = modalContainer.querySelector('#close-detail-modal-btn');
     if (closeBtnHeader) closeBtnHeader.addEventListener('click', enhancedCloseModal);
     if (closeBtnFooter) closeBtnFooter.addEventListener('click', enhancedCloseModal);
 

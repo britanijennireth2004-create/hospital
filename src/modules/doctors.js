@@ -94,7 +94,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   const state = {
     doctors: [],
     filters: {
-      search: ''
+      search: '',
+      onlyToday: false
     },
     editingId: null,
     isLoading: false,
@@ -112,6 +113,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   function init() {
     render();
     setupEventListeners();
+    loadSelectData();
     loadDoctors();
 
     const unsubscribe = store.subscribe('doctors', () => {
@@ -175,6 +177,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         }
       }
 
+      if (state.filters.onlyToday) {
+        if (!isDoctorWorkingAt(doctor, new Date())) {
+          return false;
+        }
+      }
+
       return true;
     });
   }
@@ -201,6 +209,81 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         a.doctorId === doctorId && a.status === 'completed'
       ).length
     };
+  }
+
+  // Verificar si un médico trabaja en un día/hora específico
+  function isDoctorWorkingAt(doctor, date, timeStr = null, duration = 0) {
+    if (doctor.isActive === false || doctor.status === 'vacation' || doctor.status === 'license') return false;
+
+    // Normalizar fecha
+    const dateObj = date instanceof Date ? date : new Date(date + 'T12:00:00');
+    const dayIndex = dateObj.getDay();
+
+    // Arrays para días de la semana
+    const englishDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const spanishDays = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const dayEn = englishDays[dayIndex];
+    const dayEs = spanishDays[dayIndex];
+
+    let worksThatDay = false;
+    let startStr = doctor.scheduleStart || (doctor.workStartHour !== undefined ? `${doctor.workStartHour.toString().padStart(2, '0')}:00` : '08:00');
+    let endStr = doctor.scheduleEnd || (doctor.workEndHour !== undefined ? `${doctor.workEndHour.toString().padStart(2, '0')}:00` : '18:00');
+
+    // 1. Objeto schedule (formato avanzado)
+    if (doctor.schedule && typeof doctor.schedule === 'object') {
+      const scheduleKeys = Object.keys(doctor.schedule).reduce((acc, key) => { acc[key.toLowerCase()] = doctor.schedule[key]; return acc; }, {});
+      if (scheduleKeys[dayEn]) {
+        const daySched = scheduleKeys[dayEn];
+        if (daySched.start && daySched.end) {
+          worksThatDay = true;
+          startStr = daySched.start;
+          endStr = daySched.end;
+        }
+      }
+    }
+
+    // 2. Array workDays (formato simple)
+    if (!worksThatDay && doctor.workDays && Array.isArray(doctor.workDays) && doctor.workDays.length > 0) {
+      const workDays = doctor.workDays.map(d => d.toLowerCase());
+      const normalizedDayEs = dayEs.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (workDays.includes(dayEs.toLowerCase()) || workDays.includes(normalizedDayEs)) {
+        worksThatDay = true;
+      }
+    }
+
+    // 3. String schedule (formato legado)
+    if (!worksThatDay && typeof doctor.schedule === 'string') {
+      const s = doctor.schedule.toLowerCase();
+      if (s.includes('lun-vie') && dayIndex >= 1 && dayIndex <= 5) worksThatDay = true;
+      else if (s.includes('mar-jue') && dayIndex >= 2 && dayIndex <= 4) worksThatDay = true;
+      else if (s.includes('lun-sab') && dayIndex >= 1 && dayIndex <= 6) worksThatDay = true;
+      else if (s.includes('lun-dom')) worksThatDay = true;
+
+      if (!worksThatDay) {
+        const abbrs = { 'lun': 1, 'mar': 2, 'mie': 3, 'jue': 4, 'vie': 5, 'sab': 6, 'dom': 0 };
+        Object.entries(abbrs).forEach(([a, i]) => { if (s.includes(a) && dayIndex === i) worksThatDay = true; });
+      }
+    }
+
+    // Fallback absoluto: L-V si no tiene nada definido
+    if (!worksThatDay && !doctor.workDays && !doctor.schedule) {
+      if (dayIndex >= 1 && dayIndex <= 5) worksThatDay = true;
+    }
+
+    if (!worksThatDay) return false;
+    if (!timeStr) return true;
+
+    const timeToMin = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + (m || 0);
+    };
+
+    const timeVal = timeToMin(timeStr);
+    const endValTarget = timeVal + (duration || 0);
+    const startValTotal = timeToMin(startStr);
+    const endValTotal = timeToMin(endStr);
+
+    return timeVal >= startValTotal && endValTarget <= endValTotal;
   }
 
   // Formatear horario
@@ -256,6 +339,11 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="module-doctors">
+        <!-- Estadísticas -->
+        <div class="stats-auto-grid mb-4" id="stats-container">
+          <!-- Se llenará dinámicamente -->
+        </div>
+
         <!-- Header -->
         <div class="card" style="padding: 0.75rem 1rem;">
           <div class="flex justify-between items-center">
@@ -267,21 +355,22 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                 </span>
               </button>
             ` : '<div></div>'}
-            <div class="search-input-wrapper" style="position: relative; width: 450px;">
-              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
-                ${icons.search}
-              </span>
-              <input type="text" class="input" id="filter-search" 
-                     placeholder="Buscar por nombre, especialidad, licencia, área, estado..." 
-                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
-                     value="${state.filters.search}">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2" style="white-space: nowrap;">
+                <input type="checkbox" id="filter-today" ${state.filters.onlyToday ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px;">
+                <label for="filter-today" class="text-sm font-semibold" style="cursor: pointer;">En turno hoy</label>
+              </div>
+              <div class="search-input-wrapper" style="position: relative; width: 450px;">
+                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                  ${icons.search}
+                </span>
+                <input type="text" class="input" id="filter-search" 
+                       placeholder="Buscar por nombre, especialidad, licencia, área, estado..." 
+                       style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
+                       value="${state.filters.search}">
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- Estadísticas -->
-        <div class="grid grid-4" id="stats-container">
-          <!-- Se llenará dinámicamente -->
         </div>
 
         <!-- Lista de médicos -->
@@ -350,89 +439,65 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           
           <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
             <form id="doctor-form">
-              <!-- Información personal -->
-              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                ${icons.user}
-                INFORMACIÓN PERSONAL
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
-                  <input type="text" class="input" id="form-name" required placeholder="Ej: Juan Pérez García" style="border-color: var(--neutralTertiary); background: var(--white);">
-                </div>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: var(--neutralPrimary); display: flex; align-items: center; gap: 8px;">
+                  ${icons.user} INFORMACIÓN PERSONAL
+                </h4>
                 
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
-                  <div class="doc-group">
-                    <select class="input" id="form-doc-type" required style="border-color: var(--modal-border); background-color: var(--modal-bg);">
-                      <option value="V">V</option>
-                      <option value="E">E</option>
-                      <option value="J">J</option>
-                      <option value="P">P</option>
-                    </select>
-                    <input type="text" class="input" id="form-dni" placeholder="Número de cédula" style="border-color: var(--neutralTertiary); background: var(--white);">
+                <div class="grid grid-2 gap-4 mb-4">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
+                    <input type="text" class="input" id="form-name" required style="height: 38px;">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
+                    <div class="doc-group" style="display: flex; gap: 0;">
+                      <select class="input" id="form-doc-type" required style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px;">
+                        <option value="V">V</option>
+                        <option value="E">E</option>
+                        <option value="J">J</option>
+                        <option value="P">P</option>
+                      </select>
+                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-2 gap-4">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO *</label>
+                    <input type="tel" class="input" id="form-phone" required style="height: 38px;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CORREO ELECTRÓNICO *</label>
+                    <input type="email" class="input" id="form-email" required style="height: 38px;">
                   </div>
                 </div>
               </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO</label>
-                  <input type="date" class="input" id="form-birth-date" style="border-color: var(--neutralTertiary); background: var(--white);">
+
+              <div style="background: #f0f7ff; padding: 20px; border-radius: 8px; border: 1px solid #c2e0ff; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #005a9e; display: flex; align-items: center; gap: 8px;">
+                  ${icons.clipboard || ''} DATOS PROFESIONALES
+                </h4>
+                <div class="grid grid-2 gap-4 mb-4">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESPECIALIDAD *</label>
+                    <input type="text" class="input" id="form-specialty" required placeholder="Ej: Cardiología" style="height: 38px;">
+                  </div>
+                   <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">Nº LICENCIA / MPPS *</label>
+                    <input type="text" class="input" id="form-license" required style="height: 38px;">
+                  </div>
                 </div>
-                
                 <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO</label>
-                  <select class="input" id="form-gender" style="border-color: var(--neutralTertiary); background: var(--white);">
-                    <option value="">Seleccionar</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                    <option value="O">Otro</option>
-                  </select>
-                </div>
-              </div>
-              
-              <!-- Información profesional -->
-              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; color: var(--modal-section-gold); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem;">
-                ${icons.doctor}
-                INFORMACIÓN PROFESIONAL
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NÚMERO DE LICENCIA *</label>
-                  <input type="text" class="input" id="form-license" required placeholder="Ej: MED-123456" style="border-color: var(--neutralTertiary); background: var(--white);">
-                </div>
-                
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESPECIALIDAD *</label>
-                  <select class="input" id="form-specialty" required style="border-color: var(--neutralTertiary); background: var(--white);">
-                    <option value="">Seleccionar especialidad</option>
-                    <option value="Medicina General">Medicina General</option>
-                    <option value="Pediatría">Pediatría</option>
-                    <option value="Ginecología">Ginecología</option>
-                    <option value="Cardiología">Cardiología</option>
-                    <option value="Dermatología">Dermatología</option>
-                    <option value="Ortopedia">Ortopedia</option>
-                    <option value="Oftalmología">Oftalmología</option>
-                    <option value="Psiquiatría">Psiquiatría</option>
-                    <option value="Otra">Otra</option>
-                  </select>
+                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ÁREA ASIGNADA *</label>
+                  <select class="input" id="form-area" required style="height: 38px;"></select>
                 </div>
               </div>
               
               <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ÁREA PRINCIPAL *</label>
-                <select class="input" id="form-area" required style="border-color: var(--neutralTertiary); background: var(--white);">
-                  <option value="">Seleccionar área</option>
-                </select>
-              </div>
-              
-              <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">
-                  OTRAS ÁREAS ASIGNADAS
-                </label>
+                <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">OTRAS ÁREAS ASIGNADAS</label>
                 <div id="other-areas-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; min-height: 20px;">
                   <!-- Se llenará dinámicamente con las áreas adicionales -->
                 </div>
@@ -441,21 +506,28 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                 </select>
               </div>
               
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO *</label>
-                  <input type="tel" class="input" id="form-phone" required placeholder="Ej: +34 600 123 456" style="border-color: var(--neutralTertiary); background: var(--white);">
+              <div style="background: #fffcf5; padding: 20px; border-radius: 8px; border: 1px solid #fff1c1; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO</label>
+                    <input type="date" class="input" id="form-birth-date" style="border-color: var(--neutralTertiary); background: var(--white); height: 38px;">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO</label>
+                    <select class="input" id="form-gender" style="border-color: var(--neutralTertiary); background: var(--white); height: 38px;">
+                      <option value="">Seleccionar</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Femenino</option>
+                      <option value="O">Otro</option>
+                    </select>
+                  </div>
                 </div>
-                
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL *</label>
-                  <input type="email" class="input" id="form-email" required placeholder="Ej: medico@hospital.com" style="border-color: var(--neutralTertiary); background: var(--white);">
+
+                <div class="form-group" style="margin-top: 1rem;">
+                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DIRECCIÓN</label>
+                  <input type="text" class="input" id="form-address" placeholder="Ej: Calle Principal 123, Ciudad" style="border-color: var(--neutralTertiary); background: var(--white); height: 38px;">
                 </div>
-              </div>
-              
-              <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DIRECCIÓN</label>
-                  <input type="text" class="input" id="form-address" placeholder="Ej: Calle Principal 123, Ciudad" style="border-color: var(--neutralTertiary); background: var(--white);">
               </div>
               
               <!-- Horario y disponibilidad -->
@@ -545,9 +617,11 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </div>
           
           <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? 'GUARDANDO...' : (state.editingId ? 'ACTUALIZAR PERFIL' : 'REGISTRAR MÉDICO')}
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
+              ${icons.close || ICONS.close}
+            </button>
+            <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Perfil' : 'Registrar Médico'}" ${state.isLoading ? 'disabled' : ''}>
+              ${state.isLoading ? '<span class="loading-spinner"></span>' : ICONS.check}
             </button>
           </div>
         </div>
@@ -558,11 +632,11 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         <div class="modal-content" style="max-width: 500px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
           <div class="modal-header" style="background: var(--warning); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
             <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">CAMBIAR ESTADO</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              ${state.currentDoctor ? state.currentDoctor.name : 'Médico'}
+            <div id="status-modal-name" style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
+              Médico
             </div>
             <button class="btn-close-modal" id="btn-close-status-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              ${icons.close}
+              ${ICONS.close}
             </button>
           </div>
           
@@ -571,10 +645,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO ACTUAL</label>
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
-                  <div style="width: 12px; height: 12px; border-radius: 50%; background: ${state.currentDoctor?.isActive ? 'var(--success)' : 'var(--danger)'};"></div>
-                  <span style="font-weight: 600;">${state.currentDoctor?.isActive ? 'ACTIVO' : 'INACTIVO'}</span>
-                  ${state.currentDoctor?.status === 'vacation' ? '<span class="badge badge-warning ml-2">Vacaciones</span>' : ''}
-                  ${state.currentDoctor?.status === 'license' ? '<span class="badge badge-info ml-2">Licencia</span>' : ''}
+                  <div id="status-modal-badge" style="width: 12px; height: 12px; border-radius: 50%; background: ${state.currentDoctor?.isActive ? 'var(--success)' : 'var(--danger)'};"></div>
+                  <span id="status-modal-text" style="font-weight: 600;">${state.currentDoctor?.isActive ? 'ACTIVO' : 'INACTIVO'}</span>
+                  <span id="status-modal-subtext" class="hidden" style="margin-left: 0.5rem;"></span>
                 </div>
               </div>
               
@@ -601,10 +674,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: #f8f9fa; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e9ecef;">
-            <button class="btn" id="btn-cancel-status" style="background: var(--danger); color: #fff; border: 1px solid #dee2e6; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save-status" style="background: var(--warning); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700;">
-              ACTUALIZAR ESTADO
+          <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel-status" title="Cancelar">
+              ${ICONS.close}
+            </button>
+            <button class="btn-circle btn-circle-status" id="btn-save-status" title="Actualizar Estado">
+              ${ICONS.check}
             </button>
           </div>
         </div>
@@ -680,17 +755,23 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: #f8f9fa; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e9ecef;">
-            <button class="btn" id="btn-cancel-capacity" style="background: var(--danger); color: #fff; border: 1px solid #dee2e6; padding: 0.75rem 1.5rem; font-weight: 600;">CANCELAR</button>
-            <button class="btn" id="btn-save-capacity" style="background: var(--success); color: white; border: none; padding: 0.75rem 2rem; font-weight: 700;">
-              ACTUALIZAR CAPACIDAD
+          <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+            <button class="btn-circle btn-circle-cancel" id="btn-cancel-capacity" title="Cancelar">
+              ${ICONS.close}
+            </button>
+            <button class="btn-circle btn-circle-save" id="btn-save-capacity" title="Actualizar Capacidad">
+              ${ICONS.check}
             </button>
           </div>
         </div>
       </div>
     `;
 
-    // Guardar referencias a elementos
+    captureElements();
+  }
+
+  // Capturar referencias a elementos del DOM
+  function captureElements() {
     elements = {
       statsContainer: root.querySelector('#stats-container'),
       doctorsList: root.querySelector('#doctors-list'),
@@ -701,7 +782,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
       // Filtros
       filterSearch: root.querySelector('#filter-search'),
-      filterSearch: root.querySelector('#filter-search'),
+      filterToday: root.querySelector('#filter-today'),
 
       // Modal principal
       modal: root.querySelector('#doctor-modal'),
@@ -755,10 +836,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       btnCancelCapacity: root.querySelector('#btn-cancel-capacity'),
       btnSaveCapacity: root.querySelector('#btn-save-capacity')
     };
-
-    // Cargar datos iniciales
-    loadSelectData();
-    loadDoctors();
   }
 
   // Cargar datos en selects
@@ -807,6 +884,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       const canEdit = role === 'admin' || role === 'receptionist' || (role === 'doctor' && user?.doctorId === doctor.id);
       const dailyCapacity = doctor.dailyCapacity || 20;
       const capacityPercentage = Math.min(Math.round((stats.todayAppointments / dailyCapacity) * 100), 100);
+      const isWorkingToday = isDoctorWorkingAt(doctor, new Date());
 
       return `
         <tr>
@@ -830,56 +908,56 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           <td data-label="Horario">
             <div class="text-sm">${formatSchedule(doctor)}</div>
             <div class="text-xs text-muted">${doctor.consultationDuration || 30} min/consulta</div>
+            ${isWorkingToday ? '<span class="badge badge-success" style="font-size: 0.65rem; margin-top: 0.25rem;">Hoy en turno</span>' : '<span class="badge badge-outline" style="font-size: 0.65rem; margin-top: 0.25rem; opacity: 0.6;">No labora hoy</span>'}
           </td>
           <td data-label="Citas hoy">
             <div class="text-center">
-              <div style="font-weight: bold; font-size: 1.25rem; color: ${stats.todayAppointments > 0 ? 'var(--accent-2)' : 'var(--muted)'}">
-                ${stats.todayAppointments}
-              </div>
-              <div class="text-xs text-muted">de ${dailyCapacity}</div>
+              ${isWorkingToday ? `
+                <div style="font-weight: bold; font-size: 1.25rem; color: ${stats.todayAppointments > 0 ? 'var(--accent-2)' : 'var(--muted)'}">
+                  ${stats.todayAppointments}
+                </div>
+                <div class="text-xs text-muted">de ${dailyCapacity}</div>
+              ` : `
+                <div style="color: var(--muted); font-style: italic; font-size: 0.85rem;">-</div>
+              `}
             </div>
           </td>
           <td data-label="Capacidad diaria">
-            <div style="margin-bottom: 0.25rem;">
-              <div style="height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden;">
-                <div style="width: ${capacityPercentage}%; height: 100%; background: ${capacityPercentage > 80 ? 'var(--danger)' : capacityPercentage > 60 ? 'var(--warning)' : 'var(--success)'};"></div>
+            ${isWorkingToday ? `
+              <div style="margin-bottom: 0.25rem;">
+                <div style="height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden;">
+                  <div style="width: ${capacityPercentage}%; height: 100%; background: ${capacityPercentage > 80 ? 'var(--danger)' : capacityPercentage > 60 ? 'var(--warning)' : 'var(--success)'};"></div>
+                </div>
               </div>
-            </div>
-            <div class="text-sm">
-              ${stats.todayAppointments}/${dailyCapacity} pacientes
-              ${canEditStatus ? `
-                <button class="btn btn-xs btn-outline ml-2" data-action="capacity" data-id="${doctor.id}" title="Ajustar capacidad">
-                  ${icons.capacity}
-                </button>
-              ` : ''}
-            </div>
+              <div class="text-sm">
+                ${stats.todayAppointments}/${dailyCapacity} pacientes
+                ${canEditStatus ? `
+                  <button class="btn-circle btn-circle-status" style="width: 24px; height: 24px; margin-left: 0.5rem;" data-action="capacity" data-id="${doctor.id}" title="Ajustar capacidad">
+                    ${icons.capacity || ICONS.chart}
+                  </button>
+                ` : ''}
+              </div>
+            ` : `
+              <div style="font-size: 0.8rem; color: var(--muted); text-align: center;">Sin actividad hoy</div>
+            `}
           </td>
           <td data-label="Estado">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="badge ${doctor.isActive ? 'badge-success' : 'badge-danger'}">
-                ${doctor.isActive ? 'Activo' : 'Inactivo'}
-                ${doctor.status === 'vacation' ? ' (Vacaciones)' : doctor.status === 'license' ? ' (Licencia)' : ''}
-              </span>
-              ${canEditStatus ? `
-                <button class="btn btn-xs btn-outline" data-action="status" data-id="${doctor.id}" title="Cambiar estado">
-                  ${icons.status}
-                </button>
-              ` : ''}
-            </div>
+            <span class="badge ${doctor.isActive ? 'badge-success' : 'badge-danger'}">
+              ${doctor.isActive ? 'Activo' : 'Inactivo'}
+              ${doctor.status === 'vacation' ? ' (Vacaciones)' : doctor.status === 'license' ? ' (Licencia)' : ''}
+            </span>
           </td>
           <td data-label="Acciones">
-            <div class="flex gap-2">
-              <button class="btn btn-outline btn-sm" data-action="view" data-id="${doctor.id}" title="Ver perfil">
-                ${icons.view}
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button class="btn-circle btn-circle-view" data-action="view" data-id="${doctor.id}" title="Ver perfil">
+                ${icons.view || ICONS.eye}
               </button>
-              
               ${canEdit ? `
-                <button class="btn btn-outline btn-sm" data-action="edit" data-id="${doctor.id}" title="Editar">
-                  ${icons.edit}
+                <button class="btn-circle btn-circle-status" data-action="status" data-id="${doctor.id}" title="Cambiar Estado">
+                  ${ICONS.sync}
                 </button>
-                
-                <button class="btn btn-outline btn-sm" data-action="schedule" data-id="${doctor.id}" title="Agenda">
-                  ${icons.schedule}
+                <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${doctor.id}" title="Editar">
+                  ${ICONS.edit}
                 </button>
               ` : ''}
             </div>
@@ -944,21 +1022,25 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Actualizar estadísticas
   function updateStats() {
-    if (!elements.statsContainer) return;
+    const doctors = store.get('doctors') || [];
+    const appointments = store.get('appointments') || [];
+    const today = new Date();
+    const todayStr = today.toDateString();
 
-    const doctors = store.get('doctors');
-    const appointments = store.get('appointments');
-    const today = new Date().toDateString();
-
-    const totalCapacity = doctors.reduce((sum, doctor) => sum + (doctor.dailyCapacity || 20), 0);
     const usedCapacity = appointments.filter(a =>
-      new Date(a.dateTime).toDateString() === today
+      a.status !== 'cancelled' &&
+      new Date(a.dateTime).toDateString() === todayStr
     ).length;
-    const availableCapacity = totalCapacity - usedCapacity;
+
+    // Calcular capacidad total considerando solo médicos trabajando hoy
+    const workingToday = doctors.filter(d => isDoctorWorkingAt(d, today));
+    const totalCapacity = workingToday.reduce((sum, d) => sum + (d.dailyCapacity || 20), 0);
+    const availableCapacity = Math.max(0, totalCapacity - usedCapacity);
 
     const stats = {
       total: doctors.length,
       active: doctors.filter(d => d.isActive).length,
+      workingToday: workingToday.length,
       specialties: [...new Set(doctors.map(d => d.specialty).filter(Boolean))].length,
       todayAppointments: usedCapacity,
       totalCapacity: totalCapacity,
@@ -966,26 +1048,28 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     };
 
     elements.statsContainer.innerHTML = `
-      <div class="card">
-        <div class="text-muted text-sm">Total médicos</div>
-        <div class="text-2xl font-bold" style="color: var(--accent);">${stats.total}</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Total Médicos</span>
+        <span class="stat-info-value">${stats.total}</span>
+        <span class="stat-info-sub">${icons.doctor} Registrados</span>
+      </div>
+
+      <div class="stat-info-card">
+        <span class="stat-info-label">Médicos Hoy</span>
+        <span class="stat-info-value">${stats.workingToday}</span>
+        <span class="stat-info-sub">${icons.successCheck} En turno</span>
+      </div>
+
+      <div class="stat-info-card">
+        <span class="stat-info-label">Especialidades</span>
+        <span class="stat-info-value">${stats.specialties}</span>
+        <span class="stat-info-sub">${icons.clipboard} Áreas médicas</span>
       </div>
       
-      <div class="card">
-        <div class="text-muted text-sm">Médicos activos</div>
-        <div class="text-2xl font-bold" style="color: var(--success);">${stats.active}</div>
-        <div class="text-xs text-muted mt-1">${Math.round((stats.active / stats.total) * 100)}% del total</div>
-      </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">Especialidades</div>
-        <div class="text-2xl font-bold" style="color: var(--accent-2);">${stats.specialties}</div>
-      </div>
-      
-      <div class="card">
-        <div class="text-muted text-sm">Capacidad hoy</div>
-        <div class="text-2xl font-bold" style="color: var(--info);">${stats.usedCapacity || 0}/${stats.totalCapacity}</div>
-        <div class="text-xs text-muted mt-1">${stats.availableCapacity} disponibles</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Capacidad Hoy</span>
+        <span class="stat-info-value">${usedCapacity}/${stats.totalCapacity}</span>
+        <span class="stat-info-sub">${icons.capacity} ${availableCapacity} disponibles</span>
       </div>
     `;
   }
@@ -994,6 +1078,13 @@ export default function mountDoctors(root, { bus, store, user, role }) {
   function setupEventListeners() {
     if (elements.filterSearch) {
       elements.filterSearch.addEventListener('input', debounce(applyFiltersHandler, 300));
+    }
+
+    if (elements.filterToday) {
+      elements.filterToday.addEventListener('change', (e) => {
+        state.filters.onlyToday = e.target.checked;
+        applyFiltersHandler();
+      });
     }
 
 
@@ -1151,7 +1242,11 @@ export default function mountDoctors(root, { bus, store, user, role }) {
         viewDoctor(doctor);
         break;
       case 'edit':
-        editDoctor(doctor);
+        if (role === 'admin' || role === 'receptionist' || (role === 'doctor' && user?.doctorId === doctorId)) {
+          editDoctor(doctor);
+        } else {
+          showNotification('No tienes permiso para editar este perfil', 'error');
+        }
         break;
       case 'schedule':
         viewSchedule(doctor);
@@ -1226,17 +1321,45 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     state.currentDoctor = doctor;
     state.showStatusModal = true;
 
-    if (elements.statusModal) {
-      elements.statusModal.classList.remove('hidden');
+    // Actualizar dinámicamente el nombre y el estado actual visual en el modal
+    const modalName = root.querySelector('#status-modal-name');
+    if (modalName) modalName.textContent = doctor.name;
+
+    const badge = root.querySelector('#status-modal-badge');
+    const text = root.querySelector('#status-modal-text');
+    const subtext = root.querySelector('#status-modal-subtext');
+
+    if (badge) badge.style.background = doctor.isActive ? 'var(--success)' : 'var(--danger)';
+    if (text) text.textContent = doctor.isActive ? 'ACTIVO' : 'INACTIVO';
+
+    if (subtext) {
+      if (doctor.status === 'vacation') {
+        subtext.innerHTML = '<span class="badge badge-warning">Vacaciones</span>';
+        subtext.classList.remove('hidden');
+      } else if (doctor.status === 'license') {
+        subtext.innerHTML = '<span class="badge badge-info">Licencia</span>';
+        subtext.classList.remove('hidden');
+      } else {
+        subtext.innerHTML = '';
+        subtext.classList.add('hidden');
+      }
     }
 
     if (elements.statusFormState) {
       elements.statusFormState.value = doctor.status || 'active';
     }
 
+    const reasonInput = root.querySelector('#status-form-reason');
+    if (reasonInput) reasonInput.value = doctor.statusReason || '';
+
     if (elements.statusFormReturnDate) {
       const today = new Date().toISOString().split('T')[0];
       elements.statusFormReturnDate.min = today;
+      elements.statusFormReturnDate.value = doctor.statusReturnDate || '';
+    }
+
+    if (elements.statusModal) {
+      elements.statusModal.classList.remove('hidden');
     }
   }
 
@@ -1355,7 +1478,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       workDays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
     }
 
-    document.querySelectorAll('.form-checkbox').forEach(checkbox => {
+    root.querySelectorAll('#doctor-form .form-checkbox').forEach(checkbox => {
       checkbox.checked = workDays.includes(checkbox.value);
     });
 
@@ -1379,7 +1502,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       elements.otherAreasContainer.innerHTML = '';
     }
 
-    document.querySelectorAll('.form-checkbox').forEach((checkbox, index) => {
+    root.querySelectorAll('#doctor-form .form-checkbox').forEach((checkbox, index) => {
       checkbox.checked = index < 5;
     });
 
@@ -1518,7 +1641,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
   // Obtener datos del formulario principal
   function getFormData() {
-    const workDays = Array.from(document.querySelectorAll('.form-checkbox:checked'))
+    const workDays = Array.from(root.querySelectorAll('#doctor-form .form-checkbox:checked'))
       .map(checkbox => checkbox.value);
 
     let otherAreas = [];
@@ -1952,24 +2075,26 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </div>
         </div>
         
-        <div class="modal-footer" style="background: #f7fafc; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #edf2f7;">
+        <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
           ${(role === 'admin' || role === 'receptionist' || (role === 'doctor' && user?.doctorId === doctor.id)) ? `
-            <button class="btn" id="edit-doctor-btn" data-id="${doctor.id}" style="background: var(--modal-section-forest-light); color: var(--modal-header); border: 1px solid var(--modal-header); padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.edit} EDITAR PERFIL
+            <button class="btn-circle btn-circle-edit" id="edit-doctor-btn" data-id="${doctor.id}" title="Editar Perfil">
+              ${icons.edit}
             </button>
-            <button class="btn" id="view-schedule-btn" data-id="${doctor.id}" style="background: var(--modal-header); color: #fff; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.schedule} VER AGENDA
+            <button class="btn-circle btn-circle-view" id="view-schedule-btn" data-id="${doctor.id}" title="Ver Agenda">
+              ${icons.schedule}
             </button>
           ` : ''}
           ${canEditStatus ? `
-            <button class="btn" id="change-status-btn" data-id="${doctor.id}" style="background: var(--warning); color: #fff; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.status} ESTADO
+            <button class="btn-circle btn-circle-status" id="change-status-btn" data-id="${doctor.id}" title="Cambiar Estado">
+              ${icons.status}
             </button>
-            <button class="btn" id="adjust-capacity-btn" data-id="${doctor.id}" style="background: var(--info); color: #fff; border: none; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.capacity} CAPACIDAD
+            <button class="btn-circle btn-circle-save" id="adjust-capacity-btn" data-id="${doctor.id}" title="Ajustar Capacidad">
+              ${icons.capacity}
             </button>
           ` : ''}
-          <button class="btn" id="close-modal-btn" style="background: var(--danger); color: #fff; border: 1px solid #e2e8f0; padding: 0.7rem 1.75rem; font-weight: 700; border-radius: 4px;">CERRAR</button>
+          <button class="btn-circle btn-circle-cancel" id="close-modal-btn" title="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
     `;

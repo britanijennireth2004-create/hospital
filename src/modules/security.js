@@ -153,56 +153,44 @@ export default function mountSecurity(root, { bus, store, user, role }) {
     root.innerHTML = `
       <div class="security-module animated-fade-in" style="max-width: 1400px; margin: 0 auto; padding: 1rem;">
         <!-- Stats Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-red);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Eventos Totales</div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.auditLogs.length}</div>
-              </div>
-              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-red);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21L15 15"/><circle cx="10" cy="10" r="7"/></svg>
-              </div>
-            </div>
+        <div class="stats-auto-grid mb-4" id="stats-container">
+          <div class="stat-info-card">
+            <span class="stat-info-label">Eventos Totales</span>
+            <span class="stat-info-value">${state.auditLogs.length}</span>
+            <span class="stat-info-sub">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21L15 15"/><circle cx="10" cy="10" r="7"/></svg>
+              Logs registrados
+            </span>
           </div>
 
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-green);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Sesiones Activas</div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.sessions.filter(s => s.isActive).length}</div>
-              </div>
-              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-green);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </div>
-            </div>
+          <div class="stat-info-card">
+            <span class="stat-info-label">Sesiones Activas</span>
+            <span class="stat-info-value">${state.sessions.filter(s => s.isActive).length}</span>
+            <span class="stat-info-sub">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Usuarios en línea
+            </span>
           </div>
 
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-yellow);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Accesos Hoy</div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: #1e293b; margin-top: 0.25rem;">${state.loginHistory.filter(l => {
+          <div class="stat-info-card">
+            <span class="stat-info-label">Accesos Hoy</span>
+            <span class="stat-info-value">${state.loginHistory.filter(l => {
       const d = new Date(l.timestamp);
       return d.toDateString() === new Date().toDateString();
-    }).length}</div>
-              </div>
-              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-yellow);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              </div>
-            </div>
+    }).length}</span>
+            <span class="stat-info-sub">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              Autenticaciones
+            </span>
           </div>
 
-          <div class="stats-card" style="background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 8px solid var(--triage-blue);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="color: #64748b; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Seguridad</div>
-                <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 0.25rem;">PROTEGIDO</div>
-              </div>
-              <div style="background: transparent; padding: 0.4rem; border-radius: 8px; color: var(--triage-blue);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-            </div>
+          <div class="stat-info-card">
+            <span class="stat-info-label">Seguridad</span>
+            <span class="stat-info-value" style="font-size: 1.25rem;">PROTEGIDO</span>
+            <span class="stat-info-sub">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Estado del sistema
+            </span>
           </div>
         </div>
 
@@ -517,9 +505,11 @@ export default function mountSecurity(root, { bus, store, user, role }) {
           </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; align-items: center;">
           <button type="button" class="btn btn-outline" id="btn-reset-policies">Restaurar valores</button>
-          <button type="submit" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar Políticas</button>
+          <button type="submit" class="btn-circle btn-circle-save" title="Guardar Políticas">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          </button>
         </div>
       </form>
     `;
@@ -770,7 +760,9 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-outline" id="close-log-btn">Cerrar</button>
+          <button class="btn-circle btn-circle-cancel" id="close-log-btn" title="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
     `;

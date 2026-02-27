@@ -174,7 +174,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     root.innerHTML = `
       <div class="module-patients">
       <!-- Estadísticas -->
-        <div class="grid-gap-2 grid-4" id="stats-container"></div>
+        <div class="stats-auto-grid mb-4" id="stats-container"></div>
         <div class="card" style="padding: 0.75rem 1rem;">
           <div class="flex justify-between items-center">
             ${canEdit ? `
@@ -252,88 +252,102 @@ export default function mountPatients(root, { bus, store, user, role }) {
                 <div id="tab-content">
                   <!-- Pestaña 1: Datos Básicos -->
                   <div class="tab-pane active" data-tab="basic">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
-                        <input type="text" class="input" id="form-name" required style="border-color: var(--modal-border); background: var(--modal-bg);">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 20px;">
+                      <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: var(--neutralPrimary); display: flex; align-items: center; gap: 8px;">
+                        ${icons.user} DATOS IDENTIFICATIVOS
+                      </h4>
+                      <div class="grid grid-2 gap-4 mb-4">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE COMPLETO *</label>
+                          <input type="text" class="input" id="form-name" required style="height: 38px;">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
+                          <div class="doc-group" style="display: flex; gap: 0;">
+                            <select class="input" id="form-doc-type" required style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px;">
+                              <option value="V">V</option>
+                              <option value="E">E</option>
+                              <option value="J">J</option>
+                              <option value="P">P</option>
+                            </select>
+                            <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                          </div>
+                        </div>
                       </div>
                       
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÉDULA / C.I. *</label>
-                        <div class="doc-group">
-                          <select class="input" id="form-doc-type" required style="border-color: var(--modal-border); background-color: var(--modal-bg);">
-                            <option value="V">V</option>
-                            <option value="E">E</option>
-                            <option value="J">J</option>
-                            <option value="P">P</option>
-                          </select>
-                          <input type="text" class="input" id="form-dni" required 
-                                 placeholder="Número de cédula" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                      <div class="grid grid-2 gap-4">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">LUGAR DE NACIMIENTO</label>
+                          <input type="text" class="input" id="form-birthplace" placeholder="Ciudad, Estado/Provincia" style="height: 38px;">
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NACIONALIDAD</label>
+                          <input type="text" class="input" id="form-nationality" placeholder="Ej: Venezolana" style="height: 38px;">
                         </div>
                       </div>
                     </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">LUGAR DE NACIMIENTO</label>
-                        <input type="text" class="input" id="form-birthplace" placeholder="Ciudad, Estado/Provincia" style="border-color: var(--modal-border); background: var(--modal-bg);">
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NACIONALIDAD</label>
-                        <input type="text" class="input" id="form-nationality" placeholder="Ej: Venezolana" style="border-color: var(--modal-border); background: var(--modal-bg);">
+
+                    <div style="background: #fffcf5; padding: 20px; border-radius: 8px; border: 1px solid #fff1c1; margin-bottom: 20px;">
+                      <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #856404; display: flex; align-items: center; gap: 8px;">
+                         ${icons.calendar} FECHAS Y ESTADO CIVIL
+                      </h4>
+                      <div class="grid grid-3 gap-4">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA NACIMIENTO *</label>
+                          <input type="date" class="input" id="form-birthdate" required style="height: 38px;">
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO *</label>
+                          <select class="input" id="form-gender" required style="height: 38px;">
+                            <option value="">Seleccionar</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                            <option value="O">Otro</option>
+                          </select>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO CIVIL</label>
+                          <select class="input" id="form-civil-status" style="height: 38px;">
+                            <option value="">Seleccionar</option>
+                            <option value="Soltero/a">Soltero/a</option>
+                            <option value="Casado/a">Casado/a</option>
+                            <option value="Divorciado/a">Divorciado/a</option>
+                            <option value="Viudo/a">Viudo/a</option>
+                            <option value="Concubinato">Concubinato</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA DE NACIMIENTO *</label>
-                        <input type="date" class="input" id="form-birthdate" required style="border-color: var(--modal-border); background: var(--modal-bg);">
-                      </div>
-                      
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO *</label>
-                        <select class="input" id="form-gender" required style="border-color: var(--modal-border); background: var(--modal-bg);">
-                          <option value="">Seleccionar</option>
-                          <option value="M">Masculino</option>
-                          <option value="F">Femenino</option>
-                          <option value="O">Otro</option>
-                        </select>
-                      </div>
+                    <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border: 1px solid #c6f6d5; margin-bottom: 20px;">
+                      <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 8px;">
+                         ${icons.clinical} INFORMACIÓN CLÍNICA BÁSICA
+                      </h4>
+                      <div class="grid grid-2 gap-4">
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GRUPO SANGUÍNEO</label>
+                          <select class="input" id="form-blood-type" style="height: 38px;">
+                            <option value="">Desconocido</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                          </select>
+                        </div>
 
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO CIVIL</label>
-                        <select class="input" id="form-civil-status" style="border-color: var(--neutralTertiary); background: var(--white);">
-                          <option value="">Seleccionar</option>
-                          <option value="Soltero/a">Soltero/a</option>
-                          <option value="Casado/a">Casado/a</option>
-                          <option value="Divorciado/a">Divorciado/a</option>
-                          <option value="Viudo/a">Viudo/a</option>
-                          <option value="Concubinato">Concubinato</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                      <div class="form-group">
-                        <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GRUPO SANGUÍNEO</label>
-                        <select class="input" id="form-blood-type" style="border-color: var(--neutralTertiary); background: var(--white);">
-                          <option value="">Desconocido</option>
-                          <option value="O+">O+</option>
-                          <option value="O-">O-</option>
-                          <option value="A+">A+</option>
-                          <option value="A-">A-</option>
-                          <option value="B+">B+</option>
-                          <option value="B-">B-</option>
-                          <option value="AB+">AB+</option>
-                          <option value="AB-">AB-</option>
-                        </select>
-                      </div>
-
-                      <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 4px;">
-                          <input type="checkbox" id="form-consent" style="width: 18px; height: 18px;">
-                          <span style="font-size: 0.85rem; font-weight: 600; color: var(--modal-section-forest);">CONSENTIMIENTO INFORMADO FIRMADO</span>
-                        </label>
+                        <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end;">
+                          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: rgba(255,255,255,0.7); border: 1px solid #c6f6d5; border-radius: 4px; height: 38px;">
+                            <input type="checkbox" id="form-consent" style="width: 18px; height: 18px;">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--modal-section-forest);">CONSENTIMIENTO FIRMADO</span>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -469,12 +483,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
               </form>
             </div>
             
-            <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-              <button class="btn" id="btn-cancel" style="background: var(--danger); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;">
-                ${icons.close} CANCELAR
+            <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+              <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
+                ${icons.close || ICONS.close}
               </button>
-              <button class="btn" id="btn-save" style="background: var(--success); color: #fff; border: none; padding: 0.75rem 2rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;">
-                ${icons.successCheck} ${state.editingId ? 'ACTUALIZAR FICHA' : 'REGISTRAR PACIENTE'}
+              <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Ficha' : 'Registrar Paciente'}">
+                ${ICONS.check}
               </button>
             </div>
           </div>
@@ -495,9 +509,9 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
           <div class="modal-body" id="clinical-history-content" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;"></div>
 
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; border: none;">
-            <button class="btn" id="btn-close-history-footer" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.6rem 1.5rem; font-weight: 600;">
-              ${icons.close} CERRAR
+          <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; border: none;">
+            <button class="btn-circle btn-circle-cancel" id="btn-close-history-footer" title="Cerrar">
+              ${icons.close || ICONS.close}
             </button>
           </div>
         </div>
@@ -659,16 +673,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </span>
         </td>
         <td data-label="Acciones">
-          <div class="flex gap-2">
-            <button class="btn btn-outline btn-sm" data-action="view" data-id="${patient.id}">
-              ${icons.view}
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button class="btn-circle btn-circle-view" data-action="view" data-id="${patient.id}" title="Ver Detalles">
+              ${icons.view || ICONS.eye}
             </button>
-            <button class="btn btn-outline btn-sm" data-action="history" data-id="${patient.id}" style="color: var(--modal-section-gold);">
-              ${icons.clinical}
-            </button>
+            ${role === 'admin' || role === 'receptionist' ? `
+              <button class="btn-circle btn-circle-status" data-action="status" data-id="${patient.id}" title="${patient.isActive ? 'Desactivar Paciente' : 'Activar Paciente'}">
+                ${ICONS.sync}
+              </button>
+            ` : ''}
             ${role === 'admin' || role === 'doctor' || role === 'receptionist' ? `
-              <button class="btn btn-outline btn-sm" data-action="edit" data-id="${patient.id}">
-                ${icons.edit} 
+              <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${patient.id}" title="Modificar">
+                ${icons.edit || ICONS.edit}
               </button>
             ` : ''}
           </div>
@@ -777,16 +793,18 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </div>
           </div>
           
-          <div class="card-actions flex gap-2">
-            <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="view" data-id="${patient.id}">
-              ${icons.view} Ver
+          <div class="card-actions flex gap-2 justify-center" style="margin-top: 1rem;">
+            <button class="btn-circle btn-circle-view" data-action="view" data-id="${patient.id}" title="Ver Detalles">
+              ${icons.view || ICONS.eye}
             </button>
-            <button class="btn btn-outline btn-sm" style="flex: 1; color: var(--modal-section-gold);" data-action="history" data-id="${patient.id}">
-              ${icons.clinical} Historial
-            </button>
+            ${role === 'admin' || role === 'receptionist' ? `
+              <button class="btn-circle btn-circle-status" data-action="status" data-id="${patient.id}" title="${patient.isActive ? 'Desactivar' : 'Activar'}">
+                ${ICONS.sync}
+              </button>
+            ` : ''}
             ${role === 'admin' || role === 'doctor' || role === 'receptionist' ? `
-              <button class="btn btn-outline btn-sm" style="flex: 1;" data-action="edit" data-id="${patient.id}">
-                ${icons.edit} Editar
+              <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${patient.id}" title="Editar">
+                ${icons.edit || ICONS.edit}
               </button>
             ` : ''}
           </div>
@@ -904,42 +922,28 @@ export default function mountPatients(root, { bus, store, user, role }) {
     };
 
     elements.statsContainer.innerHTML = `
-      <div class="stat-info-card" >
-        <div class="text-muted text-sm">Total de pacientes</div>
-        <div class="text-2xl font-bold" style="color: var(--accent);">${totalPatients}</div>
-        <div class="text-xs text-muted mt-1">${icons.user} ${activePatients} activos</div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Total de pacientes</span>
+        <span class="stat-info-value">${totalPatients}</span>
+        <span class="stat-info-sub">${icons.user} ${activePatients} activos</span>
       </div>
       
       <div class="stat-info-card">
-        <div class="text-muted text-sm">Con citas</div>
-        <div class="text-2xl font-bold" style="color: var(--accent-2);">${patientsWithAppointments}</div>
-        <div class="text-xs text-muted mt-1">${icons.calendar} ${patientsWithRecords} con historial</div>
+        <span class="stat-info-label">Con Citas</span>
+        <span class="stat-info-value">${patientsWithAppointments}</span>
+        <span class="stat-info-sub">${icons.calendar} ${patientsWithRecords} con historial</span>
       </div>
       
       <div class="stat-info-card">
-        <div class="text-muted text-sm">Distribución por género</div>
-        <div class="flex items-center justify-between mt-2">
-          <div style="text-align: center;">
-            <div style="font-size: 1.25rem; color: var(--info);">${icons.male}</div>
-            <div style="font-size: 0.75rem; color: var(--muted);">${genderCount.M}</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 1.25rem; color: var(--warning);">${icons.female}</div>
-            <div style="font-size: 0.75rem; color: var(--muted);">${genderCount.F}</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 1.25rem; color: var(--muted);">${icons.user}</div>
-            <div style="font-size: 0.75rem; color: var(--muted);">${genderCount.O}</div>
-          </div>
-        </div>
+        <span class="stat-info-label">Género Femenino</span>
+        <span class="stat-info-value">${genderCount.F}</span>
+        <span class="stat-info-sub">${icons.female} ${Math.round((genderCount.F / totalPatients) * 100) || 0}% del total</span>
       </div>
       
       <div class="stat-info-card">
-        <div class="text-muted text-sm">Edad promedio</div>
-        <div class="text-2xl font-bold" style="color: var(--info);">
-          ${calculateAverageAge()} años
-        </div>
-        <div class="text-xs text-muted mt-1">${icons.clipboard} Entre todos los pacientes</div>
+        <span class="stat-info-label">Edad Promedio</span>
+        <span class="stat-info-value">${calculateAverageAge()} años</span>
+        <span class="stat-info-sub">${icons.clipboard} Población total</span>
       </div>
     `;
   }
@@ -1090,10 +1094,72 @@ export default function mountPatients(root, { bus, store, user, role }) {
       case 'history':
         viewClinicalHistory(patient);
         break;
+      case 'status':
+        if (role === 'admin' || role === 'receptionist') {
+          togglePatientStatus(patient);
+        }
+        break;
     }
   }
 
   // Los antiguos manejadores de filtros han sido eliminados en la refactorización unificada.
+
+  // Cambiar estado activo/inactivo de un paciente
+  function togglePatientStatus(patient) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;`;
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 440px; width: 95%; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.25rem; font-weight: 700;">CAMBIAR ESTADO</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500;">${patient.name}</div>
+        </div>
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: ${patient.isActive ? 'var(--success)' : 'var(--danger)'}"></div>
+            <span style="font-weight: 600;">Estado actual: ${patient.isActive ? 'ACTIVO' : 'INACTIVO'}</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 700; font-size: 0.85rem;">NUEVO ESTADO *</label>
+            <select class="input" id="patient-status-select">
+              <option value="active" ${patient.isActive ? '' : 'selected'}>Activo</option>
+              <option value="inactive" ${patient.isActive ? 'selected' : ''}>Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
+          <button class="btn-circle btn-circle-cancel" id="btn-cancel-patient-status" title="Cancelar">
+            ${ICONS.close}
+          </button>
+          <button class="btn-circle btn-circle-status" id="btn-save-patient-status" title="Confirmar Cambio">
+            ${ICONS.check}
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelector('#btn-cancel-patient-status').onclick = () => modal.remove();
+    modal.querySelector('#btn-save-patient-status').onclick = async () => {
+      const newStatus = modal.querySelector('#patient-status-select').value;
+      const isActive = newStatus === 'active';
+      try {
+        await store.update('patients', patient.id, { isActive, updatedAt: Date.now() });
+        showNotification(`Paciente ${isActive ? 'activado' : 'desactivado'} correctamente`, 'success');
+        modal.remove();
+        applyFilters();
+        renderContent();
+        renderStats();
+      } catch (e) {
+        showNotification('Error al actualizar estado del paciente', 'error');
+      }
+    };
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  }
 
   function toggleViewMode() {
     state.viewMode = state.viewMode === 'list' ? 'cards' : 'list';
@@ -1155,7 +1221,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
   // Abrir modal
   function openModal(patient = null) {
-    state.editingid = patient?.id || null;
+    state.editingId = patient?.id || null;
     state.showModal = true;
 
     if (elements.modal) {
@@ -1174,7 +1240,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
   // Cerrar modal
   function closeModal() {
     state.showModal = false;
-    state.editingid = null;
+    state.editingId = null;
 
     if (elements.modal) {
       elements.modal.classList.add('hidden');
@@ -1406,7 +1472,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     openModal(patient);
   }
 
-  // Ver detalles del paciente
+  // Ver detalles del paciente - VERSIÓN REDISEÑADA
   function viewPatientDetails(patient) {
     const clinicalRecords = state.clinicalRecords.filter(cr => cr.patientId === patient.id);
     const appointments = state.appointments.filter(apt => apt.patientId === patient.id);
@@ -1430,255 +1496,256 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
     modalContainer.innerHTML = `
       <div class="modal-content" style="max-width: 900px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+        <!-- HEADER - Estilo corporativo igual al modal de médico -->
         <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">${icons.clinical} EXPEDIENTE DIGITAL DEL PACIENTE</div>
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
+            ${icons.clinical} EXPEDIENTE DIGITAL DEL PACIENTE
+          </div>
           <button class="btn-close-modal" id="close-view-patient-btn" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
             ${icons.close}
           </button>
         </div>
         
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column;">
-          <!-- Cabecera de Identidad -->
-          <div style="padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 1.5rem; background: #f8fafc;">
-            <div style="width: 70px; height: 70px; background: var(--card-patient); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--modal-header); font-size: 2rem; font-weight: 800; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
+          
+          <!-- ENCABEZADO DE PERFIL - Similar al del médico -->
+          <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding: 2rem 2rem 2rem 2rem;">
+            <div style="width: 100px; height: 100px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: white;">
               ${icons.patient}
             </div>
             <div>
-              <div style="font-size: 0.75rem; font-weight: 700; color: #666; letter-spacing: 0.05em;">PACIENTE REGISTRADO</div>
-              <h3 style="margin: 0; color: var(--modal-header); font-size: 1.75rem; font-weight: 800;">${patient.name}</h3>
-              <div style="font-size: 0.9rem; color: #555; margin-top: 0.25rem;">
-                <span style="font-weight: 700;">C.I.:</span> ${patient.docType || 'V'}-${patient.dni || 'Sin especificar'} • 
-                <span style="font-weight: 700;">HC:</span> ${patient.id.split('_').pop()}
+              <div style="font-size: 0.8rem; font-weight: 700; color: var(--modal-header); letter-spacing: 0.1em; margin-bottom: 0.5rem;">PACIENTE</div>
+              <h3 style="margin: 0; font-size: 1.75rem; color: #1a202c; font-weight: 800;">${patient.name}</h3>
+              <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                <span class="badge" style="background: var(--modal-header); color: white; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 700;">
+                  ${icons.user} ${patient.docType || 'V'}-${patient.dni || 'N/A'}
+                </span>
+                <span style="color: #4a5568; font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;">
+                  ${patient.gender === 'M' ? icons.male : patient.gender === 'F' ? icons.female : icons.user} 
+                  ${patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Femenino' : 'Otro'} • ${age} años
+                </span>
+              </div>
+              <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}" style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                  ${patient.isActive ? icons.successCheck : icons.warning}
+                  ${patient.isActive ? 'Activo' : 'Inactivo'}
+                </span>
+                <span class="badge badge-info" style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                  ${icons.calendar} HC: ${patient.id.split('_').pop()}
+                </span>
               </div>
             </div>
           </div>
 
-          <!-- Franja de Títulos (Antiguos Tabs) -->
-          <div style="display: flex; background: #edeff2; padding: 1rem 1.5rem; justify-content: space-around; border-bottom: 1px solid #e2e8f0;">
-            <div style="font-weight: 700; color: var(--modal-header); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.user} INFORMACIÓN
-            </div>
-            <div style="font-weight: 700; color: #666; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.diagnosis} MÉDICO
-            </div>
-            <div style="font-weight: 700; color: #666; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.calendar} CITAS
-            </div>
-            <div style="font-weight: 700; color: #666; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
-              ${icons.clinical} REGISTROS
-            </div>
-          </div>
-          
-          <!-- Contenido de secciones (stacked) -->
-          <div id="view-content-wrapper" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem;">
-            <!-- Sección 1: Información -->
-            <div class="patient-section" data-section="info">
-              <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
-                <div style="background: var(--card-patient); border-radius: 8px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.05);">
-                  <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;">
-                    ${icons.user} DATOS PERSONALES
-                  </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div>
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">NACIMIENTO</div>
-                      <div style="font-weight: 600;">${patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-ES') : 'N/A'}</div>
-                      <div style="font-size: 0.75rem; color: #888;">${patient.birthPlace || ''}</div>
-                    </div>
-                    <div>
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">NACIONALIDAD</div>
-                      <div style="font-weight: 600;">${patient.nationality || 'No especificada'}</div>
-                    </div>
-                    <div>
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">GÉNERO / E. CIVIL</div>
-                      <div style="font-weight: 600;">
-                        ${patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Femenino' : 'Otro'}
-                        ${patient.civilStatus ? ` • ${patient.civilStatus}` : ''}
-                      </div>
-                    </div>
-                    <div>
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">GRUPO SANGUÍNEO</div>
-                      <div style="font-weight: 600;">${patient.bloodType || 'Desconocido'}</div>
-                    </div>
-                    <div style="grid-column: span 2; margin-top: 0.5rem; padding: 0.75rem; background: ${patient.consent?.granted ? '#f0fff4' : '#fff5f5'}; border: 1px solid ${patient.consent?.granted ? '#c6f6d5' : '#feb2b2'}; border-radius: 4px;">
-                      <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.25rem;">${patient.consent?.granted ? icons.successCheck : icons.cancel}</span>
-                        <div>
-                          <div style="font-weight: 700; font-size: 0.75rem; color: ${patient.consent?.granted ? 'var(--modal-section-forest)' : '#c53030'};">CONSENTIMIENTO INFORMADO</div>
-                          <div style="font-size: 0.75rem; color: ${patient.consent?.granted ? '#2f855a' : '#9b2c2c'};">
-                            ${patient.consent?.granted ? `Otorgado el ${new Date(patient.consent.date).toLocaleDateString('es-ES')}` : 'Sin consentimiento firmado'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div style="margin-top: 0.5rem;">
-                      <div style="font-weight: 700; color: #666; font-size: 0.7rem;">ESTADO FICHA</div>
-                      <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}" style="width: fit-content; font-size: 0.7rem;">
-                        ${patient.isActive ? icons.successCheck : icons.cancel} ${patient.isActive ? 'ACTIVO' : 'INACTIVO'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div style="margin-top: 1.5rem;">
-                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">${icons.email} CORREO ELECTRÓNICO</div>
-                    <div style="font-weight: 600;">${patient.email || 'No registrado'}</div>
-                  </div>
-                  <div style="margin-top: 1rem;">
-                    <div style="font-weight: 700; color: #666; font-size: 0.7rem;">${icons.address} DIRECCIÓN</div>
-                    <div style="font-weight: 600;">${patient.address || 'No registrada'}</div>
-                  </div>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                  <div style="background: #f1f5f9; border-radius: 8px; padding: 1.25rem; border-left: 4px solid var(--modal-header);">
-                    <div style="font-weight: 700; color: #475569; font-size: 0.75rem; margin-bottom: 0.75rem;">${icons.emergency} CONTACTO DE EMERGENCIA</div>
-                    <div style="font-weight: 700; font-size: 1rem;">${patient.emergencyContact?.name || 'No definido'}</div>
-                    <div style="font-size: 0.85rem; margin-top: 0.25rem; color: #64748b;">${patient.emergencyContact?.relation || ''} • ${icons.phone} ${patient.emergencyContact?.phone || ''}</div>
-                  </div>
-                  
-                  <div style="background: var(--modal-section-gold-light); border-radius: 8px; padding: 1.25rem; border: 1px solid var(--modal-section-gold);">
-                    <div style="font-weight: 700; color: var(--modal-highlight); font-size: 0.75rem; margin-bottom: 0.75rem;">${icons.insurance} SEGURO MÉDICO</div>
-                    ${patient.insurance?.company ? `
-                      <div style="font-weight: 700; font-size: 1rem; color: var(--modal-highlight);">${patient.insurance.company}</div>
-                      <div style="font-size: 0.85rem; margin-top: 0.25rem; color: #b8860b;">Póliza: ${patient.insurance.policyNumber}</div>
-                    ` : '<div style="color: #b8860b; font-style: italic; font-size: 0.85rem;">Particular / Sin seguro</div>'}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- INFORMACIÓN PRINCIPAL - Grid 2 columnas como el modal del médico -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; padding: 0 2rem;">
             
-            <!-- Sección 2: Historial Médico -->
-            <div class="patient-section" data-section="medical" style="border-top: 1px solid #eee; padding-top: 2rem;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <!-- Columna 1: Datos Personales y Contacto -->
+            <div style="background: #f8fafc; border-radius: 8px; padding: 1.5rem; border-left: 4px solid var(--modal-header);">
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 1rem; letter-spacing: 0.05em;">
+                ${icons.user} INFORMACIÓN PERSONAL
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div>
-                   <div style="font-size: 0.85rem; font-weight: 700; color: #c53030; margin-bottom: 1rem;">${icons.allergy} ALERGIAS Y CONTRAINDICACIONES</div>
-                   <div style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 1rem; min-height: 100px;">
-                      ${patient.allergies && patient.allergies.length > 0 ? `
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                          ${patient.allergies.map(allergy => `<span class="badge badge-danger" style="font-size: 0.75rem;">${allergy}</span>`).join('')}
-                        </div>
-                      ` : '<div style="color: #c53030; font-style: italic; font-size: 0.85rem;">Sin alergias conocidas</div>'}
-                   </div>
+                  <div style="font-weight: 700; color: #334155; font-size: 0.75rem;">FECHA NACIMIENTO</div>
+                  <div style="font-weight: 600; font-size: 0.95rem;">${patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('es-ES') : 'No registrada'}</div>
+                  <div style="font-size: 0.8rem; color: #64748b;">${patient.birthPlace || ''}</div>
                 </div>
-                
                 <div>
-                   <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem;">${icons.medication} MEDICACIÓN HABITUAL</div>
-                   <div style="background: var(--modal-section-forest-light); border: 1px solid var(--modal-section-forest); border-radius: 8px; padding: 1rem; min-height: 100px;">
-                      <div style="font-size: 0.9rem; color: #2d3748;">${patient.regularMeds || 'No registra medicación'}</div>
-                   </div>
+                  <div style="font-weight: 700; color: #334155; font-size: 0.75rem;">NACIONALIDAD</div>
+                  <div style="font-weight: 600;">${patient.nationality || 'Venezolana'}</div>
                 </div>
               </div>
               
-              <div style="margin-top: 1.5rem;">
-                 <div style="font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 1rem;">${icons.clinical} OBSERVACIONES MÉDICAS Y ANTECEDENTES</div>
-                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
-                    <div style="font-size: 0.95rem; line-height: 1.6; color: #334155;">${patient.medicalNotes || 'Sin notas adicionales en el registro'}</div>
-                 </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div>
+                  <div style="font-weight: 700; color: #334155; font-size: 0.75rem;">ESTADO CIVIL</div>
+                  <div style="font-weight: 600;">${patient.civilStatus || 'No especificado'}</div>
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: #334155; font-size: 0.75rem;">GRUPO SANGUÍNEO</div>
+                  <div style="font-weight: 600;">${patient.bloodType || 'Desconocido'}</div>
+                </div>
+              </div>
+
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                <div style="font-weight: 700; color: #334155; font-size: 0.75rem; margin-bottom: 0.5rem;">${icons.phone} CONTACTO</div>
+                <div style="font-size: 0.9rem; color: #475569; display: flex; flex-direction: column; gap: 0.25rem;">
+                  <span>${icons.phone} ${patient.phone || 'No registrado'}</span>
+                  <span>${icons.email} ${patient.email || 'No registrado'}</span>
+                  <span>${icons.address} ${patient.address || 'No registrada'}${patient.city ? `, ${patient.city}` : ''}</span>
+                </div>
               </div>
             </div>
-            
-            <!-- Sección 3: Citas -->
-            <div class="patient-section" data-section="appointments" style="border-top: 1px solid #eee; padding-top: 2rem;">
-              <h4 style="color: #666; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">${icons.calendar} HISTORIAL DE CITAS</h4>
-              ${appointments.length > 0 ? `
-                <div class="table-responsive">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>Fecha</th>
-                        <th>Médico</th>
-                        <th>Área</th>
-                        <th>Motivo</th>
-                        <th>Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${appointments.slice(0, 10).map(appointment => {
-      const doctor = store.find('doctors', appointment.doctorId);
-      const area = store.find('areas', appointment.areaId);
-      const date = new Date(appointment.dateTime);
-      return `
-                          <tr>
-                            <td>
-                              <div style="font-weight: 600;">${icons.calendar} ${date.toLocaleDateString('es-ES')}</div>
-                              <div style="font-size: 0.75rem; color: #666;">${icons.clock} ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
-                            </td>
-                            <td>${icons.doctor} ${doctor?.name || 'N/A'}</td>
-                            <td>${icons.area} ${area?.name || 'N/A'}</td>
-                            <td>${appointment.reason || '-'}</td>
-                            <td>
-                              <span class="badge ${appointment.status === 'completed' ? 'badge-success' : appointment.status === 'scheduled' ? 'badge-info' : appointment.status === 'confirmed' ? 'badge-warning' : 'badge-danger'}">
-                                ${appointment.status === 'completed' ? icons.successCheck : appointment.status === 'cancelled' ? icons.cancel : ''} 
-                                ${appointment.status.toUpperCase()}
-                              </span>
-                            </td>
-                          </tr>
-                        `;
-    }).join('')}
-                    </tbody>
-                  </table>
+
+            <!-- Columna 2: Información Médica y Seguros -->
+            <div style="background: #f0fdf4; border-radius: 8px; padding: 1.5rem; border-left: 4px solid var(--modal-section-forest);">
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 800; color: var(--modal-section-forest); margin-bottom: 1rem; letter-spacing: 0.05em;">
+                ${icons.clinical} INFORMACIÓN MÉDICA
+              </div>
+              
+              <!-- Alergias -->
+              <div style="margin-bottom: 1.5rem;">
+                <div style="font-weight: 700; color: #334155; font-size: 0.75rem; margin-bottom: 0.5rem;">${icons.allergy} ALERGIAS</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                  ${patient.allergies && patient.allergies.length > 0
+        ? patient.allergies.map(allergy => `<span class="badge badge-danger" style="font-size: 0.75rem;">${allergy}</span>`).join('')
+        : '<span class="text-muted" style="font-size: 0.85rem;">Sin alergias registradas</span>'}
                 </div>
-              ` : '<div style="text-align: center; padding: 2rem; color: #666;">No hay citas registradas</div>'}
-            </div>
-            
-            <!-- Sección 4: Registros -->
-            <div class="patient-section" data-section="records" style="border-top: 1px solid #eee; padding-top: 2rem;">
-              <h4 style="color: #666; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">${icons.clinical} REGISTROS CLÍNICOS</h4>
-              ${clinicalRecords.length > 0 ? `
-                <div class="table-responsive">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>Fecha</th>
-                        <th>Tipo</th>
-                        <th>Diagnóstico</th>
-                        <th>Médico</th>
-                        <th>Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${clinicalRecords.slice(0, 10).map(record => {
-      const doctor = store.find('doctors', record.doctorId);
-      return `
-                          <tr>
-                            <td>${icons.calendar} ${new Date(record.date).toLocaleDateString('es-ES')}</td>
-                            <td><span class="badge badge-info">${icons.clinical} ${record.type.toUpperCase()}</span></td>
-                            <td>${record.diagnosis?.substring(0, 40) || 'Sin diagnóstico'}...</td>
-                            <td>${icons.doctor} ${doctor?.name || 'N/A'}</td>
-                            <td>
-                              <button class="btn btn-sm btn-outline" data-action="view-record" data-id="${record.id}">${icons.view} Ver</button>
-                            </td>
-                          </tr>
-                        `;
-    }).join('')}
-                    </tbody>
-                  </table>
+              </div>
+              
+              <!-- Enfermedades Crónicas -->
+              ${patient.chronicDiseases ? `
+                <div style="margin-bottom: 1.5rem;">
+                  <div style="font-weight: 700; color: #334155; font-size: 0.75rem; margin-bottom: 0.25rem;">ENFERMEDADES CRÓNICAS</div>
+                  <div style="font-size: 0.9rem;">${patient.chronicDiseases}</div>
                 </div>
-              ` : '<div style="text-align: center; padding: 2rem; color: #666;">No hay registros clínicos</div>'}
+              ` : ''}
+              
+              <!-- Medicación Habitual -->
+              ${patient.regularMeds ? `
+                <div style="margin-bottom: 1.5rem;">
+                  <div style="font-weight: 700; color: #334155; font-size: 0.75rem; margin-bottom: 0.25rem;">${icons.medication} MEDICACIÓN HABITUAL</div>
+                  <div style="font-size: 0.9rem;">${patient.regularMeds}</div>
+                </div>
+              ` : ''}
+
+              <!-- Seguro Médico -->
+              <div style="background: white; border-radius: 4px; padding: 1rem; margin-top: 1rem;">
+                <div style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem; margin-bottom: 0.5rem;">${icons.insurance} SEGURO MÉDICO</div>
+                ${patient.insurance?.company ? `
+                  <div style="font-weight: 600; font-size: 0.95rem;">${patient.insurance.company}</div>
+                  <div style="font-size: 0.8rem; color: #64748b;">Póliza: ${patient.insurance.policyNumber || 'N/A'}</div>
+                ` : '<div style="font-size: 0.85rem; color: #64748b;">Paciente particular / Sin seguro</div>'}
+              </div>
+
+              <!-- Contacto de Emergencia -->
+              <div style="background: #fff5f5; border-radius: 4px; padding: 1rem; margin-top: 1rem;">
+                <div style="font-weight: 700; color: #c53030; font-size: 0.75rem; margin-bottom: 0.5rem;">${icons.emergency} CONTACTO DE EMERGENCIA</div>
+                ${patient.emergencyContact?.name ? `
+                  <div style="font-weight: 600; font-size: 0.95rem;">${patient.emergencyContact.name}</div>
+                  <div style="font-size: 0.8rem; color: #64748b;">${patient.emergencyContact.relation || ''} • ${icons.phone} ${patient.emergencyContact.phone || ''}</div>
+                ` : '<div style="font-size: 0.85rem; color: #64748b;">No registrado</div>'}
+              </div>
             </div>
           </div>
+
+          <!-- PANEL DE ESTADÍSTICAS - Grid 4 columnas como el modal del médico -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <div style="background: #fff; border: 1px solid #edf2f7; border-radius: 8px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+              <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; margin-bottom: 0.5rem;">TOTAL CITAS</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--modal-header);">${appointments.length}</div>
+            </div>
+            <div style="background: #fff; border: 1px solid #edf2f7; border-radius: 8px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+              <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; margin-bottom: 0.5rem;">REGISTROS CLÍNICOS</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--modal-section-forest);">${clinicalRecords.length}</div>
+            </div>
+            <div style="background: #fff; border: 1px solid #edf2f7; border-radius: 8px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+              <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; margin-bottom: 0.5rem;">ÚLTIMA VISITA</div>
+              <div style="font-size: 1rem; font-weight: 700; color: #3182ce;">
+                ${getLastVisit(patient.id)
+        ? getLastVisit(patient.id).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'Sin visitas'}
+              </div>
+            </div>
+            <div style="background: #fff; border: 1px solid #edf2f7; border-radius: 8px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+              <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; margin-bottom: 0.5rem;">CONSENTIMIENTO</div>
+              <div style="font-size: 1rem; font-weight: 700; color: ${patient.consent?.granted ? 'var(--success)' : 'var(--danger)'};">
+                ${patient.consent?.granted ? 'FIRMADO' : 'PENDIENTE'}
+              </div>
+            </div>
+          </div>
+
+          <!-- PRÓXIMAS CITAS - Tabla similar a la del médico -->
+          <div style="margin: 2rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 800; color: var(--modal-header); margin-bottom: 1rem;">
+              ${icons.calendar} AGENDA DE CITAS
+            </div>
+            ${appointments.length > 0 ? `
+              <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                  <thead>
+                    <tr style="background: #edf2f7; text-align: left;">
+                      <th style="padding: 1rem; font-weight: 700; color: #4a5568;">FECHA/HORA</th>
+                      <th style="padding: 1rem; font-weight: 700; color: #4a5568;">MÉDICO</th>
+                      <th style="padding: 1rem; font-weight: 700; color: #4a5568;">ÁREA</th>
+                      <th style="padding: 1rem; font-weight: 700; color: #4a5568;">MOTIVO</th>
+                      <th style="padding: 1rem; font-weight: 700; color: #4a5568;">ESTADO</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${appointments.slice(0, 5).map(app => {
+          const doctor = store.find('doctors', app.doctorId);
+          const area = store.find('areas', app.areaId);
+          return `
+                        <tr style="border-top: 1px solid #e2e8f0;">
+                          <td style="padding: 1rem;">
+                            <div style="font-weight: 700;">${new Date(app.dateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                            <div style="font-size: 0.75rem; color: #666;">${new Date(app.dateTime).toLocaleDateString()}</div>
+                          </td>
+                          <td style="padding: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            ${icons.doctor} ${doctor?.name || 'N/A'}
+                          </td>
+                          <td style="padding: 1rem;">${area?.name || 'N/A'}</td>
+                          <td style="padding: 1rem; color: #666;">${app.reason || 'Consulta'}</td>
+                          <td style="padding: 1rem;">
+                            <span class="badge ${app.status === 'confirmed' ? 'badge-warning' : app.status === 'completed' ? 'badge-success' : 'badge-info'}" style="font-size: 0.7rem;">
+                              ${app.status.toUpperCase()}
+                            </span>
+                          </td>
+                        </tr>
+                      `;
+        }).join('')}
+                  </tbody>
+                </table>
+                ${appointments.length > 5 ? `
+                  <div style="padding: 0.75rem; text-align: center; border-top: 1px solid #e2e8f0; background: white;">
+                    <span class="text-muted" style="font-size: 0.8rem;">+ ${appointments.length - 5} citas más</span>
+                  </div>
+                ` : ''}
+              </div>
+            ` : '<div style="background: #f8fafc; padding: 2.5rem; border-radius: 8px; text-align: center; color: #64748b; font-style: italic;">No hay citas registradas</div>'}
+          </div>
+
+          <!-- NOTAS MÉDICAS (si existen) -->
+          ${patient.medicalNotes ? `
+            <div style="margin: 2rem; padding: 1.5rem; background: #fff7ed; border-radius: 8px; border-left: 4px solid #f97316;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; color: #9a3412; margin-bottom: 0.75rem;">
+                ${icons.clinical} NOTAS MÉDICAS
+              </div>
+              <div style="font-size: 0.95rem; color: #431407;">${patient.medicalNotes}</div>
+            </div>
+          ` : ''}
         </div>
         
-        <div class="modal-footer" style="background: #f1f5f9; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0;">
-          <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">
-            ${icons.calendar} REGISTRADO EL ${new Date(patient.createdAt).toLocaleDateString('es-ES')}
-          </div>
-          <div style="display: flex; gap: 0.75rem;">
-            ${role === 'admin' || role === 'doctor' ? `
-              <button class="btn" id="btn-edit-patient" data-id="${patient.id}" style="background: var(--modal-section-forest); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
-                ${icons.edit} EDITAR FICHA
-              </button>
-              <button class="btn" id="btn-new-appointment-for-patient" data-id="${patient.id}" style="background: var(--modal-section-green); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
-                ${icons.plus} NUEVA CITA
-              </button>
-            ` : ''}
-            <button class="btn" id="close-view-patient-btn-2" style="background: var(--danger); color: white; border: none; padding: 0.6rem 1.25rem; font-weight: 700;">
-              ${icons.close} CERRAR
+        <!-- FOOTER con acciones - Estilo igual al modal del médico -->
+        <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
+          ${role === 'admin' || role === 'doctor' || role === 'receptionist' ? `
+            <button class="btn-circle btn-circle-edit" id="btn-edit-patient" data-id="${patient.id}" title="Editar Ficha">
+              ${icons.edit}
             </button>
-          </div>
+            <button class="btn-circle btn-circle-save" id="btn-new-appointment-for-patient" data-id="${patient.id}" title="Nueva Cita">
+              ${icons.plus}
+            </button>
+          ` : ''}
+          ${role === 'admin' || role === 'doctor' ? `
+            <button class="btn-circle btn-circle-view" id="btn-view-clinical-history" data-id="${patient.id}" title="Historial Clínico">
+              ${icons.clinical}
+            </button>
+          ` : ''}
+          <button class="btn-circle btn-circle-cancel" id="close-view-patient-btn-2" title="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <!-- Fecha de registro en el footer - igual que en el modal del médico -->
+        <div style="padding: 0.5rem 1.5rem; text-align: right; font-size: 0.7rem; color: rgba(255,255,255,0.5); background: var(--modal-header); border-top: 1px solid rgba(255,255,255,0.1);">
+          ${icons.calendar} REGISTRADO EL ${patient.createdAt ? new Date(patient.createdAt).toLocaleDateString('es-ES').toUpperCase() : 'N/A'}
         </div>
       </div>
-      `;
+    `;
 
     document.body.appendChild(modalContainer);
 
@@ -1688,7 +1755,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     const closeBtn2 = modalContainer.querySelector('#close-view-patient-btn-2');
     const editBtn = modalContainer.querySelector('#btn-edit-patient');
     const newAppointmentBtn = modalContainer.querySelector('#btn-new-appointment-for-patient');
-    const viewRecordBtns = modalContainer.querySelectorAll('[data-action="view-record"]');
+    const clinicalHistoryBtn = modalContainer.querySelector('#btn-view-clinical-history');
 
     if (closeBtn1) closeBtn1.addEventListener('click', closeModal);
     if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
@@ -1707,16 +1774,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
       });
     }
 
-    if (viewRecordBtns) {
-      viewRecordBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const recordId = btn.dataset.id;
-          viewClinicalRecord(recordId);
-        });
+    if (clinicalHistoryBtn) {
+      clinicalHistoryBtn.addEventListener('click', () => {
+        closeModal();
+        viewClinicalHistory(patient);
       });
     }
-
-
 
     modalContainer.addEventListener('click', (e) => {
       if (e.target === modalContainer) closeModal();
@@ -1724,7 +1787,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
-    });
+    }, { once: true });
   }
 
   // Ver historial clínico completo
@@ -1889,22 +1952,252 @@ export default function mountPatients(root, { bus, store, user, role }) {
       `;
   }
 
-  // Ver registro clínico completo
+  // ===== FUNCIONES AUXILIARES PARA EL MODAL DE HISTORIA CLÍNICA =====
+  function _clinicalGetTypeText(type) {
+    const types = { consultation: 'Consulta', followup: 'Seguimiento', emergency: 'Urgencia', lab: 'Laboratorio', prescription: 'Receta' };
+    return types[type] || type;
+  }
+
+  function _clinicalCalculateAge(birthDate) {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  }
+
+  function _clinicalDaysUntil(followUpDate) {
+    const today = new Date();
+    const followUp = new Date(followUpDate);
+    const diffDays = Math.ceil((followUp - today) / (1000 * 60 * 60 * 24));
+    if (diffDays > 0) return `En ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
+    if (diffDays === 0) return 'Hoy';
+    return `Vencido hace ${Math.abs(diffDays)} días`;
+  }
+
+  // Ver registro clínico completo — mismo modal profesional que clinical.js
   function viewClinicalRecord(recordId) {
-    if (window.APP_STATE && window.APP_STATE.appShell && window.APP_STATE.appShell.navigateTo) {
-      window.APP_STATE.appShell.navigateTo('clinical');
-
-      localStorage.setItem('clinical_view_record', recordId);
-
-      state.showClinicalHistory = false;
-      if (elements.clinicalHistoryModal) {
-        elements.clinicalHistoryModal.classList.add('hidden');
-      }
-
-      setTimeout(() => {
-        showNotification('Cargando registro clínico...', 'info');
-      }, 300);
+    const record = store.find('clinicalRecords', recordId);
+    if (!record) {
+      showNotification('Registro clínico no encontrado', 'error');
+      return;
     }
+
+    const patient = store.find('patients', record.patientId);
+    const doctor = store.find('doctors', record.doctorId);
+    const date = new Date(record.date);
+    const vitals = record.vitalSigns || {};
+
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'view-clinical-record-modal-patient';
+    modalContainer.style.cssText = `
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 3000; padding: 1rem; overflow: auto;
+    `;
+
+    modalContainer.innerHTML = `
+      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+        <!-- CABECERA -->
+        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
+          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
+          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">HISTORIA CLÍNICA ELECTRÓNICA</div>
+          <button id="close-clin-rec-hdr" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+        </div>
+
+        <!-- CUERPO -->
+        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 4px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
+
+          <!-- N° Registro y Fecha -->
+          <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">N° DE REGISTRO</div>
+              <div style="font-family: monospace; font-size: 1.25rem; font-weight: 700;">${record.id.split('_').pop()}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">FECHA DE ATENCIÓN</div>
+              <div style="font-size: 1.125rem; font-weight: 700;">
+                ${date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+              <div style="margin-top: 0.25rem;">
+                <span class="badge badge-success" style="font-size: 0.7rem; padding: 2px 8px;">Finalizado</span>
+                <span style="font-size: 0.75rem; color: #666;">• ${_clinicalGetTypeText(record.type)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paciente y Médico -->
+          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div style="background: var(--card-patient); border-radius: 4px; padding: 1.25rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                  <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">PACIENTE</div>
+                  <div style="font-weight: 700; font-size: 1.1rem;">${patient?.name || 'N/A'}</div>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
+                <div><div style="font-weight: 700; color: var(--modal-text-muted);">CÉDULA</div><div>${patient?.docType || 'V'}-${patient?.dni || '0'}</div></div>
+                <div><div style="font-weight: 700; color: var(--modal-text-muted);">EDAD</div><div>${patient?.birthDate ? _clinicalCalculateAge(patient.birthDate) + ' años' : 'N/A'}</div></div>
+                <div><div style="font-weight: 700; color: var(--modal-text-muted);">TELÉFONO</div><div>${patient?.phone || '-'}</div></div>
+                <div><div style="font-weight: 700; color: var(--modal-text-muted);">EMAIL</div><div style="word-break: break-all;">${patient?.email || '-'}</div></div>
+              </div>
+            </div>
+
+            <div style="background: var(--card-doctor); border-radius: 4px; padding: 1.25rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 40px; height: 40px; background: white; border-radius: 50%; opacity: 0.6;"></div>
+                <div>
+                  <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">MÉDICO TRATANTE</div>
+                  <div style="font-weight: 700; font-size: 1.1rem;">${doctor?.name || 'N/A'}</div>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
+                <div><div style="font-weight: 700; color: var(--modal-text-muted);">ESPECIALIDAD</div><div>${doctor?.specialty || '-'}</div></div>
+                <div><div style="font-weight: 700; color: var(--modal-text-muted);">MATRÍCULA</div><div>${doctor?.license || '-'}</div></div>
+                <div><div style="font-weight: 700; color: var(--modal-text-muted);">CITA ORIGINAL</div><div>#${record.appointmentId ? record.appointmentId.split('_').pop() : 'Directo'}</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Signos Vitales -->
+          <div class="clinical-section">
+            <div class="clinical-section-header" style="background: #5a8973; color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;">SIGNOS VITALES</div>
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; border: 1px solid #ddd; border-top: none;">
+              ${[
+        ['Presión Arterial', vitals.bloodPressure, 'mmHg'],
+        ['Frec. Cardíaca', vitals.heartRate, 'lpm'],
+        ['Temperatura', vitals.temperature, '°C'],
+        ['Saturación O₂', vitals.spo2, '%'],
+        ['Peso', vitals.weight, 'kg'],
+        ['Altura', vitals.height, 'cm']
+      ].map((v, i, arr) => `
+                <div style="padding: 1rem; ${i < arr.length - 1 ? 'border-right: 1px solid #ddd;' : ''}">
+                  <div style="font-size: 0.65rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">${v[0]}</div>
+                  <div style="font-weight: 700; font-size: 1.1rem;">${v[1] || '-'}</div>
+                  <div style="font-size: 0.65rem; color: #999;">${v[2]}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+
+          <!-- Motivo y Síntomas -->
+          <div class="clinical-section" style="margin-top: 1.5rem;">
+            <div class="clinical-section-header" style="background: var(--modal-section-gold); color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;">MOTIVO DE CONSULTA Y SÍNTOMAS</div>
+            <div style="background: var(--modal-section-gold-light); padding: 1.25rem;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--modal-highlight); margin-bottom: 0.5rem;">SÍNTOMAS REPORTADOS</div>
+              <div style="font-size: 0.95rem; line-height: 1.5;">${record.reason || ''} ${record.symptoms || 'No especificados'}</div>
+            </div>
+          </div>
+
+          <!-- Diagnóstico -->
+          <div class="clinical-section" style="margin-top: 1.5rem;">
+            <div class="clinical-section-header" style="background: var(--modal-section-olive); color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;">DIAGNÓSTICO</div>
+            <div style="background: var(--modal-section-olive-light); padding: 1.25rem;">
+              <div style="font-size: 0.95rem; font-weight: 700;">${record.diagnosis || 'Resultados pendientes'}</div>
+            </div>
+          </div>
+
+          <!-- Tratamiento -->
+          <div class="clinical-section" style="margin-top: 1.5rem;">
+            <div class="clinical-section-header" style="background: var(--modal-section-olive); color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;">TRATAMIENTO PRESCRITO</div>
+            <div style="background: var(--modal-section-olive-light); padding: 1.25rem;">
+              <div style="font-size: 0.95rem; line-height: 1.5;">${record.treatment || 'Seguimiento según evolución'}</div>
+            </div>
+          </div>
+
+          <!-- Recetas -->
+          <div class="clinical-section" style="margin-top: 1.5rem;">
+            <div class="clinical-section-header" style="background: var(--modal-section-forest); color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;">RECETAS MÉDICAS</div>
+            <div style="background: var(--modal-section-forest-light); padding: 0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="text-align: left; color: var(--modal-text-muted);">
+                    <th style="padding: 0.75rem 1.25rem; font-weight: 700;">MEDICAMENTO</th>
+                    <th style="padding: 0.75rem; font-weight: 700;">DOSIS</th>
+                    <th style="padding: 0.75rem; font-weight: 700;">FRECUENCIA</th>
+                    <th style="padding: 0.75rem; font-weight: 700;">DURACIÓN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${record.prescriptions && Array.isArray(record.prescriptions) && record.prescriptions.length > 0
+        ? record.prescriptions.map(p => `
+                          <tr>
+                            <td style="padding: 0.75rem 1.25rem; font-weight: 700;">${p.medication}</td>
+                            <td style="padding: 0.75rem;">${p.dosage}</td>
+                            <td style="padding: 0.75rem;">${p.frequency}</td>
+                            <td style="padding: 0.75rem;">${p.duration}</td>
+                          </tr>`).join('')
+        : `<tr><td colspan="4" style="padding: 1.25rem; text-align: center; color: var(--modal-text-muted);">Sin prescripciones activas</td></tr>`
+      }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Observaciones y Seguimiento -->
+          <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: none;">
+            <div style="background: var(--modal-section-forest-light); padding: 1.25rem; border: 1px solid var(--modal-border); border-right: none; border-radius: 4px 0 0 4px;">
+              <div class="clinical-section-header" style="background: var(--modal-section-forest); color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; margin: -1.25rem -1.25rem 1.25rem -1.25rem;">OBSERVACIONES Y SEGUIMIENTO</div>
+              <div style="margin-bottom: 1rem;">
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">NOTAS ADICIONALES</div>
+                <div style="font-size: 0.85rem;">${record.notes || 'Ninguna observación relevante'}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">RECOMENDACIONES</div>
+                <div style="font-size: 0.85rem;">${record.recommendations || 'Acudir a urgencias si presenta síntomas de alarma'}</div>
+              </div>
+            </div>
+            <div style="background: var(--modal-section-forest-light); padding: 1.25rem; border: 1px solid var(--modal-border); border-radius: 0 4px 4px 0; display: flex; align-items: center; justify-content: center;">
+              <div style="background: var(--modal-highlight-light); border: 1px solid var(--modal-highlight); padding: 1rem; border-radius: 4px; width: 100%;">
+                <div style="font-size: 0.65rem; font-weight: 700; color: var(--modal-highlight);">PRÓXIMO CONTROL</div>
+                <div style="font-weight: 700; font-size: 1rem; margin-top: 0.25rem;">
+                  ${record.followUp ? new Date(record.followUp).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'A demanda'}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--modal-highlight); margin-top: 0.25rem;">
+                  ${record.followUp ? _clinicalDaysUntil(record.followUp) : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer del documento -->
+          <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; justify-content: space-between; font-size: 0.7rem; color: #999;">
+            <div>
+              <div style="font-weight: 700; color: #666;">REGISTRO CREADO</div>
+              <div>${new Date(record.createdAt).toLocaleString()}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700; color: #666;">ÚLTIMA ACTUALIZACIÓN</div>
+              <div>${record.updatedAt ? new Date(record.updatedAt).toLocaleString() : 'Sin modificaciones'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 0.75rem 1.5rem; text-align: center; color: #666; font-size: 0.75rem; border-top: 1px solid var(--modal-border);">
+          Documento clínico electrónico • Generado automáticamente por Hospital Universitario Manuel Nuñez Tovar
+        </div>
+
+        <!-- Footer de botones -->
+        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+          <button class="btn-circle btn-circle-cancel" id="close-clin-rec-ftr" title="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modalContainer);
+
+    const closeModal = () => modalContainer.remove();
+    modalContainer.querySelector('#close-clin-rec-hdr').addEventListener('click', closeModal);
+    modalContainer.querySelector('#close-clin-rec-ftr').addEventListener('click', closeModal);
+    modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) closeModal(); });
+    const escH = (e) => { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escH); } };
+    document.addEventListener('keydown', escH);
   }
 
   // Crear cita para paciente

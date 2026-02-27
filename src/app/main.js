@@ -5,6 +5,8 @@ import { createStore } from '../core/store.js';
 import { ICONS } from './icons.js';
 import { Logger } from '../utils/logger.js';
 
+window.ICONS = ICONS; // Disponible globalmente para los módulos
+
 // Estado global
 const APP_STATE = {
   bus: null,
@@ -156,6 +158,12 @@ window.alert = (msg, type) => { window.hospitalAlert(msg, type); };
 
 // ===== SISTEMA DE ROUTING =====
 const ROUTES = {
+  dashboard: {
+    label: 'Dashboard',
+    icon: ICONS.dashboard,
+    module: () => import('../modules/dashboard.js'),
+    permission: () => true
+  },
   landing: {
     label: 'Inicio',
     icon: ICONS.home,
@@ -167,12 +175,6 @@ const ROUTES = {
     icon: ICONS.home,
     module: () => import('../modules/landing_manager.js'),
     permission: (role) => role === 'admin'
-  },
-  dashboard: {
-    label: 'Dashboard',
-    icon: ICONS.dashboard,
-    module: () => import('../modules/dashboard.js'),
-    permission: () => true
   },
   appointments: {
     label: 'Citas',
@@ -419,7 +421,7 @@ function mountLogin(root, { onSuccess }) {
     </div>
     <div id="recover-modal-overlay" class="auth-modal-overlay" style="display:none;">
       <div class="auth-modal" id="recover-modal-box">
-        <button class="auth-modal-close" id="recover-modal-close">${ai.back} Cerrar</button>
+        <button class="auth-modal-close" id="recover-modal-close" style="color: var(--red);">X</button>
         <div id="recover-modal-body"></div>
       </div>
     </div>
@@ -541,10 +543,10 @@ function mountLogin(root, { onSuccess }) {
     .auth-lock-msg{background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;font-weight:500;}
     .auth-rec{animation:authSlide .35s ease;}
     @keyframes authSlide{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
-    .auth-rec-head{text-align:center;margin-bottom:1.5rem;}
+    .auth-rec-head{text-align:center;margin-bottom:0.5rem;}
     .auth-rec-head h3{margin:0.75rem 0 0.25rem;font-size:1.15rem;color:#1a202c;}
     .auth-rec-head p{margin:0;font-size:0.82rem;color:#6b7280;line-height:1.55;}
-    .auth-rec-ico{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#166534,#10b981);color:white;box-shadow:0 4px 12px rgba(16,185,129,0.25);}
+    .auth-rec-ico{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background: var(--greenDark);color:var(--white);box-shadow:0 4px 12px rgba(16,185,129,0.25);}
     .auth-ico-ok{background:linear-gradient(135deg,#059669,#34d399);}
     .auth-str{display:flex;align-items:center;gap:8px;margin-top:6px;}
     .auth-str-bar{flex:1;height:4px;background:#e5e7eb;border-radius:4px;overflow:hidden;}
@@ -560,10 +562,12 @@ function mountLogin(root, { onSuccess }) {
     .auth-modal-close:hover{background:#f3f4f6;color:#1f2937;}
     .auth-modal .login-field{margin-bottom:1rem;}
     .auth-modal .login-label{display:block;margin-bottom:0.35rem;font-size:0.8rem;font-weight:600;color:#374151;}
-    .auth-modal .login-input{width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem;transition:border-color .2s;background:#f9fafb;box-sizing:border-box;}
-    .auth-modal .login-input:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
-    .auth-modal .login-submit-btn{display:block;width:100%;padding:0.7rem;background:linear-gradient(135deg,#166534,#10b981);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all .2s;letter-spacing:0.03em;}
-    .auth-modal .login-submit-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(16,185,129,0.3);}
+    .auth-modal .login-input{width: 100%; padding: 0.3rem 0.85rem; border-color: var(--neutralTertiary); border-width: 0 0 2px 0; border-radius: var(--radius); font-family: var(--font); font-size: 0.9rem; background: var(--white); color: var(--themeDark); box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12); transition: border-color 0.2s, box-shadow 0.2s;}
+    .auth-modal .login-input:hover{background: var(--neutralLighter);}
+    .auth-modal .login-input:focus{outline: none; border-color: var(--green); box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);}
+    .auth-modal .login-input::placeholder{color: var(--muted); font-weight: 400;}
+    .auth-modal .login-submit-btn{display:block;width:100%;padding:0.7rem;background: var(--themeDark);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all .2s;letter-spacing:0.03em;}
+    .auth-modal .login-submit-btn:hover{background: var(--greenDark);box-shadow:0 4px 12px rgba(16,185,129,0.3);}
     @media(max-width:500px){.auth-modal{max-width:95%;margin:1rem;padding:1.5rem;}}
     </style>`;
   }

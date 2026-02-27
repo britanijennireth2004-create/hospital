@@ -8,8 +8,13 @@ import { Logger } from '../utils/logger.js';
 export default function mountResources(container, { store, bus, user }) {
   const state = {
     activeTab: 'rooms', // 'rooms', 'equipment', 'supplies'
+    filters: {
+      search: ''
+    },
     isLoading: false
   };
+
+  let elements = {};
 
   const icons = {
     room: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/><path d="M13 13h4"/><path d="M13 17h4"/><path d="M7 13h2v4H7z"/></svg>`,
@@ -32,64 +37,93 @@ export default function mountResources(container, { store, bus, user }) {
 
   function render() {
     container.innerHTML = `
-      <style>
-        .resource-card-clickable {
-          cursor: pointer;
-          transition: all 0.2s ease;
-          position: relative;
-        }
-        .resource-card-clickable:hover {
-          transform: translateY(-4px);
-          box-shadow: var(--shadow-lg);
-          border-color: var(--primary) !important;
-        }
-        .resource-card-clickable::after {
-          content: 'Haga clic para gestionar';
-          position: absolute;
-          bottom: 10px;
-          right: 15px;
-          font-size: 0.65rem;
-          color: var(--primary);
-          font-weight: 600;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-        }
-        .resource-card-clickable:hover::after {
-          opacity: 0.7;
-        }
-      </style>
-      <div class="module-header">
-        <div>
-          <h1>Gestión de Recursos Críticos</h1>
-          <p>Hospital Universitario Manuel Nuñez Tovar - Control de Infraestructura e Insumos</p>
+      <div class="module-resources animated-fade-in">
+        <!-- Estadísticas -->
+        <div class="stats-auto-grid mb-4" id="stats-container">
+          <!-- Se llenará dinámicamente -->
         </div>
-        <div class="actions">
-          <button class="btn btn-primary" id="btn-add-resource" style="display: flex; align-items: center; gap: 0.5rem;">
-            ${icons.plus} ${getAddButtonLabel()}
-          </button>
-        </div>
-      </div>
 
-      <div class="card mb-1rem">
-        <div class="tabs" style="display: flex; gap: 1rem; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
-          <button class="tab-btn ${state.activeTab === 'rooms' ? 'active' : ''}" data-tab="rooms" style="background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; color: ${state.activeTab === 'rooms' ? 'var(--primary)' : 'var(--muted)'}; border-bottom: 3px solid ${state.activeTab === 'rooms' ? 'var(--primary)' : 'transparent'};">
-            ${icons.room} Consultorios
-          </button>
-          <button class="tab-btn ${state.activeTab === 'equipment' ? 'active' : ''}" data-tab="equipment" style="background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; color: ${state.activeTab === 'equipment' ? 'var(--primary)' : 'var(--muted)'}; border-bottom: 3px solid ${state.activeTab === 'equipment' ? 'var(--primary)' : 'transparent'};">
-            ${icons.equipment} Equipamiento
-          </button>
-          <button class="tab-btn ${state.activeTab === 'supplies' ? 'active' : ''}" data-tab="supplies" style="background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; color: ${state.activeTab === 'supplies' ? 'var(--primary)' : 'var(--muted)'}; border-bottom: 3px solid ${state.activeTab === 'supplies' ? 'var(--primary)' : 'transparent'};">
-            ${icons.supply} Insumos Críticos
-          </button>
+        <!-- Barra de Búsqueda + Botón -->
+        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
+          <div class="flex justify-between items-center">
+            <button class="btn btn-primary" id="btn-add-resource" style="border-radius: 20px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: var(--themePrimary);">
+              ${icons.plus} ${getAddButtonLabel()}
+            </button>
+            <div class="search-input-wrapper" style="position: relative; width: 450px;">
+              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input type="text" class="input" id="filter-search" 
+                     placeholder="Buscar en la pestaña actual..." 
+                     style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; height: 40px; width: 100%;"
+                     value="${state.filters.search}">
+            </div>
+          </div>
         </div>
-        
-        <div id="resources-content" class="mt-1rem">
-          ${renderActiveTab()}
+
+        <div class="card mb-1rem">
+          <div class="tabs" style="display: flex; gap: 1rem; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+            <button class="tab-btn ${state.activeTab === 'rooms' ? 'active' : ''}" data-tab="rooms" style="background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; color: ${state.activeTab === 'rooms' ? 'var(--themePrimary)' : 'var(--muted)'}; border-bottom: 3px solid ${state.activeTab === 'rooms' ? 'var(--themePrimary)' : 'transparent'};">
+              ${icons.room} Consultorios
+            </button>
+            <button class="tab-btn ${state.activeTab === 'equipment' ? 'active' : ''}" data-tab="equipment" style="background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; color: ${state.activeTab === 'equipment' ? 'var(--themePrimary)' : 'var(--muted)'}; border-bottom: 3px solid ${state.activeTab === 'equipment' ? 'var(--themePrimary)' : 'transparent'};">
+              ${icons.equipment} Equipamiento
+            </button>
+            <button class="tab-btn ${state.activeTab === 'supplies' ? 'active' : ''}" data-tab="supplies" style="background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; font-weight: 600; color: ${state.activeTab === 'supplies' ? 'var(--themePrimary)' : 'var(--muted)'}; border-bottom: 3px solid ${state.activeTab === 'supplies' ? 'var(--themePrimary)' : 'transparent'};">
+              ${icons.supply} Insumos Críticos
+            </button>
+          </div>
+          
+          <div id="resources-content" class="mt-1rem" style="min-height: 400px;">
+            ${renderActiveTab()}
+          </div>
         </div>
       </div>
     `;
 
+    elements.statsContainer = container.querySelector('#stats-container');
+    elements.filterSearch = container.querySelector('#filter-search');
+
+    updateStats();
     setupListeners();
+  }
+
+  function updateStats() {
+    const rooms = store.get('consultorios') || [];
+    const equipment = store.get('equiposMedicos') || [];
+    const supplies = store.get('suministros') || [];
+
+    const stats = {
+      roomsTotal: rooms.length,
+      roomsAvailable: rooms.filter(r => r.status === 'available' || r.status === 'disponible').length,
+      equipmentTotal: equipment.length,
+      suppliesCritical: supplies.filter(s => s.stock <= s.minStock).length
+    };
+
+    if (elements.statsContainer) {
+      elements.statsContainer.innerHTML = `
+        <div class="stat-info-card">
+          <span class="stat-info-label">Consultorios</span>
+          <span class="stat-info-value">${stats.roomsAvailable}/${stats.roomsTotal}</span>
+          <span class="stat-info-sub">${icons.room} Disponibles</span>
+        </div>
+        <div class="stat-info-card">
+          <span class="stat-info-label">Equipos Médicos</span>
+          <span class="stat-info-value">${stats.equipmentTotal}</span>
+          <span class="stat-info-sub">${icons.equipment} Equipos Totales</span>
+        </div>
+        <div class="stat-info-card">
+          <span class="stat-info-label">Alertas Insumos</span>
+          <span class="stat-info-value" style="color: ${stats.suppliesCritical > 0 ? 'var(--danger)' : 'var(--accent)'}">${stats.suppliesCritical}</span>
+          <span class="stat-info-sub">${icons.supply} Stock Crítico</span>
+        </div>
+        <div class="stat-info-card">
+          <span class="stat-info-label">Estado General</span>
+          <span class="stat-info-value">Óptimo</span>
+          <span class="stat-info-sub">${icons.save} Controlado</span>
+        </div>
+      `;
+    }
   }
 
   function renderActiveTab() {
@@ -102,7 +136,16 @@ export default function mountResources(container, { store, bus, user }) {
   }
 
   function renderRooms() {
-    const rooms = store.get('consultorios') || [];
+    let rooms = store.get('consultorios') || [];
+
+    if (state.filters.search) {
+      const q = state.filters.search.toLowerCase();
+      rooms = rooms.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.area.toLowerCase().includes(q)
+      );
+    }
+
     if (rooms.length === 0) return '<p class="text-muted" style="text-align: center; padding: 2rem;">No hay consultorios registrados.</p>';
 
     return `
@@ -124,7 +167,17 @@ export default function mountResources(container, { store, bus, user }) {
   }
 
   function renderEquipment() {
-    const equipment = store.get('equiposMedicos') || [];
+    let equipment = store.get('equiposMedicos') || [];
+
+    if (state.filters.search) {
+      const q = state.filters.search.toLowerCase();
+      equipment = equipment.filter(e =>
+        e.name.toLowerCase().includes(q) ||
+        e.status.toLowerCase().includes(q) ||
+        (e.brand && e.brand.toLowerCase().includes(q))
+      );
+    }
+
     if (equipment.length === 0) return '<p class="text-muted" style="text-align: center; padding: 2rem;">No hay equipamiento registrado.</p>';
 
     return `
@@ -146,7 +199,9 @@ export default function mountResources(container, { store, bus, user }) {
               <td><span class="badge badge-outline">${getConditionLabel(eq.condition)}</span></td>
               <td>${eq.lastMaintenance || 'N/A'}</td>
               <td>
-                <button class="btn btn-sm btn-outline btn-manage-equipment" data-id="${eq.id}">Gestionar</button>
+                <button class="btn-circle btn-circle-status btn-manage-equipment" data-id="${eq.id}" title="Gestionar">
+                  ${ICONS.sync}
+                </button>
               </td>
             </tr>
           `).join('')}
@@ -156,7 +211,16 @@ export default function mountResources(container, { store, bus, user }) {
   }
 
   function renderSupplies() {
-    const supplies = store.get('suministros') || [];
+    let supplies = store.get('suministros') || [];
+
+    if (state.filters.search) {
+      const q = state.filters.search.toLowerCase();
+      supplies = supplies.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q)
+      );
+    }
+
     if (supplies.length === 0) return '<p class="text-muted" style="text-align: center; padding: 2rem;">No hay insumos críticos registrados.</p>';
 
     return `
@@ -186,28 +250,48 @@ export default function mountResources(container, { store, bus, user }) {
     container.querySelectorAll('.tab-btn').forEach(btn => {
       btn.onclick = () => {
         state.activeTab = btn.dataset.tab;
+        state.filters.search = ''; // Limpiar búsqueda al cambiar pestaña
         render();
       };
     });
 
-    container.querySelectorAll('.btn-manage-equipment').forEach(btn => {
+    if (elements.filterSearch) {
+      elements.filterSearch.oninput = (e) => {
+        state.filters.search = e.target.value;
+        const content = container.querySelector('#resources-content');
+        if (content) content.innerHTML = renderActiveTab();
+        // Re-adjuntar listeners después de render parcial
+        setupResourceListeners();
+      };
+    }
+
+    setupResourceListeners();
+  }
+
+  function setupResourceListeners() {
+    const content = container.querySelector('#resources-content');
+    if (!content) return;
+
+    content.querySelectorAll('.btn-manage-equipment').forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
         showManageEquipmentModal(btn.dataset.id);
       };
     });
 
-    container.querySelectorAll('.btn-manage-room').forEach(card => {
+    content.querySelectorAll('.btn-manage-room').forEach(card => {
       card.onclick = () => showManageRoomModal(card.dataset.id);
     });
 
-    container.querySelectorAll('.btn-manage-supply').forEach(card => {
+    content.querySelectorAll('.btn-manage-supply').forEach(card => {
       card.onclick = () => showManageSupplyModal(card.dataset.id);
     });
 
     const btnAdd = container.querySelector('#btn-add-resource');
     if (btnAdd) {
-      btnAdd.onclick = () => showAddResourceModal();
+      btnAdd.onclick = () => {
+        showAddResourceModal();
+      };
     }
   }
 
@@ -314,10 +398,12 @@ export default function mountResources(container, { store, bus, user }) {
         <div style="padding: 2rem; max-height: 80vh; overflow-y: auto;">
           <form id="add-resource-form">
             ${formFields}
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-              <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancelar</button>
-              <button type="submit" class="btn btn-primary" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                ${icons.save} Guardar Registro
+            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+              <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
+                ${ICONS.close}
+              </button>
+              <button type="submit" class="btn-circle btn-circle-save" title="Guardar Registro">
+                ${ICONS.check}
               </button>
             </div>
           </form>
@@ -401,10 +487,12 @@ export default function mountResources(container, { store, bus, user }) {
               </select>
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-              <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancelar</button>
-              <button type="submit" class="btn btn-primary" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                ${icons.save} Guardar Cambios
+            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+              <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
+                ${ICONS.close}
+              </button>
+              <button type="submit" class="btn-circle btn-circle-save" title="Guardar Cambios">
+                ${ICONS.check}
               </button>
             </div>
           </form>
@@ -483,10 +571,12 @@ export default function mountResources(container, { store, bus, user }) {
               </select>
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-              <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancelar</button>
-              <button type="submit" class="btn btn-primary" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                ${icons.save} Guardar Cambios
+            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+              <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
+                ${ICONS.close}
+              </button>
+              <button type="submit" class="btn-circle btn-circle-save" title="Guardar Cambios">
+                ${ICONS.check}
               </button>
             </div>
           </form>
@@ -563,10 +653,12 @@ export default function mountResources(container, { store, bus, user }) {
               <input type="number" class="input" name="minStock" value="${supply.minStock}" min="0" required style="width: 100%;">
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-              <button type="button" class="btn btn-outline close-modal" style="flex: 1;">Cancelar</button>
-              <button type="submit" class="btn btn-primary" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                ${icons.save} Actualizar Stock
+            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+              <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
+                ${ICONS.close}
+              </button>
+              <button type="submit" class="btn-circle btn-circle-save" title="Actualizar Stock">
+                ${ICONS.check}
               </button>
             </div>
           </form>
