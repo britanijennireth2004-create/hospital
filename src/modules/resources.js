@@ -46,7 +46,7 @@ export default function mountResources(container, { store, bus, user }) {
         <!-- Barra de Búsqueda + Botón -->
         <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
           <div class="flex justify-between items-center">
-            <button class="btn btn-primary" id="btn-add-resource" style="border-radius: 20px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: var(--themePrimary);">
+            <button class="btn btn-primary" id="btn-add-resource">
               ${icons.plus} ${getAddButtonLabel()}
             </button>
             <div class="search-input-wrapper" style="position: relative; width: 450px;">

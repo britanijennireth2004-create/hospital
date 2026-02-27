@@ -378,8 +378,8 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
               </td>
               <td>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                  <button class="btn-circle btn-circle-view" data-action="view" data-id="${item.id}" title="Ver">${icons.view || ICONS.eye}</button>
-                  <button class="btn-circle btn-circle-status" data-action="status" data-id="${item.id}" title="Cambiar Estado">${ICONS.sync}</button>
+                  <button class="btn-circle btn-circle-status" data-action="view" data-id="${item.id}" title="Ver">${icons.view || ICONS.eye}</button>
+                  <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${item.id}" title="Cambiar Estado">${ICONS.sync}</button>
                   <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${item.id}" title="Editar">${icons.edit || ICONS.edit}</button>
                 </div>
               </td>
@@ -655,7 +655,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
             </button>
           ` : ''}
           ${canEditStatus ? `
-            <button class="btn-circle btn-circle-status" id="status-rec-btn" data-id="${rec.id}" title="Cambiar Estado">
+            <button class="btn-circle btn-circle-cancel" id="status-rec-btn" data-id="${rec.id}" title="Cambiar Estado">
               ${icons.status || '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'}
             </button>
           ` : ''}

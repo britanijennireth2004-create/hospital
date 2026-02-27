@@ -541,7 +541,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
   // Renderizar componente principal
   function render() {
-    const canCreate = ['admin', 'patient', 'doctor', 'receptionist'].includes(role);
+    // Se agrega el rol 'nurse' a la lista de roles que pueden crear citas
+    const canCreate = ['admin', 'patient', 'doctor', 'receptionist', 'nurse'].includes(role);
 
     root.innerHTML = `
       <div class="module-appointments">
@@ -824,10 +825,10 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           
           <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
             <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
-              ${icons.close || ICONS.close}
+              ${icons.close}
             </button>
             <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Cita' : 'Registrar Cita'}" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? '<span class="loading-spinner"></span>' : ICONS.check}
+              ${state.isLoading ? '<span class="loading-spinner"></span>' : icons.successCheck}
             </button>
           </div>
         </div>
@@ -984,6 +985,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     const canEditBase = role === 'admin' ||
       role === 'receptionist' ||
+      role === 'nurse' ||
       (role === 'doctor' && user?.doctorId) ||
       (role === 'patient' && user?.patientId);
 
@@ -1037,11 +1039,11 @@ export default function mountAppointments(root, { bus, store, user, role }) {
               ` : ''}
               ${canCancel ? `
                 <button class="btn-circle btn-circle-cancel" data-action="cancel" data-id="${appointment.id}" title="Cancelar">
-                  ${icons.cancel || ICONS.close}
+                  ${icons.cancel}
                 </button>
               ` : ''}
-              <button class="btn-circle btn-circle-view" data-action="view" data-id="${appointment.id}" title="Ver">
-                ${icons.view || ICONS.eye}
+              <button class="btn-circle btn-circle-status" data-action="view" data-id="${appointment.id}" title="Ver">
+                ${icons.view}
               </button>
             </div>
           </td>
@@ -1190,7 +1192,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       };
     });
 
-    const canCreate = ['admin', 'patient', 'doctor', 'receptionist'].includes(role);
+    const canCreate = ['admin', 'patient', 'doctor', 'receptionist', 'nurse'].includes(role);
     container.querySelectorAll('.calendar-day').forEach(el => {
       el.onclick = () => {
         const date = el.dataset.date;
@@ -2318,7 +2320,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     state.isLoading = true;
     if (elements.btnSave) {
       elements.btnSave.disabled = true;
-      elements.btnSave.textContent = 'Guardando...';
+      elements.btnSave.innerHTML = '<span class="loading-spinner"></span>';
     }
 
     try {
@@ -2339,7 +2341,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       state.isLoading = false;
       if (elements.btnSave) {
         elements.btnSave.disabled = false;
-        elements.btnSave.textContent = state.editingId ? 'ACTUALIZAR CITA' : 'REGISTRAR CITA';
+        elements.btnSave.innerHTML = icons.successCheck;
       }
     }
   }
@@ -2467,6 +2469,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     `;
 
     const canEdit = role === 'admin' ||
+      role === 'receptionist' ||
+      role === 'nurse' ||
       (role === 'doctor' && user?.doctorId === appointment.doctorId) ||
       (role === 'patient' && user?.patientId === appointment.patientId);
 
@@ -2683,13 +2687,13 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <div style="display: flex; gap: 0.75rem;">
             ${canCancel ? `
               <button class="btn-circle btn-circle-cancel" id="cancel-appointment-btn" data-id="${appointment.id}" title="Cancelar Cita">
-                ${icons.cancel || ICONS.close}
+                ${icons.cancel}
               </button>
             ` : ''}
             
             ${canEdit ? `
               <button class="btn-circle btn-circle-edit" id="edit-appointment-btn" data-id="${appointment.id}" title="Editar Cita">
-                ${icons.edit || ICONS.edit}
+                ${icons.edit}
               </button>
             ` : ''}
           </div>
@@ -2697,18 +2701,18 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <div style="display: flex; gap: 0.75rem;">
             ${canCreateClinical ? `
               <button class="btn-circle btn-circle-save" id="create-clinical-from-appointment" data-id="${appointment.id}" title="Crear Consulta Clínica">
-                ${icons.clinical || ICONS.clipboard}
+                ${icons.clinical}
               </button>
             ` : ''}
             
             ${hasClinicalRecord(appointment.id) ? `
               <button class="btn-circle btn-circle-view" id="view-clinical-record" data-id="${appointment.id}" title="Ver Historia Clínica">
-                ${icons.view || ICONS.eye}
+                ${icons.view}
               </button>
             ` : ''}
             
             <button class="btn-circle btn-circle-cancel" id="close-appointment-modal" title="Cerrar">
-              ${icons.close || ICONS.close}
+              ${icons.close}
             </button>
           </div>
         </div>

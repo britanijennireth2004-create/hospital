@@ -292,6 +292,35 @@ export default function mountTriage(root, { bus, store, user, role }) {
         opacity: 0.7;
         pointer-events: none;
       }
+      
+      /* Estilos para el modal de emergencia */
+      .emergency-alert-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #e53e3e;
+        color: white;
+        padding: 1rem;
+        z-index: 10000;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.25rem;
+        animation: flash 1s infinite;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+      }
+      
+      @keyframes flash {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0.8; }
+      }
+      
+      .modal-header.emergency {
+        background: #e53e3e;
+      }
     </style>
   `;
 
@@ -952,44 +981,53 @@ export default function mountTriage(root, { bus, store, user, role }) {
           </div>
         </div>
 
-        <!-- Emergency Alert Modal (Diseño Simplificado y Claro) -->
+        <!-- Emergency Alert Modal (Diseño Fluent UI) -->
         <div class="modal-overlay hidden" id="emergency-modal">
-          <div class="modal-content" style="max-width: 450px; border-radius: 8px; border: none; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-             <div class="modal-header" style="background: var(--red); padding: 16px 20px; color: white; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">ALERTA DE EMERGENCIA</h2>
-                <button class="btn-close-modal" id="btn-close-emergency" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
-             </div>
-             <div class="modal-body" style="padding: 24px; background: white;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                   <div style="color: var(--red); margin-bottom: 10px;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                   </div>
-                   <p style="font-size: 14px; font-weight: 600; color: var(--neutralPrimary);">¿Activar protocolo de respuesta inmediata?</p>
-                </div>
-                
-                <div class="form-group mb-4">
-                   <label class="form-label" style="font-size: 12px; font-weight: 700;">TIPO DE EMERGENCIA</label>
-                   <select class="input" id="emergency-type" style="border-radius: 4px;">
-                      <option value="code_blue">CÓDIGO AZUL (Cardiorrespiratorio)</option>
-                      <option value="trauma">TRAUMA SHOCK / ACCIDENTE</option>
-                      <option value="mass_casualty">TRIAGE MASIVO</option>
-                      <option value="other">OTRA EMERGENCIA CRÍTICA</option>
-                   </select>
-                </div>
-                
-                <div class="form-group">
-                   <label class="form-label" style="font-size: 12px; font-weight: 700;">UBICACIÓN EXACTA *</label>
-                   <input type="text" class="input" id="emergency-location" placeholder="Ej: Pasillo B, Triaje, Entrada" style="border-radius: 4px;">
-                </div>
-             </div>
-             <div class="modal-footer" style="padding: 16px 20px; background: #fdf2f2; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #fee2e2;">
-                <button class="btn-circle btn-circle-cancel" id="btn-cancel-emergency" title="Cancelar">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-                <button class="btn-circle" id="btn-activate-emergency" style="background: var(--red); color: white;" title="Activar Alerta de Emergencia">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </button>
-             </div>
+          <div class="modal-content" style="max-width: 500px; border-radius: 4px; border: none; box-shadow: 0 32px 64px rgba(0,0,0,0.24), 0 2px 21px rgba(0,0,0,0.22);">
+            <div class="modal-header emergency" style="background: var(--red); padding: 16px 20px; color: white; display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <h2 style="margin: 0; font-size: 18px; font-weight: 600;">ALERTA DE EMERGENCIA</h2>
+              </div>
+              <button class="btn-close-modal" id="btn-close-emergency" style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 24px; background: white;">
+              <div style="background: #fde7e9; border-left: 4px solid var(--red); padding: 12px; margin-bottom: 20px; font-size: 13px; color: var(--neutralPrimary);">
+                <strong>ATENCIÓN:</strong> Esta acción notificará a todo el personal de guardia de forma inmediata.
+              </div>
+              
+              <div class="form-group mb-4">
+                <label class="form-label" style="font-weight: 600; font-size: 12px;">TIPO DE EMERGENCIA *</label>
+                <select class="input" id="emergency-type" style="border-radius: 2px;">
+                  <option value="code_blue">Código Azul - Paro cardiorrespiratorio</option>
+                  <option value="code_red">Código Rojo - Incendio</option>
+                  <option value="code_black">Código Negro - Amenaza violenta</option>
+                  <option value="mass_casualty">Múltiples víctimas / Triaje masivo</option>
+                  <option value="evacuation">Evacuación inmediata</option>
+                  <option value="other">Otra emergencia crítica</option>
+                </select>
+              </div>
+              
+              <div class="form-group mb-4">
+                <label class="form-label" style="font-weight: 600; font-size: 12px;">UBICACIÓN EXACTA *</label>
+                <input type="text" class="input" id="emergency-location" placeholder="Ej: Pasillo B, Triaje, Entrada" style="border-radius: 2px;">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 600; font-size: 12px;">DESCRIPCIÓN DE LA SITUACIÓN</label>
+                <textarea class="input" id="emergency-description" rows="3" placeholder="Indique detalles relevantes..." style="border-radius: 2px;"></textarea>
+              </div>
+            </div>
+            
+            <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--neutralLight); background: #f3f2f1; display: flex; justify-content: flex-end; gap: 12px;">
+              <button class="btn-circle btn-circle-cancel" id="btn-cancel-emergency" title="Cancelar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="btn-circle" id="btn-activate-emergency" style="background: var(--red); color: white;" title="Activar Alerta de Emergencia">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1065,10 +1103,13 @@ export default function mountTriage(root, { bus, store, user, role }) {
       btnQuickAddAllergy: root.querySelector('#btn-quick-add-allergy'),
       quickAllergiesContainer: root.querySelector('#quick-allergies-container'),
 
-      // Botones Alerta de Emergencia
+      // Elementos del modal de emergencia
+      emergencyType: root.querySelector('#emergency-type'),
+      emergencyLocation: root.querySelector('#emergency-location'),
+      emergencyDescription: root.querySelector('#emergency-description'),
+      btnCloseEmergency: root.querySelector('#btn-close-emergency'),
       btnCancelEmergency: root.querySelector('#btn-cancel-emergency'),
-      btnActivateEmergency: root.querySelector('#btn-activate-emergency'),
-      btnCloseEmergency: root.querySelector('#btn-close-emergency')
+      btnActivateEmergency: root.querySelector('#btn-activate-emergency')
     };
 
     updateUI();
@@ -1350,34 +1391,34 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (!elements.statsContainer) return;
 
     elements.statsContainer.innerHTML = `
-      <div class="stat-info-card">
-        <span class="stat-info-label">EN ESPERA</span>
-        <span class="stat-info-value">${state.stats.waiting || 0}</span>
-        <span class="stat-info-sub">
+      <div class="f-stat-card">
+        <span class="f-stat-label">EN ESPERA</span>
+        <span class="f-stat-value">${state.stats.waiting || 0}</span>
+        <span class="f-stat-sub">
           <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Total: ${state.stats.total || 0} registrados
         </span>
       </div>
-      <div class="stat-info-card">
-        <span class="stat-info-label">EN ATENCIÓN</span>
-        <span class="stat-info-value">${state.stats.in_progress || 0}</span>
-        <span class="stat-info-sub">
+      <div class="f-stat-card">
+        <span class="f-stat-label">EN ATENCIÓN</span>
+        <span class="f-stat-value">${state.stats.in_progress || 0}</span>
+        <span class="f-stat-sub">
           <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Pacientes activos
         </span>
       </div>
-      <div class="stat-info-card">
-        <span class="stat-info-label">ESPERA PROMEDIO</span>
-        <span class="stat-info-value">${state.stats.averageWaitingTime || 0}<span style="font-size: 1rem; margin-left: 2px;">min</span></span>
-        <span class="stat-info-sub">
+      <div class="f-stat-card">
+        <span class="f-stat-label">ESPERA PROMEDIO</span>
+        <span class="f-stat-value">${state.stats.averageWaitingTime || 0}<span style="font-size: 1rem; margin-left: 2px;">min</span></span>
+        <span class="f-stat-sub">
           <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           Flujo de hoy
         </span>
       </div>
-      <div class="stat-info-card" style="border-bottom: 4px solid var(--red);">
-        <span class="stat-info-label" style="color: var(--red);">TIEMPO MÁXIMO</span>
-        <span class="stat-info-value" style="color: var(--red);">${state.stats.maxWaitingTime || 0}<span style="font-size: 1rem; margin-left: 2px;">min</span></span>
-        <span class="stat-info-sub" style="color: var(--red);">
+      <div class="f-stat-card" style="border-bottom: 4px solid var(--red);">
+        <span class="f-stat-label" style="color: var(--red);">TIEMPO MÁXIMO</span>
+        <span class="f-stat-value" style="color: var(--red);">${state.stats.maxWaitingTime || 0}<span style="font-size: 1rem; margin-left: 2px;">min</span></span>
+        <span class="f-stat-sub" style="color: var(--red);">
           <svg style="opacity:0.7" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           Requiere atención
         </span>
@@ -1454,9 +1495,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
           </td>
           <td style="text-align: right;">
              <div class="flex justify-end gap-2">
-                ${patient.status === 'waiting' ? `<button class="btn-circle btn-circle-save" data-action="start" data-id="${patient.id}" title="Atender">${ICONS.check || 'Atender'}</button>` : ''}
-                ${patient.status === 'in_progress' ? `<button class="btn-circle btn-circle-status" data-action="complete" data-id="${patient.id}" title="Cerrar">${ICONS.close || 'Cerrar'}</button>` : ''}
-                <button class="btn-circle btn-circle-view" data-action="view" data-id="${patient.id}" title="Ver">${ICONS.eye || 'Ver'}</button>
+                ${patient.status === 'waiting' ? `<button class="btn-circle btn-circle-save" data-action="start" data-id="${patient.id}" title="Atender"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>` : ''}
+                ${patient.status === 'in_progress' ? `<button class="btn-circle btn-circle-status" data-action="complete" data-id="${patient.id}" title="Cerrar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>` : ''}
+                <button class="btn-circle btn-circle-view" data-action="view" data-id="${patient.id}" title="Ver"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"/></svg></button>
              </div>
           </td>
         </tr>
@@ -2375,7 +2416,14 @@ export default function mountTriage(root, { bus, store, user, role }) {
   // Abrir modal de emergencia
   function openEmergencyModal() {
     const modal = root.querySelector('#emergency-modal');
-    if (modal) modal.classList.remove('hidden');
+    if (modal) {
+      // Limpiar campos del modal antes de mostrarlo
+      if (elements.emergencyLocation) elements.emergencyLocation.value = '';
+      if (elements.emergencyType) elements.emergencyType.value = 'code_blue';
+      if (elements.emergencyDescription) elements.emergencyDescription.value = '';
+      
+      modal.classList.remove('hidden');
+    }
   }
 
   // Cerrar modal de emergencia
@@ -2384,17 +2432,43 @@ export default function mountTriage(root, { bus, store, user, role }) {
     if (modal) modal.classList.add('hidden');
   }
 
-  // Activar emergencia
+  // Activar emergencia (VERSIÓN CORREGIDA Y MEJORADA)
   async function activateEmergency() {
     const modal = root.querySelector('#emergency-modal');
-    if (!modal) return;
+    if (!modal) {
+      showNotification('Error: No se encontró el modal de emergencia', 'error');
+      return;
+    }
 
-    const location = modal.querySelector('#emergency-location').value;
-    const type = modal.querySelector('#emergency-type').value;
-    const description = modal.querySelector('#emergency-description').value;
+    // Obtener elementos con validación usando las referencias guardadas
+    const locationInput = elements.emergencyLocation || modal.querySelector('#emergency-location');
+    const typeInput = elements.emergencyType || modal.querySelector('#emergency-type');
+    const descriptionInput = elements.emergencyDescription || modal.querySelector('#emergency-description');
 
-    if (!location.trim()) {
-      alert('Debe especificar la ubicación');
+    // Validar que los elementos existan
+    if (!locationInput || !typeInput) {
+      showNotification('Error: El modal de emergencia no está correctamente inicializado', 'error');
+      console.error('Elementos faltantes:', { locationInput, typeInput, descriptionInput });
+      closeEmergencyModal();
+      return;
+    }
+
+    const location = locationInput.value.trim();
+    const type = typeInput.value;
+    const description = descriptionInput ? descriptionInput.value.trim() : '';
+
+    if (!location) {
+      showNotification('Debe especificar la ubicación', 'warning');
+      // Resaltar el campo de ubicación
+      locationInput.style.borderColor = '#e53e3e';
+      locationInput.focus();
+      return;
+    } else {
+      locationInput.style.borderColor = '#e2e8f0';
+    }
+
+    // Confirmar activación de emergencia
+    if (!await hospitalConfirm(`¿Está seguro de activar una alerta de emergencia tipo ${type} en ${location}?`, 'danger')) {
       return;
     }
 
@@ -2418,6 +2492,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
       showNotification('Alerta de emergencia activada', 'success');
 
     } catch (error) {
+      console.error('Error activando emergencia:', error);
       showNotification('Error al activar alerta', 'error');
     }
   }
@@ -2435,25 +2510,7 @@ export default function mountTriage(root, { bus, store, user, role }) {
     const alertInfo = alertTypes[type] || { title: 'EMERGENCIA', color: '#e53e3e' };
 
     const alertDiv = document.createElement('div');
-    alertDiv.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: ${alertInfo.color};
-      color: white;
-      padding: 1rem;
-      z-index: 10000;
-      text-align: center;
-      font-weight: bold;
-      font-size: 1.25rem;
-      animation: flash 1s infinite;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-    `;
-
+    alertDiv.className = 'emergency-alert-banner';
     alertDiv.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
@@ -2461,8 +2518,9 @@ export default function mountTriage(root, { bus, store, user, role }) {
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       ${alertInfo.title} - ${location}
-      <button onclick="this.parentElement.remove()" style="position: absolute; right: 1rem; background: transparent; border: 1px solid white; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-        &times;
+      <button onclick="this.parentElement.remove()" 
+              style="position: absolute; right: 1rem; background: transparent; border: 1px solid white; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+        ×
       </button>
     `;
 

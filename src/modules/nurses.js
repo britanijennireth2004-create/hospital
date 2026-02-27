@@ -466,10 +466,10 @@ export default function mountNurses(root, { bus, store, user, role }) {
            </td>
            <td>
               <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                 <button class="btn-circle btn-circle-view" data-action="view" data-id="${nurse.id}" title="Ver Perfil">${icons.view || ICONS.eye}</button>
+                 <button class="btn-circle btn-circle-status" data-action="view" data-id="${nurse.id}" title="Ver Perfil">${icons.view || ICONS.eye}</button>
                  ${canManage ? `
-                 <button class="btn-circle btn-circle-status" data-action="status" data-id="${nurse.id}" title="Cambiar Estado">${ICONS.sync}</button>
-                 <button class="btn-circle btn-circle-status" data-action="capacity" data-id="${nurse.id}" title="Ajustar Capacidad">${icons.capacity || ICONS.chart}</button>
+                 <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${nurse.id}" title="Cambiar Estado">${ICONS.sync}</button>
+                 <button class="btn-circle btn-circle-view" data-action="capacity" data-id="${nurse.id}" title="Ajustar Capacidad">${icons.capacity || ICONS.chart}</button>
                  <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${nurse.id}" title="Editar">${icons.edit || ICONS.edit}</button>
                  ` : ''}
               </div>
@@ -754,7 +754,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
             </button>
           ` : ''}
           ${canEditStatus ? `
-            <button class="btn-circle btn-circle-status" id="status-nurse-btn" data-id="${nurse.id}" title="Cambiar Estado">
+            <button class="btn-circle btn-circle-cancel" id="status-nurse-btn" data-id="${nurse.id}" title="Cambiar Estado">
               ${icons.status}
             </button>
           ` : ''}

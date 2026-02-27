@@ -674,11 +674,11 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </td>
         <td data-label="Acciones">
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button class="btn-circle btn-circle-view" data-action="view" data-id="${patient.id}" title="Ver Detalles">
+            <button class="btn-circle btn-circle-status" data-action="view" data-id="${patient.id}" title="Ver Detalles">
               ${icons.view || ICONS.eye}
             </button>
             ${role === 'admin' || role === 'receptionist' ? `
-              <button class="btn-circle btn-circle-status" data-action="status" data-id="${patient.id}" title="${patient.isActive ? 'Desactivar Paciente' : 'Activar Paciente'}">
+              <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${patient.id}" title="${patient.isActive ? 'Desactivar Paciente' : 'Activar Paciente'}">
                 ${ICONS.sync}
               </button>
             ` : ''}
@@ -794,7 +794,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
           </div>
           
           <div class="card-actions flex gap-2 justify-center" style="margin-top: 1rem;">
-            <button class="btn-circle btn-circle-view" data-action="view" data-id="${patient.id}" title="Ver Detalles">
+            <button class="btn-circle btn-circle-status" data-action="view" data-id="${patient.id}" title="Ver Detalles">
               ${icons.view || ICONS.eye}
             </button>
             ${role === 'admin' || role === 'receptionist' ? `
@@ -1731,7 +1731,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
             </button>
           ` : ''}
           ${role === 'admin' || role === 'doctor' ? `
-            <button class="btn-circle btn-circle-view" id="btn-view-clinical-history" data-id="${patient.id}" title="Historial Clínico">
+            <button class="btn-circle btn-circle-status" id="btn-view-clinical-history" data-id="${patient.id}" title="Historial Clínico">
               ${icons.clinical}
             </button>
           ` : ''}

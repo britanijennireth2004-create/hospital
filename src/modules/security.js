@@ -723,7 +723,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       <div class="modal-content" style="max-width: 700px;">
         <div class="modal-header">
           <h3 class="modal-title">Detalles del Evento de Auditoría</h3>
-          <button class="close-modal" id="close-log-modal">&times;</button>
+          <button class="close-modal btn-circle" style="font-size: 2rem; background: rgba(0, 0, 0, 0.2); color: white;" id="close-log-modal">&times;</button>
         </div>
         
         <div class="modal-body" style="padding: 1.5rem;">

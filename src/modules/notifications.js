@@ -22,6 +22,8 @@ const ico = {
   reply: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>`,
   selectAll: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
   plus: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  // Nuevo icono para borradores
+  draft: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8.5L14.5 3z"/><polyline points="14 3 14 8 19 8"/></svg>`,
 };
 
 const CSS = `
@@ -62,6 +64,11 @@ const CSS = `
 .notif-row:hover .row-actions { display:flex; }
 .notif-row .row-actions .notif-toolbar-btn { width:32px; height:32px; }
 
+/* Estilo para la fila de borrador */
+.notif-row.draft { background: rgba(255, 193, 7, 0.05); }
+.notif-row.draft::before { background: #f59e0b; width: 3px; }
+.notif-row.draft .msg-sender { color: #b45309; font-style: italic; }
+
 /* Modal de Confirmación */
 .notif-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:10000; backdrop-filter:blur(3px); }
 .notif-modal { background:white; width:95%; max-width:450px; border-radius:16px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); animation:notif-modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -93,11 +100,17 @@ const CSS = `
 .notif-send-btn:hover { box-shadow:0 8px 20px rgba(16, 185, 129, 0.3); transform: translateY(-2px); }
 .notif-discard-btn { margin-left:auto; width:42px; height:42px; border:none; background:transparent; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); transition: all 0.2s; }
 .notif-discard-btn:hover { background:#fee2e2; color:#ef4444; transform: rotate(90deg); }
+
+/* Botón de guardar borrador */
+.notif-save-draft-btn { padding:0.75rem 1.5rem; background: #f59e0b; color:white; border:none; border-radius:12px; font-size:0.9rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s; }
+.notif-save-draft-btn:hover { background: #d97706; box-shadow:0 4px 12px rgba(245, 158, 11, 0.2); }
+
 @media(max-width:768px){ .notif-row .msg-sender{width:120px;} .notif-row .msg-subject{max-width:180px;} .notif-detail-header{padding:1.5rem; flex-direction: column;} }
 </style>
 `;
 
-const ROUTE_MAP = { notif_inbox: 'inbox', notif_sent: 'sent', notif_reminders: 'reminders', notif_alerts: 'alerts', notif_trash: 'trash' };
+// Añadimos 'drafts' al mapa de rutas
+const ROUTE_MAP = { notif_inbox: 'inbox', notif_sent: 'sent', notif_reminders: 'reminders', notif_alerts: 'alerts', notif_trash: 'trash', notif_drafts: 'drafts' };
 
 export default function mountNotifications(root, { bus, store, user, role, routeId }) {
   const state = {
@@ -106,12 +119,13 @@ export default function mountNotifications(root, { bus, store, user, role, route
     selectedIds: new Set(),
     view: 'list',       // 'list' | 'detail' | 'compose'
     viewingId: null,
-    replyTo: null
+    replyTo: null,
+    editingDraftId: null // Para saber si estamos editando un borrador existente
   };
 
   const canSend = ['admin', 'receptionist', 'doctor', 'nurse', 'patient'].includes(role);
   const canManage = ['admin', 'receptionist'].includes(role);
-  let allData = { messages: [], notifications: [], reminders: [] };
+  let allData = { messages: [], notifications: [], reminders: [], drafts: [] }; // Añadimos 'drafts'
   let subs = [];
 
   // === HELPERS ===
@@ -181,6 +195,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
     allData.messages = store.get('messages') || [];
     allData.notifications = store.get('notifications') || [];
     allData.reminders = store.get('reminders') || [];
+    allData.drafts = store.get('drafts') || []; // Cargar borradores
     generateAutoReminders();
   }
 
@@ -204,7 +219,8 @@ export default function mountNotifications(root, { bus, store, user, role, route
     const all = [
       ...allData.messages.map(m => ({ ...m, _src: 'messages' })),
       ...allData.notifications.map(n => ({ ...n, _src: 'notifications' })),
-      ...allData.reminders.map(r => ({ ...r, _src: 'reminders' }))
+      ...allData.reminders.map(r => ({ ...r, _src: 'reminders' })),
+      ...allData.drafts.map(d => ({ ...d, _src: 'drafts' })) // Incluir borradores
     ];
 
     return all.filter(i => {
@@ -223,10 +239,11 @@ export default function mountNotifications(root, { bus, store, user, role, route
   function getFolderItems() {
     let items = getAllItems();
     if (state.folder === 'inbox') items = items.filter(i => i.createdBy !== user.id && !i.deleted);
-    else if (state.folder === 'sent') items = items.filter(i => i.createdBy === user.id && !i.deleted);
+    else if (state.folder === 'sent') items = items.filter(i => i.createdBy === user.id && !i.deleted && i._src !== 'drafts'); // Excluir borradores de 'sent'
     else if (state.folder === 'reminders') items = items.filter(i => i._src === 'reminders' && !i.deleted);
     else if (state.folder === 'alerts') items = items.filter(i => (i.priority === 'critical' || i.priority === 'high' || i._src === 'notifications') && !i.deleted);
     else if (state.folder === 'trash') items = items.filter(i => i.deleted);
+    else if (state.folder === 'drafts') items = items.filter(i => i._src === 'drafts' && !i.deleted); // Filtrar solo borradores no eliminados
 
     // Filtro por Rol Destinatario (Solo para Inbox)
     if (state.folder === 'inbox') {
@@ -243,7 +260,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
   }
 
   function folderTitle() {
-    const map = { inbox: 'Bandeja de entrada', sent: 'Enviados', reminders: 'Recordatorios', alerts: 'Alertas', trash: 'Papelera' };
+    const map = { inbox: 'Bandeja de entrada', sent: 'Enviados', reminders: 'Recordatorios', alerts: 'Alertas', trash: 'Papelera', drafts: 'Borradores' };
     return map[state.folder] || 'Bandeja de entrada';
   }
 
@@ -254,7 +271,8 @@ export default function mountNotifications(root, { bus, store, user, role, route
     const unreadMap = {
       inbox: allItems.filter(i => i.createdBy !== user.id && (i.status === 'sent' || i.status === 'pending' || i.status === 'scheduled' || i.status === 'delivered')).length,
       alerts: allItems.filter(i => (i.priority === 'critical' || i.priority === 'high' || i._src === 'notifications') && i.status !== 'read').length,
-      reminders: allItems.filter(i => i._src === 'reminders' && i.status !== 'read').length
+      reminders: allItems.filter(i => i._src === 'reminders' && i.status !== 'read').length,
+      drafts: allItems.filter(i => i._src === 'drafts' && i.status !== 'read').length // Contar borradores no leídos (aunque no aplica)
     };
 
     root.innerHTML = CSS + `
@@ -275,7 +293,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
         <button class="notif-toolbar-btn" id="tb-refresh" title="Actualizar">${ico.refresh}</button>
         <button class="notif-toolbar-btn" id="tb-selectall" title="Seleccionar todo">${ico.selectAll}</button>
         ${state.selectedIds.size > 0 ? `
-          <button class="notif-toolbar-btn" id="tb-markread" title="Marcar leídos" style="color:var(--accent);">${ico.markRead}</button>
+          ${state.folder !== 'drafts' ? `<button class="notif-toolbar-btn" id="tb-markread" title="Marcar leídos" style="color:var(--accent);">${ico.markRead}</button>` : ''}
           <button class="notif-toolbar-btn" id="tb-delete" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Mover a papelera'}" style="color:var(--danger);">${ico.trash}</button>
           <div style="font-size:0.8rem; color:var(--accent); font-weight:700; margin-left: 0.5rem; padding: 0.2rem 0.6rem; background:rgba(16,185,129,0.1); border-radius:12px;">${state.selectedIds.size} seleccionados</div>
         ` : ''}
@@ -294,11 +312,22 @@ export default function mountNotifications(root, { bus, store, user, role, route
   }
 
   function renderRow(item) {
-    const sender = state.folder === 'sent' ? `Para: ${item.recipientName || '—'}` : getActorName(item.createdBy);
-    const isUnread = (item.status === 'sent' || item.status === 'pending' || item.status === 'scheduled' || item.status === 'delivered') && item.createdBy !== user.id;
+    // Adaptar el remitente/destinatario según el tipo de item y la carpeta
+    let sender = '';
+    if (state.folder === 'sent') {
+      sender = `Para: ${item.recipientName || '—'}`;
+    } else if (state.folder === 'drafts') {
+      sender = 'Borrador'; // Para borradores, mostramos un texto fijo
+    } else {
+      sender = getActorName(item.createdBy);
+    }
+
+    const isUnread = (item.status === 'sent' || item.status === 'pending' || item.status === 'scheduled' || item.status === 'delivered') && item.createdBy !== user.id && state.folder !== 'drafts';
     const isSelected = state.selectedIds.has(item.id);
+    const isDraft = item._src === 'drafts';
+
     return `
-    <div class="notif-row ${isUnread ? 'unread' : ''} ${isSelected ? 'selected' : ''}" data-id="${item.id}">
+    <div class="notif-row ${isUnread ? 'unread' : ''} ${isSelected ? 'selected' : ''} ${isDraft ? 'draft' : ''}" data-id="${item.id}">
       <div class="row-check"><input type="checkbox" ${isSelected ? 'checked' : ''} data-check="${item.id}"></div>
       <div class="row-star" data-star="${item.id}" title="Destacar">${item.starred ? ico.starFill : ico.star}</div>
       <div class="msg-sender">${sender}</div>
@@ -310,18 +339,20 @@ export default function mountNotifications(root, { bus, store, user, role, route
       <div class="msg-badges">
         ${chBadge(item.channel)}
         ${item.priority && item.priority !== 'normal' ? prBadge(item.priority) : ''}
+        ${isDraft ? '<span class="badge-pr" style="color:#b45309;background:#fef3c7;">Borrador</span>' : ''}
       </div>
       <div class="msg-date">${fmtDate(item.createdAt)}</div>
       <div class="row-actions">
-        ${state.folder !== 'trash' && isUnread ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar como leído">${ico.markRead}</button>` : ''}
+        ${!isDraft && state.folder !== 'trash' && isUnread ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar como leído">${ico.markRead}</button>` : ''}
         <button class="notif-toolbar-btn" data-action="delete" data-aid="${item.id}" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Eliminar'}">${ico.trash}</button>
-        ${state.folder !== 'trash' ? `<button class="notif-toolbar-btn" data-action="reply-row" data-aid="${item.id}" title="Responder">${ico.reply}</button>` : ''}
+        ${!isDraft && state.folder !== 'trash' ? `<button class="notif-toolbar-btn" data-action="reply-row" data-aid="${item.id}" title="Responder">${ico.reply}</button>` : ''}
+        ${isDraft ? `<button class="notif-toolbar-btn" data-action="edit-draft" data-aid="${item.id}" title="Editar borrador">${ico.compose}</button>` : ''}
       </div>
     </div>`;
   }
 
   function renderEmpty() {
-    const folderIco = { inbox: ico.inbox, sent: ico.sent, reminders: ico.clock, alerts: ico.alert, trash: ico.trash };
+    const folderIco = { inbox: ico.inbox, sent: ico.sent, reminders: ico.clock, alerts: ico.alert, trash: ico.trash, drafts: ico.draft };
     return `<div class="notif-empty">
       ${folderIco[state.folder] || ico.inbox}
       <p style="font-size:0.95rem;margin:0.75rem 0 0.25rem;">No hay mensajes en <strong>${folderTitle()}</strong></p>
@@ -369,8 +400,9 @@ export default function mountNotifications(root, { bus, store, user, role, route
         <button class="notif-toolbar-btn" id="detail-back" title="Volver">${ico.back}</button>
         <div style="width:1px;height:24px;background:var(--border);margin:0 0.25rem;"></div>
         <button class="notif-toolbar-btn" data-action="delete" data-aid="${item.id}" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Eliminar'}">${ico.trash}</button>
-        ${state.folder !== 'trash' ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar como leído">${ico.markRead}</button>` : ''}
-        ${canSend ? `<button class="notif-toolbar-btn" id="toolbar-reply" title="Responder">${ico.reply}</button>` : ''}
+        ${state.folder !== 'trash' && state.folder !== 'drafts' ? `<button class="notif-toolbar-btn" data-action="read" data-aid="${item.id}" title="Marcar como leído">${ico.markRead}</button>` : ''}
+        ${canSend && state.folder !== 'drafts' ? `<button class="notif-toolbar-btn" id="toolbar-reply" title="Responder">${ico.reply}</button>` : ''}
+        ${state.folder === 'drafts' ? `<button class="notif-toolbar-btn" id="toolbar-edit-draft" title="Editar borrador">${ico.compose}</button>` : ''}
         <button class="notif-toolbar-btn" data-star="${item.id}" title="Destacar">${item.starred ? ico.starFill : ico.star}</button>
         <span class="notif-info">${fmtFull(item.createdAt)}</span>
       </div>
@@ -393,7 +425,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
         <div class="notif-detail-body">
           <div style="font-size:0.88rem;color:var(--text);line-height:1.75;white-space:pre-wrap;padding:0.5rem 0;">${item.content || 'Sin contenido'}</div>
           ${item.appointmentId ? `<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:var(--modal-section-green-light);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:0.8rem;color:var(--accent-dark);"><strong>Cita vinculada:</strong> ${item.appointmentId}</div>` : ''}
-          ${canSend ? `
+          ${canSend && state.folder !== 'drafts' ? `
           <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
             <button class="notif-new-btn" id="detail-reply" style="font-size:0.82rem;">${ico.reply} Responder</button>
           </div>` : ''}
@@ -403,95 +435,107 @@ export default function mountNotifications(root, { bus, store, user, role, route
 
   function renderCompose() {
     const replyTo = state.replyTo;
+    const draftToEdit = state.editingDraftId ? findItem(state.editingDraftId) : null;
+    const isEditing = !!draftToEdit;
+
+    // Determinar valores iniciales para el formulario
+    let initialTo = '';
+    let initialSubj = '';
+    let initialBody = '';
+    let initialChannel = 'internal';
+    let initialPriority = 'normal';
+
+    if (isEditing) {
+      initialTo = draftToEdit.recipientId || (draftToEdit.recipientRole ? `role_${draftToEdit.recipientRole}` : '');
+      initialSubj = draftToEdit.title || '';
+      initialBody = draftToEdit.content || '';
+      initialChannel = draftToEdit.channel || 'internal';
+      initialPriority = draftToEdit.priority || 'normal';
+    } else if (replyTo) {
+      if (replyTo.createdBy === user.id) {
+        initialTo = replyTo.recipientId || (replyTo.recipientRole ? `role_${replyTo.recipientRole}` : '');
+        initialSubj = 'Re: ' + (replyTo.title || '');
+      } else {
+        initialTo = getEntityIdByUser(replyTo.createdBy);
+        initialSubj = 'Re: ' + (replyTo.title || '');
+      }
+    }
+
     const patients = store.get('patients') || [];
     const doctors = store.get('doctors') || [];
     const nurses = store.get('nurses') || [];
     const receptionists = store.get('receptionists') || [];
     const admins = (store.get('users') || []).filter(u => u.role === 'admin');
 
-    // Determinar destinatario predeterminado y nombre para mostrar
-    let replyId = null;
-    let replyName = '';
-    if (replyTo) {
-      if (replyTo.createdBy === user.id) {
-        replyId = replyTo.recipientId || (replyTo.recipientRole ? `role_${replyTo.recipientRole}` : null);
-        replyName = replyTo.recipientName || 'Destinatario original';
-      } else {
-        replyId = getEntityIdByUser(replyTo.createdBy);
-        replyName = getActorName(replyTo.createdBy);
-      }
-    }
-
-    const showAdminOption = true; // Todos pueden escribir a admin/recepción en un GH hospitalario
-
     return `
       <div class="notif-compose-header">
-        <h3 style="margin:0;font-size:1rem;color:var(--text);font-weight:600;display:flex;align-items:center;gap:8px;">${ico.compose} ${replyTo ? 'Responder' : 'Nuevo mensaje'}</h3>
+        <h3 style="margin:0;font-size:1rem;color:var(--text);font-weight:600;display:flex;align-items:center;gap:8px;">${ico.compose} ${isEditing ? 'Editar borrador' : (replyTo ? 'Responder' : 'Nuevo mensaje')}</h3>
         <button class="notif-toolbar-btn" id="compose-cancel" title="Cancelar">${ico.close}</button>
       </div>
       <form id="compose-form" class="notif-compose-form">
-        <div class="notif-compose-field" ${replyTo ? 'style="background:rgba(16, 185, 129, 0.05);"' : ''}>
+        <div class="notif-compose-field">
           <label>Para</label>
-          ${replyTo ? `
+          ${!isEditing && replyTo ? `
             <div style="flex:1; padding:0.6rem 0; font-size:0.85rem; font-weight:600; color:var(--accent-dark); display:flex; align-items:center; gap:6px;">
-              ${ico.check} ${replyName}
-              <input type="hidden" id="cmp-to" value="${replyId}">
+              ${ico.check} ${getActorName(initialTo)}
+              <input type="hidden" id="cmp-to" value="${initialTo}">
             </div>
           ` : `
-            <select id="cmp-to" required>
+            <select id="cmp-to" required ${isEditing ? '' : ''}>
               <option value="">Seleccionar destinatario...</option>
               <optgroup label="Destinatarios por Gremio">
-                <option value="role_admin" ${replyId === 'role_admin' ? 'selected' : ''}>Alta Administración</option>
-                <option value="role_receptionist" ${replyId === 'role_receptionist' ? 'selected' : ''}>Mesa de Recepción General</option>
-                <option value="role_doctor" ${replyId === 'role_doctor' ? 'selected' : ''}>Todo el Gremio Médico</option>
-                <option value="role_nurse" ${replyId === 'role_nurse' ? 'selected' : ''}>Personal de Enfermería</option>
+                <option value="role_admin" ${initialTo === 'role_admin' ? 'selected' : ''}>Alta Administración</option>
+                <option value="role_receptionist" ${initialTo === 'role_receptionist' ? 'selected' : ''}>Mesa de Recepción General</option>
+                <option value="role_doctor" ${initialTo === 'role_doctor' ? 'selected' : ''}>Todo el Gremio Médico</option>
+                <option value="role_nurse" ${initialTo === 'role_nurse' ? 'selected' : ''}>Personal de Enfermería</option>
               </optgroup>
               ${admins.length > 0 ? `
               <optgroup label="Directivos y Administradores">
-                ${admins.map(a => `<option value="${a.id}" data-name="${a.name}" ${replyId === a.id ? 'selected' : ''}>${a.name} (Admin)</option>`).join('')}
+                ${admins.map(a => `<option value="${a.id}" data-name="${a.name}" ${initialTo === a.id ? 'selected' : ''}>${a.name} (Admin)</option>`).join('')}
               </optgroup>
               ` : ''}
               <optgroup label="Médicos Adscritos">
-                ${doctors.map(d => `<option value="${d.id}" data-name="${d.name}" ${replyId === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
+                ${doctors.map(d => `<option value="${d.id}" data-name="${d.name}" ${initialTo === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
               </optgroup>
               <optgroup label="Pacientes Registrados">
-                ${patients.map(p => `<option value="${p.id}" data-name="${p.name}" ${replyId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                ${patients.map(p => `<option value="${p.id}" data-name="${p.name}" ${initialTo === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
               </optgroup>
             </select>
           `}
         </div>
         <div class="notif-compose-field">
           <label>Asunto</label>
-          <input id="cmp-subj" required placeholder="Asunto del mensaje" value="${replyTo ? 'Re: ' + (replyTo.title || '') : ''}">
+          <input id="cmp-subj" required placeholder="Asunto del mensaje" value="${initialSubj}">
         </div>
         <div class="notif-compose-field">
           <label>Canal</label>
           <select id="cmp-ch">
-            <option value="internal">Interna</option>
-            <option value="email">Email</option>
-            <option value="sms">SMS</option>
-            <option value="push">Push</option>
+            <option value="internal" ${initialChannel === 'internal' ? 'selected' : ''}>Interna</option>
+            <option value="email" ${initialChannel === 'email' ? 'selected' : ''}>Email</option>
+            <option value="sms" ${initialChannel === 'sms' ? 'selected' : ''}>SMS</option>
+            <option value="push" ${initialChannel === 'push' ? 'selected' : ''}>Push</option>
           </select>
         </div>
         <div class="notif-compose-field">
           <label>Prioridad</label>
           <select id="cmp-pri">
-            <option value="normal">Normal</option>
-            <option value="low">Baja</option>
-            <option value="high">Alta</option>
-            <option value="critical">Urgente</option>
+            <option value="normal" ${initialPriority === 'normal' ? 'selected' : ''}>Normal</option>
+            <option value="low" ${initialPriority === 'low' ? 'selected' : ''}>Baja</option>
+            <option value="high" ${initialPriority === 'high' ? 'selected' : ''}>Alta</option>
+            <option value="critical" ${initialPriority === 'critical' ? 'selected' : ''}>Urgente</option>
           </select>
         </div>
-        <textarea id="cmp-body" class="notif-compose-textarea" required placeholder="Escriba el contenido del mensaje..."></textarea>
+        <textarea id="cmp-body" class="notif-compose-textarea" required placeholder="Escriba el contenido del mensaje...">${initialBody}</textarea>
         <div class="notif-compose-footer">
           <button type="submit" class="notif-send-btn">${ico.sent} Enviar</button>
+          <button type="button" class="notif-save-draft-btn" id="compose-save-draft">${ico.draft} Guardar borrador</button>
           <button type="button" class="notif-discard-btn" id="compose-discard" title="Descartar">${ico.trash}</button>
         </div>
       </form>`;
   }
 
-  function findItem(id) { return [...allData.messages, ...allData.notifications, ...allData.reminders].find(i => i.id === id); }
-  function findSrc(id) { for (const src of ['messages', 'notifications', 'reminders']) { if ((allData[src] || []).find(i => i.id === id)) return src; } return null; }
+  function findItem(id) { return [...allData.messages, ...allData.notifications, ...allData.reminders, ...allData.drafts].find(i => i.id === id); }
+  function findSrc(id) { for (const src of ['messages', 'notifications', 'reminders', 'drafts']) { if ((allData[src] || []).find(i => i.id === id)) return src; } return null; }
 
   function markRead(id) {
     const src = findSrc(id);
@@ -573,6 +617,52 @@ export default function mountNotifications(root, { bus, store, user, role, route
     }, items.length);
   }
 
+  // Función para guardar borrador
+  function saveDraft(form) {
+    const toSel = form.querySelector('#cmp-to');
+    const val = toSel.value;
+    const isRole = val.startsWith('role_');
+
+    let rName = '';
+    if (toSel.tagName === 'SELECT') {
+      rName = isRole ? toSel.options[toSel.selectedIndex].text : (toSel.options[toSel.selectedIndex]?.dataset?.name || '');
+    } else {
+      // Si es un input hidden (respuesta)
+      rName = getActorName(val);
+    }
+
+    const draftData = {
+      recipientId: isRole ? null : val,
+      recipientRole: isRole ? val.replace('role_', '') : null,
+      recipientName: rName,
+      title: form.querySelector('#cmp-subj').value.trim() || '(sin asunto)',
+      content: form.querySelector('#cmp-body').value.trim(),
+      channel: form.querySelector('#cmp-ch').value,
+      priority: form.querySelector('#cmp-pri').value,
+      status: 'draft', // Estado especial para borradores
+      type: 'manual',
+      createdBy: user.id,
+      createdAt: Date.now()
+    };
+
+    if (state.editingDraftId) {
+      // Actualizar borrador existente
+      store.update('drafts', state.editingDraftId, draftData);
+      showToast('Borrador actualizado');
+    } else {
+      // Crear nuevo borrador
+      store.add('drafts', draftData);
+      showToast('Borrador guardado');
+    }
+
+    // Limpiar estado y volver a la lista
+    state.view = 'list';
+    state.replyTo = null;
+    state.editingDraftId = null;
+    loadData();
+    render();
+  }
+
   function sendMessage(form) {
     const toSel = form.querySelector('#cmp-to');
     const val = toSel.value;
@@ -589,6 +679,8 @@ export default function mountNotifications(root, { bus, store, user, role, route
         } else {
           rName = getActorName(state.replyTo.createdBy);
         }
+      } else {
+        rName = getActorName(val);
       }
     }
 
@@ -605,6 +697,12 @@ export default function mountNotifications(root, { bus, store, user, role, route
       createdBy: user.id,
       createdAt: Date.now()
     };
+
+    // Si estábamos editando un borrador, eliminarlo después de enviar
+    if (state.editingDraftId) {
+      store.remove('drafts', state.editingDraftId);
+    }
+
     store.add('messages', msg);
     store.add('communicationLogs', {
       messageId: msg.id, title: 'Mensaje enviado', content: msg.title,
@@ -619,6 +717,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
     showToast('Mensaje enviado correctamente');
     state.view = 'list';
     state.replyTo = null;
+    state.editingDraftId = null;
     loadData();
     render();
   }
@@ -633,7 +732,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
 
   function setupEvents() {
     const btnNew = root.querySelector('#btn-new');
-    if (btnNew) btnNew.onclick = () => { state.view = 'compose'; state.replyTo = null; render(); };
+    if (btnNew) btnNew.onclick = () => { state.view = 'compose'; state.replyTo = null; state.editingDraftId = null; render(); };
     const search = root.querySelector('#notif-search');
     if (search) search.addEventListener('input', debounce(() => { state.search = search.value; render(); }, 300));
     const tbSel = root.querySelector('#tb-selectall');
@@ -664,30 +763,42 @@ export default function mountNotifications(root, { bus, store, user, role, route
       b.onclick = e => { e.stopPropagation(); markRead(b.dataset.aid); render(); showToast('Marcado como leído'); };
     });
     root.querySelectorAll('[data-action="reply-row"]').forEach(b => {
-      b.onclick = e => { e.stopPropagation(); const item = findItem(b.dataset.aid); state.replyTo = item; state.view = 'compose'; render(); };
+      b.onclick = e => { e.stopPropagation(); const item = findItem(b.dataset.aid); state.replyTo = item; state.editingDraftId = null; state.view = 'compose'; render(); };
+    });
+    // Nuevo evento para editar borrador desde la fila
+    root.querySelectorAll('[data-action="edit-draft"]').forEach(b => {
+      b.onclick = e => { e.stopPropagation(); state.editingDraftId = b.dataset.aid; state.view = 'compose'; render(); };
     });
     const back = root.querySelector('#detail-back');
     if (back) back.onclick = () => { state.view = 'list'; state.viewingId = null; render(); };
     const detReply = root.querySelector('#detail-reply');
-    if (detReply) detReply.onclick = () => { const item = findItem(state.viewingId); state.replyTo = item || null; state.view = 'compose'; render(); };
+    if (detReply) detReply.onclick = () => { const item = findItem(state.viewingId); state.replyTo = item || null; state.editingDraftId = null; state.view = 'compose'; render(); };
     const toolReply = root.querySelector('#toolbar-reply');
-    if (toolReply) toolReply.onclick = () => { const item = findItem(state.viewingId); state.replyTo = item || null; state.view = 'compose'; render(); };
+    if (toolReply) toolReply.onclick = () => { const item = findItem(state.viewingId); state.replyTo = item || null; state.editingDraftId = null; state.view = 'compose'; render(); };
+    // Nuevo evento para editar desde la barra de herramientas en detalle
+    const toolEditDraft = root.querySelector('#toolbar-edit-draft');
+    if (toolEditDraft) toolEditDraft.onclick = () => { state.editingDraftId = state.viewingId; state.view = 'compose'; render(); };
     root.querySelectorAll('.notif-toolbar [data-star]').forEach(b => {
       b.onclick = e => { e.stopPropagation(); toggleStar(b.dataset.star); render(); };
     });
     const compForm = root.querySelector('#compose-form');
-    if (compForm) compForm.onsubmit = e => { e.preventDefault(); sendMessage(compForm); };
+    if (compForm) {
+      compForm.onsubmit = e => { e.preventDefault(); sendMessage(compForm); };
+      // Evento para guardar borrador
+      const saveDraftBtn = root.querySelector('#compose-save-draft');
+      if (saveDraftBtn) saveDraftBtn.onclick = () => { saveDraft(compForm); };
+    }
     const compCancel = root.querySelector('#compose-cancel');
-    if (compCancel) compCancel.onclick = () => { state.view = 'list'; state.replyTo = null; render(); };
+    if (compCancel) compCancel.onclick = () => { state.view = 'list'; state.replyTo = null; state.editingDraftId = null; render(); };
     const compDiscard = root.querySelector('#compose-discard');
-    if (compDiscard) compDiscard.onclick = () => { state.view = 'list'; state.replyTo = null; render(); };
+    if (compDiscard) compDiscard.onclick = () => { state.view = 'list'; state.replyTo = null; state.editingDraftId = null; render(); };
 
     // Auto-focus en el cuerpo del mensaje si estamos redactando
     if (state.view === 'compose') {
       const body = root.querySelector('#cmp-body');
       if (body) {
         body.focus();
-        // Mover cursor al final si hay texto (aunque suele estar vacío en respuestas)
+        // Mover cursor al final si hay texto
         body.setSelectionRange(body.value.length, body.value.length);
       }
     }
@@ -702,6 +813,8 @@ export default function mountNotifications(root, { bus, store, user, role, route
     subs.push(u2);
     const u3 = store.subscribe('reminders', () => { loadData(); if (state.view === 'list') render(); });
     subs.push(u3);
+    const u4 = store.subscribe('drafts', () => { loadData(); if (state.view === 'list') render(); }); // Suscripción a borradores
+    subs.push(u4);
     return { destroy() { subs.forEach(u => u()); } };
   }
 

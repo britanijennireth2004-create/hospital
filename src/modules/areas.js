@@ -194,7 +194,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
         <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1.5rem;">
           <div class="flex justify-between items-center">
             ${canManage ? `
-              <button class="btn btn-primary" id="btn-new-area" style="border-radius: 20px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: var(--themePrimary);">
+              <button class="btn btn-primary" id="btn-new-area">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nueva Área
               </button>
@@ -595,11 +595,11 @@ export default function mountAreas(root, { bus, store, user, role }) {
           </td>
           <td style="padding: 1rem; text-align: right;">
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-              <button class="btn-circle btn-circle-view" data-action="view" data-id="${area.id}" title="Ver detalles">
+              <button class="btn-circle btn-circle-status" data-action="view" data-id="${area.id}" title="Ver detalles">
                 ${ICONS.eye}
               </button>
               ${canEdit ? `
-                 <button class="btn-circle btn-circle-status" data-action="status" data-id="${area.id}" title="Cambiar Estado">
+                 <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${area.id}" title="Cambiar Estado">
                   ${ICONS.sync}
                 </button>
                 <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${area.id}" title="Editar área">

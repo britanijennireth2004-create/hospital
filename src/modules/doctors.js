@@ -949,11 +949,11 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </td>
           <td data-label="Acciones">
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-              <button class="btn-circle btn-circle-view" data-action="view" data-id="${doctor.id}" title="Ver perfil">
+              <button class="btn-circle btn-circle-status" data-action="view" data-id="${doctor.id}" title="Ver perfil">
                 ${icons.view || ICONS.eye}
               </button>
               ${canEdit ? `
-                <button class="btn-circle btn-circle-status" data-action="status" data-id="${doctor.id}" title="Cambiar Estado">
+                <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${doctor.id}" title="Cambiar Estado">
                   ${ICONS.sync}
                 </button>
                 <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${doctor.id}" title="Editar">
@@ -2080,12 +2080,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             <button class="btn-circle btn-circle-edit" id="edit-doctor-btn" data-id="${doctor.id}" title="Editar Perfil">
               ${icons.edit}
             </button>
-            <button class="btn-circle btn-circle-view" id="view-schedule-btn" data-id="${doctor.id}" title="Ver Agenda">
+            <button class="btn-circle btn-circle-status" id="view-schedule-btn" data-id="${doctor.id}" title="Ver Agenda">
               ${icons.schedule}
             </button>
           ` : ''}
           ${canEditStatus ? `
-            <button class="btn-circle btn-circle-status" id="change-status-btn" data-id="${doctor.id}" title="Cambiar Estado">
+            <button class="btn-circle btn-circle-cancel" id="change-status-btn" data-id="${doctor.id}" title="Cambiar Estado">
               ${icons.status}
             </button>
             <button class="btn-circle btn-circle-save" id="adjust-capacity-btn" data-id="${doctor.id}" title="Ajustar Capacidad">
