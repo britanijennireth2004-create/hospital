@@ -5,7 +5,7 @@ export async function createStore(bus) {
 
   // Datos de ejemplo más completos
   const defaultData = {
-    version: '3.1',
+    version: '3.3',
     users: [
       {
         id: 'admin_1',
@@ -362,6 +362,91 @@ export async function createStore(bus) {
     // ===== MÓDULO DE SEGURIDAD =====
     auditLogs: [],
     sessions: [],
+
+    // ===== MÓDULO DE RELEVO DE TURNO / TRATAMIENTOS =====
+    // REGLA: Los registros son INMUTABLES. Los errores se corrigen con una enmienda.
+    treatmentLogs: [
+      {
+        id: 'tlog_1',
+        patientId: 'p_1',
+        entryType: 'medication',
+        userId: 'doctor_1',
+        userName: 'Dra. Ana Ruiz',
+        userRole: 'doctor',
+        shift: 'Turno Mañana',
+        detail: 'Se administró Paracetamol 500mg vía oral. Paciente tolera bien. Tª descendiendo: 38.1°C → 37.2°C. Sin efectos adversos observados.',
+        medication: 'Paracetamol',
+        dose: '500mg',
+        route: 'Oral',
+        timestamp: Date.now() - 8 * 60 * 60 * 1000,
+        isAmendment: false,
+        amendedLogId: null
+      },
+      {
+        id: 'tlog_2',
+        patientId: 'p_1',
+        entryType: 'observation',
+        userId: 'nurse_1',
+        userName: 'Enf. Elena Soler',
+        userRole: 'nurse',
+        shift: 'Turno Mañana',
+        detail: 'Control de enfermías 09:30h. Signos vitales estables: PA 118/76 mmHg, FC 68 lpm, Temp 36.9°C, SpO2 99%. Paciente descansando, refiere leve cefalea residual. Se orienta tiempo y espacio.',
+        medication: null,
+        dose: null,
+        route: null,
+        timestamp: Date.now() - 5 * 60 * 60 * 1000,
+        isAmendment: false,
+        amendedLogId: null
+      },
+      {
+        id: 'tlog_3',
+        patientId: 'p_1',
+        entryType: 'treatment',
+        userId: 'doctor_1',
+        userName: 'Dra. Ana Ruiz',
+        userRole: 'doctor',
+        shift: 'Turno Tarde',
+        detail: 'RELEVO TURNO TARDE: Paciente con evolución favorable. Se indica continuar hidratación oral libre. Si fiebre > 38°C, administrar segunda dosis de Paracetamol. Alta médica probable mañana si mantiene estabilidad.',
+        medication: null,
+        dose: null,
+        route: null,
+        timestamp: Date.now() - 2 * 60 * 60 * 1000,
+        isAmendment: false,
+        amendedLogId: null
+      },
+      {
+        id: 'tlog_4',
+        patientId: 'p_1',
+        entryType: 'amendment',
+        userId: 'nurse_1',
+        userName: 'Enf. Elena Soler',
+        userRole: 'nurse',
+        shift: 'Turno Tarde',
+        detail: 'ENMIENDA al registro anterior: Aclaración: la SpO2 registrada a las 09:30h fue 97% (no 99%). Error tipográfico en el reporte inicial. El valor clínico es igualmente normal.',
+        medication: null,
+        dose: null,
+        route: null,
+        timestamp: Date.now() - 90 * 60 * 1000,
+        isAmendment: true,
+        amendedLogId: 'tlog_2'
+      },
+      {
+        id: 'tlog_5',
+        patientId: 'p_2',
+        entryType: 'observation',
+        userId: 'doctor_1',
+        userName: 'Dra. Ana Ruiz',
+        userRole: 'doctor',
+        shift: 'Turno Mañana',
+        detail: 'Evaluación inicial ingreso urgencias. Paciente masculino 33a con dolor torácico 7/10. ECG: ritmo sinusal, sin cambios ST. Solicito enzimas cardíacas. Monitoreo contínuo indicado.',
+        medication: null,
+        dose: null,
+        route: null,
+        timestamp: Date.now() - 4 * 60 * 60 * 1000,
+        isAmendment: false,
+        amendedLogId: null
+      }
+    ],
     passwordPolicies: {
       minLength: 8,
       requireUppercase: true,

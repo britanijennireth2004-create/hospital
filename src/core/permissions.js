@@ -49,6 +49,12 @@ export function can(role, action) {
     'edit:clinical': ['admin', 'doctor'],
     'delete:clinical': ['admin'],
 
+    // === Registro de Tratamientos (Relevo de Turno) ===
+    'view:treatments': ['admin', 'doctor', 'nurse'],
+    'create:treatments': ['admin', 'doctor', 'nurse'],
+    // Los registros de tratamiento NUNCA se eliminan (inmutabilidad)
+    'amend:treatments': ['admin', 'doctor', 'nurse'],
+
     // === Triage ===
     'view:triage': ['admin', 'doctor', 'nurse', 'receptionist'],
     'create:triage': ['admin', 'doctor', 'nurse'],

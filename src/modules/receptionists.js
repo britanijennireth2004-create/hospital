@@ -354,8 +354,13 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     const items = state.receptionists.slice(start, start + state.itemsPerPage);
 
     if (elements.count) elements.count.textContent = `${state.receptionists.length} Registros`;
+    const canManageAll = role === 'admin';
+    const isOwnRec = (r) => role === 'receptionist' && user?.staffId === r.id;
+
     elements.list.innerHTML = items.map(item => {
       const area = store.find('areas', item.areaId);
+      const canEdit = canManageAll || isOwnRec(item);
+      const canChangeStatus = canManageAll; // SOLO admin
       return `
             <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
               <td>
@@ -379,13 +384,18 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
               <td>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                   <button class="btn-circle btn-circle-status" data-action="view" data-id="${item.id}" title="Ver">${icons.view || ICONS.eye}</button>
+                  ${canChangeStatus ? `
                   <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${item.id}" title="Cambiar Estado">${ICONS.sync}</button>
+                  ` : ''}
+                  ${canEdit ? `
                   <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${item.id}" title="Editar">${icons.edit || ICONS.edit}</button>
+                  ` : ''}
                 </div>
               </td>
             </tr>
           `;
     }).join('');
+
 
     // Event delegation para acciones
     elements.list.onclick = (e) => {
@@ -497,7 +507,8 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
 
   function viewRec(rec) {
     const area = store.find('areas', rec.areaId);
-    const canEditStatus = role === 'admin';
+    const canManageAll = role === 'admin';
+    const isOwnRec = (r) => role === 'receptionist' && user?.staffId === r.id;
 
     // Estadísticas de citas gestionadas
     const allAppointments = store.get('appointments') || [];
@@ -649,12 +660,12 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
 
         <!-- Footer con btn-circle -->
         <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
-          ${(role === 'admin') ? `
+          ${(canManageAll || isOwnRec(rec)) ? `
             <button class="btn-circle btn-circle-edit" id="edit-rec-btn" data-id="${rec.id}" title="Editar Perfil">
               ${icons.edit || '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'}
             </button>
           ` : ''}
-          ${canEditStatus ? `
+          ${canManageAll ? `
             <button class="btn-circle btn-circle-cancel" id="status-rec-btn" data-id="${rec.id}" title="Cambiar Estado">
               ${icons.status || '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'}
             </button>

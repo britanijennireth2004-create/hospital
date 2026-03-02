@@ -1284,3 +1284,50 @@ textarea.error-field {
   width: 18px;
   height: 18px;
 }
+
+/* ===== MÓDULO DE TRATAMIENTOS / RELEVO DE TURNO ===== */
+
+/* Botones de filtro de tipo (pill outline) */
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  border: 1.5px solid currentColor;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.filter-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.filter-btn.active {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Entrada individual del timeline */
+.treatment-entry {
+  transition: background 0.15s ease;
+  border-radius: 6px;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.treatment-entry:hover {
+  background: var(--bg-light);
+}
+
+.treatment-entry.is-amendment {
+  background: #fff9f9;
+}
+
+.treatment-entry.is-amendment:hover {
+  background: #fef2f2;
+}

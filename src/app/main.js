@@ -227,6 +227,18 @@ const ROUTES = {
     module: () => import('../modules/clinical.js'),
     permission: (role) => ['admin', 'doctor', 'patient', 'nurse'].includes(role)
   },
+  treatments: {
+    label: 'Tratamientos / Relevo',
+    icon: ICONS.treatments,
+    module: () => import('../modules/treatments.js'),
+    permission: (role) => ['admin', 'doctor', 'nurse'].includes(role)
+  },
+  profile: {
+    label: 'Mi Perfil',
+    icon: ICONS.profile,
+    module: () => import('../modules/profile.js'),
+    permission: (role) => role === 'patient'
+  },
   triage: {
     label: 'Triage',
     icon: ICONS.triage,

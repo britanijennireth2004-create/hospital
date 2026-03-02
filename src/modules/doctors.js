@@ -862,7 +862,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const startIndex = (state.currentPage - 1) * state.itemsPerPage;
     const endIndex = startIndex + state.itemsPerPage;
     const paginatedDoctors = state.doctors.slice(startIndex, endIndex);
-    const canEditStatus = role === 'admin' || role === 'receptionist';
+    const canManageAll = role === 'admin' || role === 'receptionist';   // puede editar/estado de todos
+    const isOwnDoctor = (d) => role === 'doctor' && user?.doctorId === d.id; // médico viendo su propio perfil
 
     if (paginatedDoctors.length === 0) {
       elements.emptyState.classList.remove('hidden');
@@ -881,10 +882,13 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const rows = paginatedDoctors.map(doctor => {
       const stats = getDoctorStats(doctor.id);
       const area = store.find('areas', doctor.areaId);
-      const canEdit = role === 'admin' || role === 'receptionist' || (role === 'doctor' && user?.doctorId === doctor.id);
       const dailyCapacity = doctor.dailyCapacity || 20;
       const capacityPercentage = Math.min(Math.round((stats.todayAppointments / dailyCapacity) * 100), 100);
       const isWorkingToday = isDoctorWorkingAt(doctor, new Date());
+
+      // Permisos por botón
+      const canEdit = canManageAll || isOwnDoctor(doctor); // editar: admin/recep o propio médico
+      const canChangeStatus = canManageAll;                       // estado: SOLO admin/recep
 
       return `
         <tr>
@@ -926,12 +930,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             ${isWorkingToday ? `
               <div style="margin-bottom: 0.25rem;">
                 <div style="height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden;">
-                  <div style="width: ${capacityPercentage}%; height: 100%; background: ${capacityPercentage > 80 ? 'var(--danger)' : capacityPercentage > 60 ? 'var(--warning)' : 'var(--success)'};"></div>
+                  <div style="width: ${capacityPercentage}%; height: 100%; background: ${capacityPercentage > 80 ? 'var(--danger)' : capacityPercentage > 60 ? 'var(--warning)' : 'var(--success)'}"></div>
                 </div>
               </div>
               <div class="text-sm">
                 ${stats.todayAppointments}/${dailyCapacity} pacientes
-                ${canEditStatus ? `
+                ${canManageAll ? `
                   <button class="btn-circle btn-circle-status" style="width: 24px; height: 24px; margin-left: 0.5rem;" data-action="capacity" data-id="${doctor.id}" title="Ajustar capacidad">
                     ${icons.capacity || ICONS.chart}
                   </button>
@@ -952,10 +956,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               <button class="btn-circle btn-circle-status" data-action="view" data-id="${doctor.id}" title="Ver perfil">
                 ${icons.view || ICONS.eye}
               </button>
-              ${canEdit ? `
+              ${canChangeStatus ? `
                 <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${doctor.id}" title="Cambiar Estado">
                   ${ICONS.sync}
                 </button>
+              ` : ''}
+              ${canEdit ? `
                 <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${doctor.id}" title="Editar">
                   ${ICONS.edit}
                 </button>
@@ -969,6 +975,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     elements.doctorsList.innerHTML = rows;
     renderPagination();
   }
+
 
   // Renderizar paginación
   function renderPagination() {

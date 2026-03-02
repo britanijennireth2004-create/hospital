@@ -138,6 +138,7 @@ export default function mountAudit(container, { store, bus, user }) {
       case 'ELIMINAR': return 'badge-danger';
       case 'INICIO_SESION': return 'badge-info';
       case 'CERRAR_SESION': return 'badge-secondary';
+      case 'ENMIENDA': return 'badge-danger';
       default: return 'badge-outline';
     }
   }
@@ -149,6 +150,7 @@ export default function mountAudit(container, { store, bus, user }) {
       'medicos': 'Médicos',
       'citas': 'Citas Médicas',
       'historia_clinica': 'Historia Clínica',
+      'tratamientos': 'Tratamientos / Relevo',
       'triage': 'Triage',
       'seguridad': 'Seguridad',
       'areas': 'Áreas Médicas',

@@ -440,10 +440,13 @@ export default function mountNurses(root, { bus, store, user, role }) {
     const items = state.nurses.slice(start, start + state.itemsPerPage);
 
     if (elements.nursesCount) elements.nursesCount.textContent = `${state.nurses.length} Registros`;
-    const canManage = role === 'admin' || role === 'receptionist';
+    const canManageAll = role === 'admin' || role === 'receptionist';
+    const isOwnNurse = (n) => role === 'nurse' && user?.staffId === n.id;
 
     elements.nursesList.innerHTML = items.map(nurse => {
       const area = store.find('areas', nurse.areaId);
+      const canEdit = canManageAll || isOwnNurse(nurse);
+      const canChangeStatus = canManageAll; // SOLO admin/recep
       return `
          <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
            <td>
@@ -467,9 +470,11 @@ export default function mountNurses(root, { bus, store, user, role }) {
            <td>
               <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                  <button class="btn-circle btn-circle-status" data-action="view" data-id="${nurse.id}" title="Ver Perfil">${icons.view || ICONS.eye}</button>
-                 ${canManage ? `
+                 ${canChangeStatus ? `
                  <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${nurse.id}" title="Cambiar Estado">${ICONS.sync}</button>
                  <button class="btn-circle btn-circle-view" data-action="capacity" data-id="${nurse.id}" title="Ajustar Capacidad">${icons.capacity || ICONS.chart}</button>
+                 ` : ''}
+                 ${canEdit ? `
                  <button class="btn-circle btn-circle-edit" data-action="edit" data-id="${nurse.id}" title="Editar">${icons.edit || ICONS.edit}</button>
                  ` : ''}
               </div>
@@ -477,6 +482,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
         </tr>
       `;
     }).join('');
+
 
     // Event delegation para acciones
     elements.nursesList.onclick = (e) => {
@@ -586,7 +592,9 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
   function viewNurse(nurse) {
     const area = store.find('areas', nurse.areaId);
-    const canEditStatus = role === 'admin' || role === 'receptionist';
+    const canManageAll = role === 'admin' || role === 'receptionist';
+    const isOwnNurse = (n) => role === 'nurse' && user?.staffId === n.id;
+
 
     // Estadísticas básicas de la enfermera
     const allAppointments = store.get('appointments') || [];
@@ -748,12 +756,12 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
         <!-- Footer con btn-circle -->
         <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
-          ${(role === 'admin') ? `
+          ${(canManageAll || isOwnNurse(nurse)) ? `
             <button class="btn-circle btn-circle-edit" id="edit-nurse-btn" data-id="${nurse.id}" title="Editar Perfil">
               ${icons.edit}
             </button>
           ` : ''}
-          ${canEditStatus ? `
+          ${canManageAll ? `
             <button class="btn-circle btn-circle-cancel" id="status-nurse-btn" data-id="${nurse.id}" title="Cambiar Estado">
               ${icons.status}
             </button>

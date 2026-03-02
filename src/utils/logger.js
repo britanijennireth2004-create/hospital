@@ -42,7 +42,8 @@ export const Logger = {
         VIEW: 'VER',
         PRINT: 'IMPRIMIR',
         EXPORT: 'EXPORTAR',
-        IMPORT: 'IMPORTAR'
+        IMPORT: 'IMPORTAR',
+        AMEND: 'ENMIENDA'       // Corrección inmutable de un registro clínico
     },
 
     // Módulos predefinidos para consistencia
@@ -52,6 +53,7 @@ export const Logger = {
         DOCTORS: 'medicos',
         APPOINTMENTS: 'citas',
         CLINICAL: 'historia_clinica',
+        TREATMENTS: 'tratamientos',   // Relevo de turno / registro de tratamientos
         TRIAGE: 'triage',
         SECURITY: 'seguridad',
         AREAS: 'areas',
