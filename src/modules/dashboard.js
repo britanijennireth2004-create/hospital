@@ -16,7 +16,7 @@ const icons = {
   info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="#249" stroke-width="2"/><path stroke="#249" stroke-width="2" d="M10 7v5"/><circle cx="10" cy="14" r="1" fill="#249"/></svg>`,
   // Iconos adicionales
   plus: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
-  triage: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  triaje: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
   history: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
 };
 
@@ -82,11 +82,11 @@ export default function mountDashboard(root, { bus, store, user, role }) {
 
   // Cargar estadísticas
   async function loadStats() {
-    const appointments = store.get('appointments');
-    const patients = store.get('patients');
-    const doctors = store.get('doctors');
-    const areas = store.get('areas');
-    const triageRecords = store.get('triage') || [];
+    const appointments = store.get('appointments') || [];
+    const patients = store.get('patients') || [];
+    const doctors = store.get('doctors') || [];
+    const areas = store.get('areas') || [];
+    const triajeRecords = store.get('triaje') || [];
 
     // Filtrar por rol si es necesario
     let filteredAppointments = appointments;
@@ -94,12 +94,6 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       filteredAppointments = appointments.filter(a => a.patientId === user.patientId);
     } else if (role === 'doctor' && user.doctorId) {
       filteredAppointments = appointments.filter(a => a.doctorId === user.doctorId);
-    } else if (role === 'nurse') {
-      // Las enfermeras ven todas las citas pero no pueden gestionarlas todas
-      filteredAppointments = appointments;
-    } else if (role === 'receptionist') {
-      // Las recepcionistas ven todas las citas
-      filteredAppointments = appointments;
     }
 
     state.stats = {
@@ -120,7 +114,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       totalAreas: areas.length,
       pendingAppointments: filteredAppointments.filter(a => a.status === 'scheduled').length,
       completedAppointments: filteredAppointments.filter(a => a.status === 'completed').length,
-      triagePending: triageRecords.filter(t => t.status === 'waiting').length
+      triajePending: triajeRecords.filter(t => t.status === 'waiting').length
     };
   }
 
@@ -129,7 +123,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     const container = root.querySelector('#appointments-chart-container');
     if (!container) return;
 
-    const appointments = store.get('appointments');
+    const appointments = store.get('appointments') || [];
 
     // Filtrar por rol
     let myAppointments = appointments;
@@ -287,9 +281,9 @@ export default function mountDashboard(root, { bus, store, user, role }) {
       if (role === 'nurse') {
         statsHTML += `
           <div class="stat-info-card">
-            <span class="stat-info-label">Pacientes en triage</span>
-            <span class="stat-info-value">${stats.triagePending || 0}</span>
-            <span class="stat-info-sub">${icons.triage} Pendientes</span>
+            <span class="stat-info-label">Pacientes en triaje</span>
+            <span class="stat-info-value">${stats.triajePending || 0}</span>
+            <span class="stat-info-sub">${icons.triaje} Pendientes</span>
           </div>
         `;
       } else {
@@ -306,34 +300,26 @@ export default function mountDashboard(root, { bus, store, user, role }) {
     container.innerHTML = statsHTML;
   }
 
-
-
-  // Mostrar error
+  // Mostrar mensaje de error
   function showError(message) {
     const errorEl = document.createElement('div');
     errorEl.className = 'alert alert-danger';
     errorEl.textContent = message;
     errorEl.style.margin = '1rem 0';
-
     root.appendChild(errorEl);
-
-    setTimeout(() => {
-      errorEl.remove();
-    }, 5000);
+    setTimeout(() => errorEl.remove(), 5000);
   }
 
-  // Suscribirse a eventos
+  // Suscribirse a cambios en el store
   const unsubscribe = store.subscribe('appointments', () => {
     loadData();
   });
 
-  // Inicializar
+  // Inicializar el render
   render();
 
-  // Retornar API
   return {
     refresh: loadData,
-
     destroy() {
       if (unsubscribe) unsubscribe();
     }

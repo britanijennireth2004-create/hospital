@@ -151,7 +151,7 @@ export default function mountAudit(container, { store, bus, user }) {
       'citas': 'Citas Médicas',
       'historia_clinica': 'Historia Clínica',
       'tratamientos': 'Tratamientos / Relevo',
-      'triage': 'Triage',
+      'triaje': 'Triaje',
       'seguridad': 'Seguridad',
       'areas': 'Áreas Médicas',
       'auditoria': 'Auditoría',

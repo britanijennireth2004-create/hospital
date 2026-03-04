@@ -1,1769 +1,789 @@
 /**
  * Módulo de Historia Clínica Electrónica
- * Gestión completa de registros médicos de pacientes
+ * Vista principal: lista de pacientes (igual que módulo de pacientes)
+ * Vista secundaria: expediente completo del paciente con timeline de registros
  */
-
 export default function mountClinical(root, { bus, store, user, role }) {
+
+  // ── Estado ────────────────────────────────────────────────────────────────
   const state = {
-    clinicalRecords: [],
-    filteredRecords: [],
-    filters: {
-      search: ''
-    },
-    editingId: null,
-    isLoading: false,
-    showModal: false,
-    showDetailModal: false,
-    currentPatient: null,
-    currentView: 'list', // 'list', 'detail', 'timeline'
-    searchQuery: '',
+    patients: [],
+    filtered: [],
+    paginated: [],
+    totalPages: 0,
     currentPage: 1,
-    itemsPerPage: 10
+    itemsPerPage: 10,
+    search: '',
+    sortBy: 'name',
+    selectedPatient: null,   // paciente cuyo expediente estamos viendo
+    editingRecord: null,     // registro que se está editando (null = nuevo)
+    showRecordModal: false
   };
 
-  // Elementos DOM
-  let elements = {};
+  // ── Iconos ────────────────────────────────────────────────────────────────
+  const ic = {
+    search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M13 13l4 4"/></svg>`,
+    clinical: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3.25" y="2.75" width="13.5" height="14.5" rx="1.75" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6.5 6h7M6.5 10h7M6.5 14h4"/></svg>`,
+    plus: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" stroke-width="1.5" d="M4 10h12M10 4v12"/></svg>`,
+    back: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" stroke-width="1.5" d="M12 4L6 10l6 6"/></svg>`,
+    close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" stroke-width="1.5" d="M5 5l10 10M15 5L5 15"/></svg>`,
+    check: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" stroke-width="1.5" d="M4 10l4 4 8-8"/></svg>`,
+    edit: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" stroke-width="1.5" d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z"/></svg>`,
+    pdf: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+    sort: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" stroke-width="1.5" d="M6 7l4-4 4 4M14 13l-4 4-4-4"/></svg>`,
+    blood: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>`,
+    vitals: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 20 20"><path stroke="currentColor" stroke-width="1.5" d="M2 13l4-4 3 3 5-6 4 5"/></svg>`
+  };
 
-  // ===== FUNCIONES DE SEGURIDAD Y PERMISOS =====
+  // Tipos de entrada para el timeline
+  const ENTRY_TYPES = {
+    consultation: { label: 'Consulta', color: '#0a6e2e', bg: '#f0fdf4', border: '#6ee7b7' },
+    treatment: { label: 'Tratamiento', color: '#059669', bg: '#ecfdf5', border: '#34d399' },
+    medication: { label: 'Medicación', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd' },
+    observation: { label: 'Observación', color: '#d97706', bg: '#fffbeb', border: '#fcd34d' },
+    followup: { label: 'Seguimiento', color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd' },
+    emergency: { label: 'Urgencia', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
+    lab: { label: 'Laboratorio', color: '#0891b2', bg: '#ecfeff', border: '#67e8f9' },
+    prescription: { label: 'Receta', color: '#92400e', bg: '#fff7ed', border: '#fdba74' }
+  };
 
-  // Verificar si el usuario tiene permiso para ver un registro específico
-  function hasPermissionToView(record) {
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function calcAge(bd) {
+    if (!bd) return '—';
+    const b = new Date(bd), t = new Date();
+    let a = t.getFullYear() - b.getFullYear();
+    if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--;
+    return a;
+  }
+  function canCreate() { return ['admin', 'doctor', 'nurse'].includes(role); }
+  function canEdit(rec) {
     if (role === 'admin') return true;
-
-    if (role === 'doctor') {
-      // Los doctores pueden ver todos los registros
-      return true;
-    }
-
-    if (role === 'nurse') {
-      // Las enfermeras pueden ver TODOS los registros clínicos
-      // (para consulta, seguimiento de pacientes, etc.)
-      return true;
-    }
-
-    if (role === 'receptionist') {
-      // Las recepcionistas pueden ver registros básicos
-      // (para consulta de historial)
-      return true;
-    }
-
-    if (role === 'patient') {
-      // Los pacientes solo pueden ver sus propios registros
-      return record.patientId === user.patientId;
-    }
-
+    if (role === 'doctor') return rec.doctorId === user.doctorId;
     return false;
   }
+  function notify(msg, type = 'info') {
+    const n = document.createElement('div');
+    n.style.cssText = `position:fixed;top:20px;right:20px;padding:1rem 1.5rem;background:${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--info)'};color:white;border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:10000;animation:slideIn 0.3s ease;`;
+    n.textContent = msg;
+    document.body.appendChild(n);
+    setTimeout(() => { n.style.opacity = '0'; setTimeout(() => n.remove(), 300); }, 3000);
+  }
+  function typeLabel(type) { return ENTRY_TYPES[type]?.label || type; }
+  function typeCfg(type) { return ENTRY_TYPES[type] || ENTRY_TYPES.observation; }
 
-  // Verificar si el usuario tiene permiso para editar un registro específico
-  function hasPermissionToEdit(record) {
-    if (role === 'admin') return true;
+  // ── SUSCRIPCIONES ────────────────────────────────────────────────────────
+  const unsub = store.subscribe('patients', reload);
+  const unsubCR = store.subscribe('clinicalRecords', () => {
+    // Si el modal del expediente está abierto, refrescar su contenido
+    const hcModal = document.getElementById('hc-modal-overlay');
+    if (hcModal && state.selectedPatient) refreshHCModal();
+  });
 
-    if (role === 'doctor') {
-      // Los doctores solo pueden editar sus propios registros
-      return record.doctorId === user.doctorId;
-    }
+  reload();
 
-    // Las enfermeras NO pueden editar registros (solo lectura)
-    if (role === 'nurse') {
-      return false;
-    }
-
-    // Los pacientes NUNCA pueden editar registros
-    return false;
+  function reload() {
+    state.patients = store.get('patients') || [];
+    applyFilters();
+    renderList();
+    renderStats();
   }
 
-  // Verificar si el usuario puede crear nuevos registros
-  function canCreateRecords() {
-    // SOLO admin y doctor pueden crear registros
-    // La enfermera NO puede crear
-    return ['admin', 'doctor'].includes(role);
-  }
-
-  // ===== INICIALIZACIÓN =====
-  function init() {
-    render();
-    setupEventListeners();
-    loadClinicalRecords();
-
-    // Verificar si hay datos de formulario prellenados desde citas
-    const formData = localStorage.getItem('clinical_form_data');
-    if (formData) {
-      const data = JSON.parse(formData);
-      openModalWithData(data);
-      localStorage.removeItem('clinical_form_data');
+  // ── FILTROS Y PAGINACIÓN ──────────────────────────────────────────────────
+  function applyFilters() {
+    let list = [...state.patients];
+    if (state.search) {
+      const q = state.search.toLowerCase();
+      list = list.filter(p =>
+        [p.name, p.dni, p.email, p.phone, p.bloodType].filter(Boolean).join(' ').toLowerCase().includes(q)
+      );
     }
-
-    // Verificar si hay un registro específico para mostrar desde citas
-    const viewRecordId = localStorage.getItem('clinical_view_record');
-    if (viewRecordId) {
-      const record = store.find('clinicalRecords', viewRecordId);
-      if (record) {
-        // Verificar permisos antes de mostrar
-        if (hasPermissionToView(record)) {
-          viewRecordDetail(record);
-        } else {
-          showNotification('No tiene permiso para ver este registro', 'error');
-        }
-      }
-      localStorage.removeItem('clinical_view_record');
-    }
-
-    // Verificar si hay un filtro de paciente específico
-    const patientFilter = localStorage.getItem('clinical_patient_filter');
-    if (patientFilter) {
-      state.filters.patientId = patientFilter;
-      localStorage.removeItem('clinical_patient_filter');
-      // Aplicar el filtro después de un pequeño delay para que se renderice
-      setTimeout(() => {
-        if (elements.filterPatient) {
-          elements.filterPatient.value = patientFilter;
-        }
-        loadClinicalRecords();
-      }, 100);
-    }
-
-    // Suscribirse a cambios en el store
-    const unsubscribe = store.subscribe('clinicalRecords', () => {
-      loadClinicalRecords();
+    list.sort((a, b) => {
+      if (state.sortBy === 'name') return a.name.localeCompare(b.name);
+      if (state.sortBy === 'age') return calcAge(b.birthDate) - calcAge(a.birthDate);
+      return new Date(b.createdAt) - new Date(a.createdAt);
     });
-
-    // También escuchar cambios en pacientes para actualizar filtros
-    const unsubscribePatients = store.subscribe('patients', () => {
-      updatePatientSelects();
-    });
-
-    return {
-      destroy: () => {
-        unsubscribe();
-        unsubscribePatients();
-      }
-    };
+    state.filtered = list;
+    state.totalPages = Math.ceil(list.length / state.itemsPerPage);
+    if (state.currentPage > state.totalPages && state.totalPages > 0) state.currentPage = state.totalPages;
+    const s = (state.currentPage - 1) * state.itemsPerPage;
+    state.paginated = list.slice(s, s + state.itemsPerPage);
   }
 
-  // ===== FUNCIONES PRINCIPALES =====
-
-  // Cargar registros clínicos
-  function loadClinicalRecords() {
-    let records = store.get('clinicalRecords');
-
-    // Filtrar por rol y permisos
-    if (role === 'doctor' && user?.doctorId) {
-      // Los doctores ven todos los registros
-    }
-    else if (role === 'nurse') {
-      // Las enfermeras ven TODOS los registros (solo lectura)
-      // No se aplica filtro adicional
-    }
-    else if (role === 'receptionist') {
-      // Las recepcionistas ven todos los registros (solo lectura)
-    }
-    else if (role === 'patient' && user?.patientId) {
-      // Los pacientes solo ven sus propios registros
-      records = records.filter(record => record.patientId === user.patientId);
-    }
-
-    // Aplicar filtros
-    state.clinicalRecords = applyFilters(records);
-    state.filteredRecords = [...state.clinicalRecords];
-
-    // Ordenar por fecha (más reciente primero)
-    state.filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    renderRecordsList();
-    updateStats();
-    updatePatientSelects();
+  // ── RENDER: ESTADÍSTICAS ─────────────────────────────────────────────────
+  function renderStats() {
+    const el = root.querySelector('#cl-stats');
+    if (!el) return;
+    const records = store.get('clinicalRecords') || [];
+    const withHC = new Set(records.map(r => r.patientId)).size;
+    const total = state.patients.length;
+    const hoy = records.filter(r => {
+      const d = new Date(r.date); const n = new Date();
+      return d.toDateString() === n.toDateString();
+    }).length;
+    el.innerHTML = `
+      <div class="stat-info-card">
+        <span class="stat-info-label">Total Pacientes</span>
+        <span class="stat-info-value">${total}</span>
+        <span class="stat-info-sub">${ic.search} registrados</span>
+      </div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Con Historia Clínica</span>
+        <span class="stat-info-value">${withHC}</span>
+        <span class="stat-info-sub">${ic.clinical} expedientes</span>
+      </div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Total Consultas</span>
+        <span class="stat-info-value">${records.length}</span>
+        <span class="stat-info-sub">${ic.vitals} registros</span>
+      </div>
+      <div class="stat-info-card">
+        <span class="stat-info-label">Consultas Hoy</span>
+        <span class="stat-info-value">${hoy}</span>
+        <span class="stat-info-sub">${ic.clinical} atenciones</span>
+      </div>`;
   }
 
-  // Aplicar filtros
-  function applyFilters(records) {
-    return records.filter(record => {
-      // Búsqueda unificada
-      if (state.searchQuery) {
-        const query = state.searchQuery.toLowerCase();
-
-        const patient = store.find('patients', record.patientId);
-        const doctor = store.find('doctors', record.doctorId);
-
-        // Traducir tipo y estado
-        const typeText = getTypeText(record.type);
-        const statusText = record.status === 'draft' ? 'borrador draft' : 'finalizado finalized finished';
-
-        const searchableText = [
-          patient?.name,
-          doctor?.name,
-          record.symptoms,
-          record.diagnosis,
-          record.treatment,
-          record.notes,
-          record.type,
-          typeText,
-          statusText,
-          record.date
-        ].filter(Boolean).join(' ').toLowerCase();
-
-        if (!searchableText.includes(query)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }
-
-  // ===== RENDERIZADO PRINCIPAL =====
-  function render() {
-    const canCreate = canCreateRecords();
-    const isPatient = role === 'patient';
-
+  // ── RENDER: LISTA DE PACIENTES ────────────────────────────────────────────
+  function renderList() {
     root.innerHTML = `
       <div class="module-clinical">
-        <!-- Estadísticas -->
-        <div class="stats-auto-grid mb-4" id="stats-container">
-          <!-- Se llenará dinámicamente -->
-        </div>
-
-        <!-- Barra de búsqueda + Botón -->
-        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem;">
+        <div class="stats-auto-grid mb-4" id="cl-stats"></div>
+        <div class="card" style="padding:0.75rem 1rem;">
           <div class="flex justify-between items-center">
-            ${canCreate ? `
-              <button class="btn btn-primary" id="btn-new-record">
-                <span>+</span> Nuevo Registro
-              </button>
-            ` : '<div></div>'}
-            <div class="search-input-wrapper" style="position: relative; width: 450px;">
-              <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); opacity: 0.7;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </span>
-              <input 
-                type="text" 
-                class="input" 
-                id="search-input" 
-                placeholder="Buscar pacientes, médicos, diagnósticos, síntomas, estado..."
-                style="padding-left: 2.8rem; border-radius: 20px; background: rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.3s; width: 100%; height: 40px;"
-                value="${state.searchQuery}"
-              >
+            <div></div>
+            <div style="position:relative;width:450px;">
+              <span style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--muted);opacity:0.7;">${ic.search}</span>
+              <input type="text" class="input" id="cl-search"
+                placeholder="Buscar paciente por nombre, cédula, teléfono..."
+                style="padding-left:2.8rem;border-radius:20px;background:rgba(0,0,0,0.05);border:1px solid transparent;height:40px;width:100%;"
+                value="${state.search}">
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between mt-3 items-center">
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-muted" style="text-transform:uppercase;">${ic.sort} Ordenar:</label>
+            <select class="input" id="cl-sort" style="padding:0.25rem 2rem 0.25rem 0.75rem;font-size:0.8rem;width:auto;height:32px;">
+              <option value="name" ${state.sortBy === 'name' ? 'selected' : ''}>Nombre</option>
+              <option value="age"  ${state.sortBy === 'age' ? 'selected' : ''}>Edad</option>
+              <option value="recent" ${state.sortBy === 'recent' ? 'selected' : ''}>Más recientes</option>
+            </select>
+          </div>
+          <div class="text-sm text-muted" id="cl-count">Mostrando ${state.paginated.length} de ${state.filtered.length} pacientes</div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;margin-top:0.75rem;">
+          <div class="card-header" style="padding:1rem 1.5rem;">
+            <h3 style="margin:0;display:flex;align-items:center;gap:0.5rem;">${ic.clinical} Pacientes — Historia Clínica</h3>
+          </div>
+          <div id="cl-list-body">${renderRows()}</div>
+        </div>
+        <div class="card ${state.totalPages <= 1 ? 'hidden' : ''}" id="cl-pagination" style="padding:1rem;">
+          <div class="flex justify-between items-center">
+            <div class="text-sm text-muted" id="cl-page-info">Página ${state.currentPage} de ${state.totalPages}</div>
+            <div class="flex gap-1" id="cl-page-controls">${renderPageControls()}</div>
+          </div>
+        </div>
+      </div>`;
+    renderStats();
+    bindListEvents();
+  }
+
+  function renderRows() {
+    if (state.paginated.length === 0) return `
+      <div style="padding:4rem;text-align:center;color:var(--muted);">
+        <div style="opacity:0.2;margin-bottom:1rem;">${ic.clinical}</div>
+        <h3>Sin pacientes</h3><p>No se encontraron resultados.</p>
+      </div>`;
+    return state.paginated.map(p => {
+      const age = calcAge(p.birthDate);
+      const recs = (store.get('clinicalRecords') || []).filter(r => r.patientId === p.id);
+      return `
+        <div class="cl-patient-row" data-id="${p.id}" style="display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid var(--border);cursor:pointer;">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#0a6e2e);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1.1rem;flex-shrink:0;">${p.name.charAt(0)}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:0.95rem;">${p.name}</div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.2rem;">
+              <span class="text-xs text-muted">CI: ${p.docType || 'V'}-${p.dni || '—'}</span>
+              <span class="text-xs text-muted">${age} años</span>
+              ${p.bloodType ? `<span style="font-size:0.7rem;font-weight:700;padding:0 6px;border-radius:10px;background:rgba(220,38,38,0.1);color:#dc2626;">${p.bloodType}</span>` : ''}
+              ${(p.allergies || []).length ? `<span style="font-size:0.7rem;font-weight:700;padding:0 6px;border-radius:10px;background:rgba(245,158,11,0.1);color:#d97706;">⚠ Alergias</span>` : ''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.35rem;">${recs.length} registro${recs.length !== 1 ? 's' : ''}</div>
+            <button class="btn-circle btn-circle-status btn-view-hc" data-id="${p.id}" title="Ver Historia Clínica" style="width:38px;height:38px;" onclick="event.stopPropagation()">${ic.clinical}</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderPageControls() {
+    if (state.totalPages <= 1) return '';
+    let h = `<button class="btn btn-outline btn-sm" data-page="prev" ${state.currentPage === 1 ? 'disabled' : ''}>← Ant</button>`;
+    for (let i = 1; i <= Math.min(state.totalPages, 7); i++) h += `<button class="btn btn-sm ${state.currentPage === i ? 'btn-primary' : 'btn-outline'}" data-page="${i}">${i}</button>`;
+    h += `<button class="btn btn-outline btn-sm" data-page="next" ${state.currentPage === state.totalPages ? 'disabled' : ''}>Sig →</button>`;
+    return h;
+  }
+
+  // ── MODAL DE HISTORIA CLÍNICA (se abre sobre la lista) ────────────────────
+  function openHCModal(patientId) {
+    const p = state.patients.find(x => x.id === patientId);
+    if (!p) return;
+    state.selectedPatient = p;
+    // Eliminar modal previo si existe
+    document.getElementById('hc-modal-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'hc-modal-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:1100;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:modalSlideIn 0.3s ease;';
+    overlay.innerHTML = buildHCModalContent(p);
+    document.body.appendChild(overlay);
+    bindHCModalEvents(overlay);
+  }
+
+  function refreshHCModal() {
+    if (!state.selectedPatient) return;
+    openHCModal(state.selectedPatient.id);
+  }
+
+  function buildHCModalContent(p) {
+    const records = (store.get('clinicalRecords') || [])
+      .filter(r => r.patientId === p.id)
+      .sort((a, b) => (b.timestamp || new Date(b.date).getTime()) - (a.timestamp || new Date(a.date).getTime()));
+    const age = calcAge(p.birthDate);
+    const canAdd = canCreate();
+    return `
+      <div class="modal-content" style="max-width:1100px;background:var(--modal-bg);border:none;overflow:hidden;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;max-height:92vh;padding:0;width:100%;">
+        <div class="modal-header" style="background:var(--modal-header);flex-direction:column;align-items:center;padding:1.5rem;position:relative;flex-shrink:0;width:100%;box-sizing:border-box;">
+          <h2 style="margin:0;color:white;letter-spacing:0.08em;font-size:1.4rem;font-weight:700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
+          <div style="color:rgba(255,255,255,0.9);font-size:0.85rem;margin-top:0.25rem;font-weight:500;">HISTORIA CLÍNICA — ${p.name.toUpperCase()}</div>
+          <button id="hc-btn-close" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">${ic.close}</button>
+        </div>
+        
+        <!-- Info del paciente -->
+        <div style="padding:1rem 1.5rem;background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1.5rem;flex-shrink:0;">
+          <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#0a6e2e);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1.8rem;flex-shrink:0;box-shadow:0 4px 10px rgba(0,0,0,0.1);">${p.name.charAt(0)}</div>
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:1.2rem;color:var(--text);">${p.name}</div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.35rem;">
+              <span style="font-size:0.8rem;color:var(--muted);font-weight:600;">CI: ${p.docType || 'V'}-${p.dni || '—'}</span>
+              <span style="font-size:0.8rem;color:var(--muted);font-weight:600;">Edad: ${age} años</span>
+              ${p.bloodType ? `<span style="font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(220,38,38,0.1);color:#dc2626;">Sangre: ${p.bloodType}</span>` : ''}
+              ${(p.allergies || []).length ? `<span style="font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(245,158,11,0.15);color:#d97706;">⚠ Alergias: ${p.allergies.join(', ')}</span>` : ''}
             </div>
           </div>
         </div>
 
-        <!-- Contenido principal -->
-        <div style="flex: 1;">
-          <div class="card">
-            <div class="card-header">
-              <h3 style="margin: 0;">${isPatient ? 'Mi Historia Clínica' : 'Registros Clínicos'}</h3>
-              <div class="text-muted" id="records-count">
-                Cargando...
-              </div>
-            </div>
-            
-            <div id="records-list-container">
-              <div id="records-list">
-                <!-- Se llenará dinámicamente -->
-              </div>
-              
-              <div id="empty-state" class="hidden">
-                <div class="text-center" style="padding: 3rem;">
-                  <div style="margin-bottom: 1rem; opacity: 0.3;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div>
-                  <h3>No hay registros clínicos</h3>
-                  <p class="text-muted">No se encontraron registros con los filtros aplicados</p>
-                  ${canCreate ? `
-                    <button class="btn btn-primary mt-3" id="btn-create-first-record">
-                      Crear primer registro
-                    </button>
-                  ` : ''}
-                </div>
-              </div>
-            </div>
-            
-            <!-- Paginación -->
-            <div id="pagination" class="flex justify-between items-center mt-3">
-              <!-- Se llenará dinámicamente -->
-            </div>
-          </div>
+        <!-- Cuerpo con timeline -->
+        <div style="flex:1;overflow-y:auto;padding:0;background:var(--body-bg);">
+          ${renderRecordTimeline(records, p)}
         </div>
-      </div>
+        
+        <!-- Footer con botones de acción -->
+        <div class="modal-footer" style="padding:1.25rem 1.5rem;display:flex;justify-content:flex-end;gap:1.5rem;border-top:1px solid var(--border);background:white;flex-shrink:0;">
+          ${records.length > 0 ? `<button class="btn-circle btn-circle-view" id="hc-btn-pdf" title="Imprimir Historia Médica Completa">${ic.pdf}</button>` : ''}
+          ${canAdd ? `<button class="btn-circle btn-circle-save" id="hc-btn-new" title="Agregar Nuevo Registro">${ic.plus}</button>` : ''}
+        </div>
+      </div>`;
+  }
 
-      <!-- Modal para nuevo/editar registro -->
-      <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="record-modal">
-        <div class="modal-content" style="max-width: 950px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              ${state.editingId ? 'ACTUALIZACIÓN DE HISTORIA CLÍNICA' : 'NUEVO REGISTRO DE ATENCIÓN MÉDICA'}
+  function renderRecordTimeline(records, p) {
+    if (records.length === 0) return `
+      <div style="padding:4rem;text-align:center;color:var(--muted);">
+        <div style="opacity:0.2;margin-bottom:1rem;">${ic.clinical}</div>
+        <h3>Sin registros</h3>
+        <p>Aún no hay consultas registradas para este paciente.</p>
+      </div>`;
+
+    return records.map(r => {
+      const dr = store.find('doctors', r.doctorId);
+      const date = new Date(r.date);
+      const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const vitals = r.vitalSigns || {};
+      const typeStr = typeLabel(r.type).toUpperCase();
+
+      const presHtml = (Array.isArray(r.prescriptions) && r.prescriptions.length > 0)
+        ? r.prescriptions.map((px, i) => `<div style="margin-bottom:0.25rem;">${i + 1}. <strong>${px.medication}</strong> — Dosis: ${px.dosage} — Frecuencia: ${px.frequency} — Duración: ${px.duration}</div>`).join('')
+        : (r.prescriptions ? `<div>${r.prescriptions.replace(/\n/g, '<br>')}</div>` : `<div style="font-style:italic;color:var(--muted);">Sin prescripciones activas</div>`);
+
+      return `
+        <div class="cl-record-entry" style="margin: 1.5rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <!-- Header del Registro -->
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:1rem 1.5rem;">
+            <div>
+              <div style="font-weight:800;font-size:1rem;color:var(--text);">${typeStr}</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:0.25rem;">${dateStr} · Responsable: ${r.creatorName ? (r.creatorRole === 'nurse' ? 'Lic.' : r.creatorRole === 'doctor' ? 'Dr.' : '') + ' ' + r.creatorName : 'Dr. ' + (dr?.name || 'No especificado')} ${dr?.license ? '· Mat. ' + dr.license : ''}</div>
             </div>
-            <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
-            <form id="record-form">
-              <!-- Información de Cabecera -->
-              <div style="background: #f8fafc; border-radius: 8px; padding: 1.5rem; border: 1px solid #e2e8f0; margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-header); margin-bottom: 1.25rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> DATOS GENERALES DE LA ATENCIÓN</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                   <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">PACIENTE *</label>
-                      <select class="input" id="form-patient" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></select>
-                   </div>
-                   <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">MÉDICO RESPONSABLE *</label>
-                      ${role !== 'doctor' ? `
-                        <select class="input" id="form-doctor" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);"></select>
-                      ` : `
-                        <input type="text" class="input" value="${user.name}" readonly style="background: #edf2f7; border-color: #cbd5e1;">
-                        <input type="hidden" id="form-doctor" value="${user?.doctorId || ''}">
-                      `}
-                   </div>
+          <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <!-- Signos vitales -->
+            ${(vitals.bloodPressure || vitals.heartRate || vitals.temperature || vitals.spo2 || vitals.weight || vitals.height) ? `
+            <div style="background:var(--modal-section-forest-light,#f0fdf4);border-radius:8px;padding:1rem;border:1px solid var(--modal-section-forest,#6ee7b7);">
+              <div style="font-size:0.75rem;font-weight:800;color:var(--modal-section-forest,#059669);margin-bottom:0.75rem;text-transform:uppercase;">SIGNOS VITALES</div>
+              <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+                ${vitals.bloodPressure ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">PRESIÓN ARTERIAL</div><div style="font-weight:600;font-size:0.9rem;">${vitals.bloodPressure}</div></div>` : ''}
+                ${vitals.heartRate ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">F. CARDÍACA</div><div style="font-weight:600;font-size:0.9rem;">${vitals.heartRate} lpm</div></div>` : ''}
+                ${vitals.temperature ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">TEMPERATURA</div><div style="font-weight:600;font-size:0.9rem;">${vitals.temperature} °C</div></div>` : ''}
+                ${vitals.spo2 ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">SAT. O₂</div><div style="font-weight:600;font-size:0.9rem;">${vitals.spo2} %</div></div>` : ''}
+                ${vitals.weight ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">PESO</div><div style="font-weight:600;font-size:0.9rem;">${vitals.weight} kg</div></div>` : ''}
+                ${vitals.height ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">TALLA</div><div style="font-weight:600;font-size:0.9rem;">${vitals.height} cm</div></div>` : ''}
+              </div>
+            </div>` : ''}
+
+            <!-- Evaluación clínica -->
+            <div style="background:var(--modal-section-gold-light,#fffbeb);border-radius:8px;padding:1rem;border:1px solid var(--modal-section-gold,#fcd34d);">
+              <div style="display:grid;grid-template-columns:1fr;gap:1rem;">
+                <div>
+                  <div style="font-size:0.75rem;font-weight:800;color:#b8860b;margin-bottom:0.4rem;text-transform:uppercase;">MOTIVO DE CONSULTA</div>
+                  <div style="font-size:0.9rem;line-height:1.4;">${r.reason || 'No especificado'}</div>
                 </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1.25rem;">
-                   <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">FECHA *</label>
-                      <input type="date" class="input" id="form-date" required value="${new Date().toISOString().split('T')[0]}" style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);">
-                   </div>
-                   <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">TIPO DE ATENCIÓN *</label>
-                      <select class="input" id="form-type" required style="border-width: 0 0 2px 0; border-color: var(--neutralTertiary); background: var(--white);">
-                        <option value="consultation">Consulta General</option>
-                        <option value="followup">Seguimiento</option>
-                        <option value="emergency">Urgencia</option>
-                        <option value="lab">Laboratorio</option>
-                        <option value="prescription">Receta</option>
-                      </select>
-                   </div>
-                   <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: #4a5568; font-size: 0.8rem;">ESTADO</label>
-                      <select class="input" id="form-status" style="border-color: #cbd5e1; font-weight: 700;">
-                        <option value="draft">Borrador (Edición)</option>
-                        <option value="finalized">Finalizado (Solo lectura)</option>
-                      </select>
-                   </div>
+                <div>
+                  <div style="font-size:0.75rem;font-weight:800;color:#b8860b;margin-bottom:0.4rem;text-transform:uppercase;">DIAGNÓSTICO PRINCIPAL</div>
+                  <div style="font-size:0.9rem;line-height:1.4;font-weight:600;">${r.diagnosis || 'Pendiente'}</div>
                 </div>
               </div>
+            </div>
 
-              <!-- Signos Vitales (Sección Verde) -->
-              <div style="background: var(--modal-section-forest-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-forest); margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg> SIGNOS VITALES Y BIOMETRÍA</div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem;">
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">PRESIÓN ARTERIAL</label>
-                    <input type="text" class="input" id="form-bp" placeholder="120/80" style="background: white;">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">FREC. CARDÍACA (LPM)</label>
-                    <input type="number" class="input" id="form-heart-rate" placeholder="72" style="background: white;">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">TEMP. (°C)</label>
-                    <input type="number" class="input" id="form-temperature" placeholder="36.5" step="0.1" style="background: white;">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">SAT. O₂ (%)</label>
-                    <input type="number" class="input" id="form-spo2" placeholder="98" style="background: white;">
-                  </div>
+            <!-- Plan y Recetas -->
+            <div style="background:var(--modal-section-olive-light,#f1f8e9);border-radius:8px;padding:1rem;border:1px solid var(--modal-section-olive,#aed581);">
+              <div style="display:grid;grid-template-columns:1fr;gap:1.25rem;">
+                <div>
+                  <div style="font-size:0.75rem;font-weight:800;color:var(--modal-section-olive,#558b2f);margin-bottom:0.4rem;text-transform:uppercase;">PLAN DE TRATAMIENTO</div>
+                  <div style="font-size:0.9rem;line-height:1.4;">${r.treatment || '—'}</div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1rem;">
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">PESO (KG)</label>
-                    <input type="number" class="input" id="form-weight" placeholder="0.0" step="0.1" style="background: white;">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-section-forest); font-size: 0.75rem;">ALTURA (CM)</label>
-                    <input type="number" class="input" id="form-height" placeholder="0" style="background: white;">
-                  </div>
+                <div>
+                  <div style="font-size:0.75rem;font-weight:800;color:var(--modal-section-olive,#558b2f);margin-bottom:0.4rem;text-transform:uppercase;">RECETAS MÉDICAS</div>
+                  <div style="font-size:0.9rem;line-height:1.4;">${presHtml}</div>
                 </div>
+                ${r.followUp || r.notes ? `
+                <div style="border-top:1px dashed var(--border);padding-top:1rem;display:flex;gap:2rem;">
+                  ${r.followUp ? `<div><div style="font-size:0.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;">Próximo Control</div><div style="font-size:0.85rem;font-weight:600;margin-top:0.25rem;">${new Date(r.followUp).toLocaleDateString('es-ES')}</div></div>` : ''}
+                  ${r.notes ? `<div><div style="font-size:0.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;">Notas Adicionales</div><div style="font-size:0.85rem;margin-top:0.25rem;">${r.notes}</div></div>` : ''}
+                </div>` : ''}
               </div>
+            </div>
+            
+          </div>
+        </div>`;
+    }).join('');
+  }
 
-              <!-- Motivo y Síntomas (Sección Oro) -->
-              <div style="background: var(--modal-section-gold-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-gold); margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: #b8860b; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> MOTIVO Y SÍNTOMAS</div>
-                <textarea class="input" id="form-reason" rows="2" placeholder="Describa el motivo de la consulta..." style="background: white; border-color: var(--modal-section-gold);"></textarea>
-              </div>
-
-              <!-- Diagnóstico y Tratamiento (Sección Oliva) -->
-              <div style="background: var(--modal-section-olive-light); border-radius: 8px; padding: 1.5rem; border: 1px solid var(--modal-section-olive); margin-bottom: 2rem;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--modal-section-olive); margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> EVALUACIÓN MÉDICA</div>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-section-olive); font-size: 0.75rem;">DIAGNÓSTICO PRINCIPAL *</label>
-                  <textarea class="input" id="form-diagnosis" rows="2" required placeholder="Diagnóstico..." style="background: white; border-color: var(--modal-section-olive); font-weight: 700;"></textarea>
+  // ── FORMULARIO DE REGISTRO ────────────────────────────────────────────────
+  function renderRecordForm(p) {
+    const isEditing = !!state.editingRecord;
+    const r = state.editingRecord || {};
+    const doctors = store.get('doctors') || [];
+    const vitals = r.vitalSigns || {};
+    return `
+      <div class="modal-content" style="max-width:950px;background:var(--modal-bg);border:none;overflow:hidden;box-shadow:var(--shadow-lg);">
+        <div class="modal-header" style="background:var(--modal-header);flex-direction:column;align-items:center;padding:1.5rem;position:relative;">
+          <h2 style="margin:0;color:white;letter-spacing:0.08em;font-size:1.4rem;font-weight:700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
+          <div style="color:rgba(255,255,255,0.9);font-size:0.85rem;margin-top:0.25rem;font-weight:500;">NUEVO REGISTRO DE ATENCIÓN MÉDICA</div>
+          <button id="btn-close-record-modal" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">${ic.close}</button>
+        </div>
+        <div style="background:white;margin:1.5rem;border-radius:8px;padding:2rem;max-height:70vh;overflow-y:auto;">
+          <form id="cl-record-form">
+            <!-- Cabecera general -->
+            <div style="background:#f8fafc;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;margin-bottom:1.5rem;">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--modal-header);margin-bottom:1rem;text-transform:uppercase;">Datos de la Atención</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+                <div class="form-group">
+                  <label class="form-label" style="font-weight:700;font-size:0.78rem;">PROFESIONAL RESPONSABLE *</label>
+                  <input type="text" class="input" value="${user.name} (${role === 'doctor' ? 'Médico' : role === 'nurse' ? 'Enfermera/o' : 'Administrador'})" readonly style="background:#edf2f7;color:var(--text);font-weight:600;">
+                  <input type="hidden" id="rf-doctor" value="${role === 'doctor' ? (user.doctorId || user.id) : user.id}">
                 </div>
                 <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-section-olive); font-size: 0.75rem;">PLAN DE TRATAMIENTO</label>
-                  <textarea class="input" id="form-treatment" rows="3" placeholder="Instrucciones del médico..." style="background: white; border-color: var(--modal-section-olive);"></textarea>
+                  <label class="form-label" style="font-weight:700;font-size:0.78rem;">FECHA *</label>
+                  <input type="date" class="input" id="rf-date" required value="${r.date ? new Date(r.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-weight:700;font-size:0.78rem;">TIPO *</label>
+                  <select class="input" id="rf-type" required>
+                    ${Object.entries(ENTRY_TYPES).map(([k, v]) => `<option value="${k}" ${(r.type || 'consultation') === k ? 'selected' : ''}>${v.label}</option>`).join('')}
+                  </select>
                 </div>
               </div>
-
-              <!-- Recetas y Seguimiento -->
-              <div style="background: #f1f5f9; border-radius: 8px; padding: 1.5rem; border: 1px solid #cbd5e1;">
-                <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg> PRESCRIPCIONES Y SEGUIMIENTO</div>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                  <label class="form-label" style="font-weight: 700; color: #475569; font-size: 0.75rem;">DETALLE DE MEDICACIÓN</label>
-                  <textarea class="input" id="form-prescriptions" rows="3" placeholder="Medicamento - Dosis - Frecuencia..." style="background: white; border-color: #cbd5e1;"></textarea>
+              <div style="margin-top:0.75rem;">
+                <div class="form-group">
+                  <label class="form-label" style="font-weight:700;font-size:0.78rem;">ESTADO</label>
+                  <select class="input" id="rf-status" style="width:200px;">
+                    <option value="draft" ${(r.status || 'draft') === 'draft' ? 'selected' : ''}>Borrador</option>
+                    <option value="finalized" ${r.status === 'finalized' ? 'selected' : ''}>Finalizado</option>
+                  </select>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                   <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: #475569; font-size: 0.75rem;">PRÓXIMO CONTROL</label>
-                      <input type="date" class="input" id="form-followup" style="background: white; border-color: #cbd5e1;">
-                   </div>
-                   <div class="form-group">
-                      <label class="form-label" style="font-weight: 700; color: #475569; font-size: 0.75rem;">NOTAS ADICIONALES</label>
-                      <textarea class="input" id="form-notes" rows="1" placeholder="Notas internas..." style="background: white; border-color: #cbd5e1;"></textarea>
-                   </div>
-                </div>
-              </div>
-
-              <!-- Campos ocultos para compatibilidad -->
-              <textarea id="form-symptoms" class="hidden"></textarea>
-              <textarea id="form-recommendations" class="hidden"></textarea>
-            </form>
-          </div>
-          
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
-              ${ICONS.close}
-            </button>
-            <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Registro' : 'Finalizar Historia Clínica'}">
-              ${ICONS.check}
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Guardar referencias a elementos
-    captureElements();
-
-    // Cargar datos iniciales
-    loadClinicalRecords();
-  }
-
-  // Capturar referencias a elementos DOM
-  function captureElements() {
-    elements = {
-      // Contenedores
-      statsContainer: root.querySelector('#stats-container'),
-      recordsList: root.querySelector('#records-list'),
-      recordsCount: root.querySelector('#records-count'),
-      emptyState: root.querySelector('#empty-state'),
-      recordsListContainer: root.querySelector('#records-list-container'),
-      pagination: root.querySelector('#pagination'),
-
-      // Búsqueda
-      searchInput: root.querySelector('#search-input'),
-      btnAdvancedFilters: null,
-      advancedFilters: null,
-      filterPatient: null,
-      filterDoctor: null,
-      filterType: null,
-      filterStatus: null,
-      filterDateFrom: null,
-      filterDateTo: null,
-      btnClearFilters: null,
-      btnApplyFilters: null,
-
-      // Modal
-      modal: root.querySelector('#record-modal'),
-      form: root.querySelector('#record-form'),
-      formPatient: root.querySelector('#form-patient'),
-      formDoctor: root.querySelector('#form-doctor'),
-      formDate: root.querySelector('#form-date'),
-      formType: root.querySelector('#form-type'),
-      formStatus: root.querySelector('#form-status'),
-      formReason: root.querySelector('#form-reason'),
-      formBp: root.querySelector('#form-bp'),
-      formHeartRate: root.querySelector('#form-heart-rate'),
-      formTemperature: root.querySelector('#form-temperature'),
-      formSpo2: root.querySelector('#form-spo2'),
-      formWeight: root.querySelector('#form-weight'),
-      formHeight: root.querySelector('#form-height'),
-      formSymptoms: root.querySelector('#form-symptoms'),
-      formDiagnosis: root.querySelector('#form-diagnosis'),
-      formTreatment: root.querySelector('#form-treatment'),
-      formPrescriptions: root.querySelector('#form-prescriptions'),
-      formNotes: root.querySelector('#form-notes'),
-      formFollowup: root.querySelector('#form-followup'),
-      formRecommendations: root.querySelector('#form-recommendations'),
-
-      // Botones
-      btnCancel: root.querySelector('#btn-cancel'),
-      btnSave: root.querySelector('#btn-save'),
-      btnNewRecord: root.querySelector('#btn-new-record'),
-      btnCreateFirstRecord: root.querySelector('#btn-create-first-record')
-    };
-  }
-
-  // ===== FUNCIONES DE RENDERIZADO =====
-
-  // Renderizar lista de registros
-  function renderRecordsList() {
-    if (!elements.recordsList) return;
-
-    const startIndex = (state.currentPage - 1) * state.itemsPerPage;
-    const endIndex = startIndex + state.itemsPerPage;
-    const paginatedRecords = state.filteredRecords.slice(startIndex, endIndex);
-
-    if (paginatedRecords.length === 0) {
-      elements.emptyState.classList.remove('hidden');
-      elements.recordsList.innerHTML = '';
-      if (elements.recordsCount) elements.recordsCount.textContent = '0 registros';
-      elements.pagination.classList.add('hidden');
-      return;
-    }
-
-    elements.emptyState.classList.add('hidden');
-    if (elements.recordsCount) elements.recordsCount.textContent = `${state.filteredRecords.length} ${state.filteredRecords.length === 1 ? 'registro' : 'registros'} `;
-    elements.pagination.classList.remove('hidden');
-
-    const recordsHtml = paginatedRecords.map(record => {
-      const patient = store.find('patients', record.patientId);
-      const doctor = store.find('doctors', record.doctorId);
-
-      const date = new Date(record.date);
-      const dateStr = date.toLocaleDateString('es-ES', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
-
-      const typeIcon = {
-        consultation: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-        followup: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-        emergency: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-        lab: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 9V3"/><path d="M14 9V3"/><path d="M7 21h10a2 2 0 0 0 1.68-3.09L14 9H10l-4.68 8.91A2 2 0 0 0 7 21Z"/></svg>',
-        prescription: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>'
-      }[record.type] || '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
-
-      const statusBadge = getStatusBadge(record.status);
-
-      return `
-        <div class="record-item" data-id="${record.id}" style="cursor: pointer;">
-          <div style="display: flex; align-items: flex-start; gap: 1rem;">
-            <div style="font-size: 1.5rem; flex-shrink: 0;">${typeIcon}</div>
-
-            <div style="flex: 1;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                  <div style="font-weight: 500; font-size: 1.1rem;">${patient?.name || 'Paciente'}</div>
-                  <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
-                    <span class="text-sm text-muted">${dateStr}</span>
-                    <span class="text-sm">${doctor?.name || 'Médico'}</span>
-                    <span class="text-sm text-muted">${getTypeText(record.type)}</span>
-                  </div>
-                </div>
-
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                  ${statusBadge}
-                </div>
-              </div>
-
-              ${record.diagnosis ? `
-                    <div style="margin-top: 0.5rem;">
-                      <div class="text-sm text-muted">Diagnóstico:</div>
-                      <div style="font-size: 0.9rem; color: var(--text);">${truncateText(record.diagnosis, 120)}</div>
-                    </div>
-                  ` : ''}
-
-              ${record.treatment ? `
-                    <div style="margin-top: 0.25rem;">
-                      <div class="text-sm text-muted">Tratamiento:</div>
-                      <div style="font-size: 0.9rem; color: var(--text);">${truncateText(record.treatment, 100)}</div>
-                    </div>
-                  ` : ''}
-
-              <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                ${record.vitalSigns?.bloodPressure ? `
-                      <div class="text-xs" style="padding: 0.125rem 0.5rem; background: var(--bg-light); border-radius: 4px;">
-                        <span class="text-muted">TA:</span> ${record.vitalSigns.bloodPressure}
-                      </div>
-                    ` : ''}
-
-                ${record.vitalSigns?.temperature ? `
-                      <div class="text-xs" style="padding: 0.125rem 0.5rem; background: var(--bg-light); border-radius: 4px;">
-                        <span class="text-muted">Temp:</span> ${record.vitalSigns.temperature}°C
-                      </div>
-                    ` : ''}
               </div>
             </div>
-          </div>
+
+            <!-- Signos vitales -->
+            <div style="background:var(--modal-section-forest-light,#f0fdf4);border-radius:8px;padding:1.25rem;border:1px solid var(--modal-section-forest,#6ee7b7);margin-bottom:1.5rem;">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--modal-section-forest,#059669);margin-bottom:1rem;text-transform:uppercase;">Signos Vitales y Biometría</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;">
+                <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">PRESIÓN ARTERIAL</label><input type="text" class="input" id="rf-bp" placeholder="120/80" value="${vitals.bloodPressure || ''}"></div>
+                <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">FREC. CARDÍACA (lpm)</label><input type="number" class="input" id="rf-hr" placeholder="72" value="${vitals.heartRate || ''}"></div>
+                <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">TEMPERATURA (°C)</label><input type="number" class="input" id="rf-temp" placeholder="36.5" step="0.1" value="${vitals.temperature || ''}"></div>
+                <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">SAT. O₂ (%)</label><input type="number" class="input" id="rf-spo2" placeholder="98" value="${vitals.spo2 || ''}"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem;">
+                <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">PESO (kg)</label><input type="number" class="input" id="rf-weight" step="0.1" value="${vitals.weight || ''}"></div>
+                <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">TALLA (cm)</label><input type="number" class="input" id="rf-height" value="${vitals.height || ''}"></div>
+              </div>
+            </div>
+
+            <!-- Evaluación clínica -->
+            <div style="background:var(--modal-section-gold-light,#fffbeb);border-radius:8px;padding:1.25rem;border:1px solid var(--modal-section-gold,#fcd34d);margin-bottom:1.5rem;">
+              <div style="font-size:0.8rem;font-weight:700;color:#b8860b;margin-bottom:1rem;text-transform:uppercase;">Motivo y Evaluación</div>
+              <div class="form-group" style="margin-bottom:0.75rem;">
+                <label class="form-label" style="font-size:0.75rem;font-weight:700;">MOTIVO DE CONSULTA</label>
+                <textarea class="input" id="rf-reason" rows="2">${r.reason || ''}</textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size:0.75rem;font-weight:700;">DIAGNÓSTICO PRINCIPAL *</label>
+                <textarea class="input" id="rf-diagnosis" rows="2" required>${r.diagnosis || ''}</textarea>
+              </div>
+            </div>
+
+            <!-- Plan -->
+            <div style="background:var(--modal-section-olive-light,#f1f8e9);border-radius:8px;padding:1.25rem;border:1px solid var(--modal-section-olive,#aed581);">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--modal-section-olive,#558b2f);margin-bottom:1rem;text-transform:uppercase;">Plan y Seguimiento</div>
+              <div class="form-group" style="margin-bottom:0.75rem;">
+                <label class="form-label" style="font-size:0.75rem;font-weight:700;">PLAN DE TRATAMIENTO</label>
+                <textarea class="input" id="rf-treatment" rows="2">${r.treatment || ''}</textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div class="form-group">
+                  <label class="form-label" style="font-size:0.75rem;font-weight:700;">MEDICACIÓN PRESCRITA</label>
+                  <textarea class="input" id="rf-prescriptions" rows="2" placeholder="Medicamento - Dosis - Frecuencia - Duración">${Array.isArray(r.prescriptions) ? r.prescriptions.map(x => `${x.medication} - ${x.dosage} - ${x.frequency} - ${x.duration}`).join('\n') : (r.prescriptions || '')}</textarea>
+                </div>
+                <div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size:0.75rem;font-weight:700;">PRÓXIMO CONTROL</label>
+                    <input type="date" class="input" id="rf-followup" value="${r.followUp ? new Date(r.followUp).toISOString().split('T')[0] : ''}">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-size:0.75rem;font-weight:700;">NOTAS</label>
+                    <textarea class="input" id="rf-notes" rows="1">${r.notes || ''}</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
-      `;
-    }).join('');
-
-    elements.recordsList.innerHTML = recordsHtml;
-    renderPagination();
+        <div class="modal-footer" style="padding:1.25rem 1.5rem;display:flex;justify-content:flex-end;gap:1rem;border:none;">
+          <button class="btn-circle btn-circle-cancel" id="btn-cancel-record" title="Cancelar">${ic.close}</button>
+          <button class="btn-circle btn-circle-save" id="btn-save-record" title="Guardar Registro">${ic.check}</button>
+        </div>
+      </div>`;
   }
 
-  // Renderizar paginación
-  function renderPagination() {
-    if (!elements.pagination) return;
+  // ── GUARDAR REGISTRO ──────────────────────────────────────────────────────
+  function saveRecord() {
+    const p = state.selectedPatient;
+    const authorEl = document.getElementById('rf-doctor');
+    const dateEl = document.getElementById('rf-date');
+    const typeEl = document.getElementById('rf-type');
+    const diagEl = document.getElementById('rf-diagnosis');
 
-    const totalPages = Math.ceil(state.filteredRecords.length / state.itemsPerPage);
-
-    if (totalPages <= 1) {
-      elements.pagination.innerHTML = '';
+    if (!dateEl?.value || !diagEl?.value) {
+      notify('Complete los campos obligatorios (Fecha y Diagnóstico)', 'error');
       return;
     }
 
-    elements.pagination.innerHTML = `
-      <div class="text-sm text-muted">
-        Mostrando ${Math.min(state.currentPage * state.itemsPerPage, state.filteredRecords.length)} 
-        de ${state.filteredRecords.length} registros
-      </div>
-
-      <div class="flex gap-1">
-        <button class="btn btn-outline btn-sm ${state.currentPage === 1 ? 'disabled' : ''}"
-          data-page="prev" ${state.currentPage === 1 ? 'disabled' : ''}>
-          ← Anterior
-        </button>
-
-        ${Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-      let pageNum;
-      if (totalPages <= 5) {
-        pageNum = i + 1;
-      } else if (state.currentPage <= 3) {
-        pageNum = i + 1;
-      } else if (state.currentPage >= totalPages - 2) {
-        pageNum = totalPages - 4 + i;
-      } else {
-        pageNum = state.currentPage - 2 + i;
-      }
-
-      return `
-            <button class="btn btn-sm ${state.currentPage === pageNum ? 'btn-primary' : 'btn-outline'}" 
-                    data-page="${pageNum}">
-              ${pageNum}
-            </button>
-          `;
-    }).join('')}
-
-        <button class="btn btn-outline btn-sm ${state.currentPage === totalPages ? 'disabled' : ''}"
-          data-page="next" ${state.currentPage === totalPages ? 'disabled' : ''}>
-          Siguiente →
-        </button>
-      </div>
-    `;
-  }
-
-  // Actualizar estadísticas - CORREGIDO: SVG con path completo
-  function updateStats() {
-    if (!elements.statsContainer) return;
-
-    const records = state.clinicalRecords;
-    const patients = store.get('patients');
-
-    const stats = {
-      total: records.length,
-      consultations: records.filter(r => r.type === 'consultation').length,
-      pendingFollowups: records.filter(r => {
-        if (!r.followUp) return false;
-        return new Date(r.followUp) > new Date() && r.status !== 'archived';
-      }).length,
-      patientsWithRecords: new Set(records.map(r => r.patientId)).size
-    };
-
-    elements.statsContainer.innerHTML = `
-      <div class="stat-info-card">
-        <span class="stat-info-label">Total registros</span>
-        <span class="stat-info-value">${stats.total}</span>
-        <span class="stat-info-sub">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Hojas médicas
-        </span>
-      </div>
-      
-      <div class="stat-info-card">
-        <span class="stat-info-label">Consultas</span>
-        <span class="stat-info-value">${stats.consultations}</span>
-        <span class="stat-info-sub">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          ${stats.total > 0 ? Math.round((stats.consultations / stats.total) * 100) : 0}% efectividad
-        </span>
-      </div>
-      
-      <div class="stat-info-card">
-        <span class="stat-info-label">Seguimientos</span>
-        <span class="stat-info-value">${stats.pendingFollowups}</span>
-        <span class="stat-info-sub">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Próximos controles
-        </span>
-      </div>
-      
-      <div class="stat-info-card">
-        <span class="stat-info-label">Pacientes con HC</span>
-        <span class="stat-info-value">${stats.patientsWithRecords}</span>
-        <span class="stat-info-sub">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          de ${patients.length} pacientes
-        </span>
-      </div>
-    `;
-  }
-
-  // Actualizar selects de pacientes
-  function updatePatientSelects() {
-    const patients = store.get('patients');
-
-    // Para filtros
-    if (elements.filterPatient) {
-      const options = patients.map(p => `<option value="${p.id}">${p.name} - ${p.dni || ''}</option>`).join('');
-      elements.filterPatient.innerHTML = `<option value="">Todos los pacientes</option>${options}`;
-      if (state.filters.patientId) {
-        elements.filterPatient.value = state.filters.patientId;
-      }
-    }
-
-    // Para formulario
-    if (elements.formPatient) {
-      const options = patients.map(p => `<option value="${p.id}">${p.name} (${p.dni || 'Sin DNI'})</option>`).join('');
-      elements.formPatient.innerHTML = `<option value="">Seleccionar paciente</option>${options}`;
-    }
-
-    // Actualizar select de médicos (solo si no es doctor)
-    if (elements.filterDoctor && role !== 'doctor' && role !== 'patient') {
-      const doctors = store.get('doctors');
-      const options = doctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
-      elements.filterDoctor.innerHTML = `<option value="">Todos los médicos</option>${options}`;
-      if (state.filters.doctorId) {
-        elements.filterDoctor.value = state.filters.doctorId;
-      }
-    }
-
-    if (elements.formDoctor && role !== 'doctor') {
-      const doctors = store.get('doctors');
-      const options = doctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
-      elements.formDoctor.innerHTML = `<option value="">Seleccionar médico</option>${options}`;
-    }
-  }
-
-  // ===== FUNCIONES UTILITARIAS =====
-
-  function getTypeText(type) {
-    const types = {
-      consultation: 'Consulta',
-      followup: 'Seguimiento',
-      emergency: 'Urgencia',
-      lab: 'Laboratorio',
-      prescription: 'Receta'
-    };
-    return types[type] || type;
-  }
-
-  function getStatusBadge(status) {
-    const statusConfig = {
-      draft: { text: 'Borrador', class: 'badge-info' },
-      finalized: { text: 'Finalizado', class: 'badge-success' },
-      archived: { text: 'Archivado', class: 'badge-muted' }
-    };
-
-    const config = statusConfig[status] || { text: status, class: 'badge-info' };
-    return `<span class="badge ${config.class}">${config.text}</span>`;
-  }
-
-  function truncateText(text, maxLength) {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  }
-
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 1rem 1.5rem;
-    background: ${type === 'success' ? 'var(--success)' :
-        type === 'error' ? 'var(--danger)' :
-          type === 'warning' ? 'var(--warning)' : 'var(--info)'};
-    color: white;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
-    z-index: 10000;
-    animation: slideIn 0.3s ease;
-    `;
-
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s ease';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-
-  // ===== EVENT LISTENERS =====
-  function setupEventListeners() {
-    // Helper para debouncing
-    function debounce(func, wait) {
-      let timeout;
-      return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
-    }
-
-    // Búsqueda unificada
-    if (elements.searchInput) {
-      elements.searchInput.addEventListener('input', debounce((e) => {
-        state.searchQuery = e.target.value;
-        state.currentPage = 1;
-        loadClinicalRecords();
-      }, 300));
-    }
-
-
-    // Nuevo registro (solo si tiene permisos)
-    if (elements.btnNewRecord) {
-      elements.btnNewRecord.addEventListener('click', () => {
-        if (!canCreateRecords()) {
-          showNotification('No tiene permiso para crear registros clínicos', 'error');
-          return;
-        }
-        openModal();
-      });
-    }
-
-    if (elements.btnCreateFirstRecord) {
-      elements.btnCreateFirstRecord.addEventListener('click', () => {
-        if (!canCreateRecords()) {
-          showNotification('No tiene permiso para crear registros clínicos', 'error');
-          return;
-        }
-        openModal();
-      });
-    }
-
-    // Modal
-    if (elements.btnCancel) {
-      elements.btnCancel.addEventListener('click', closeModal);
-    }
-
-    if (elements.btnSave) {
-      elements.btnSave.addEventListener('click', saveRecord);
-    }
-
-    // Click en registros - CON VALIDACIÓN DE PERMISOS
-    if (elements.recordsList) {
-      elements.recordsList.addEventListener('click', (e) => {
-        const recordItem = e.target.closest('.record-item');
-        if (recordItem) {
-          const recordId = recordItem.dataset.id;
-          const record = store.find('clinicalRecords', recordId);
-          if (record) {
-            // Verificar permisos antes de mostrar detalles
-            if (!hasPermissionToView(record)) {
-              showNotification('No tiene permiso para ver este registro', 'error');
-              return;
-            }
-            viewRecordDetail(record);
-          }
-        }
-      });
-    }
-
-    // Paginación (event delegation)
-    if (elements.pagination) {
-      elements.pagination.addEventListener('click', handlePagination);
-    }
-
-  }
-
-
-  function handlePagination(event) {
-    const button = event.target.closest('button[data-page]');
-    if (!button) return;
-
-    const pageAction = button.dataset.page;
-
-    switch (pageAction) {
-      case 'prev':
-        if (state.currentPage > 1) {
-          state.currentPage--;
-          renderRecordsList();
-        }
-        break;
-
-      case 'next':
-        const totalPages = Math.ceil(state.filteredRecords.length / state.itemsPerPage);
-        if (state.currentPage < totalPages) {
-          state.currentPage++;
-          renderRecordsList();
-        }
-        break;
-
-      default:
-        const pageNum = parseInt(pageAction);
-        if (!isNaN(pageNum)) {
-          state.currentPage = pageNum;
-          renderRecordsList();
-        }
-    }
-  }
-
-  // ===== GESTIÓN DE REGISTROS =====
-
-  function openModal(record = null) {
-    // Verificar permisos antes de abrir el modal
-    if (!canCreateRecords()) {
-      showNotification('No tiene permiso para crear o editar registros clínicos', 'error');
-      return;
-    }
-
-    // Si está editando, verificar permisos específicos para ese registro
-    if (record && !hasPermissionToEdit(record)) {
-      showNotification('No tiene permiso para editar este registro', 'error');
-      return;
-    }
-
-    state.editingId = record?.id || null;
-    state.showModal = true;
-
-    if (elements.modal) {
-      elements.modal.classList.remove('hidden');
-    }
-
-    if (record) {
-      populateForm(record);
-    } else {
-      clearForm();
-
-      // Si es doctor, auto-seleccionar
-      if (role === 'doctor' && user?.doctorId && elements.formDoctor) {
-        elements.formDoctor.value = user.doctorId;
-      }
-
-      // Fecha por defecto: hoy
-      if (elements.formDate) {
-        elements.formDate.value = new Date().toISOString().split('T')[0];
-      }
-    }
-  }
-
-  // Función para abrir modal con datos prellenados desde citas
-  function openModalWithData(data) {
-    // Verificar permisos primero
-    if (!canCreateRecords()) {
-      showNotification('No tiene permiso para crear registros clínicos', 'error');
-      return;
-    }
-
-    // Crear un objeto de registro temporal con los datos proporcionados
-    const tempRecord = {
-      patientId: data.patientId,
-      doctorId: data.doctorId,
-      appointmentId: data.appointmentId,
-      date: data.date,
-      reason: data.reason || '',
-      type: 'consultation',
-      status: 'draft'
-    };
-
-    openModal(tempRecord);
-
-    // Si hay área específica, agregarla como nota
-    if (data.areaId) {
-      const area = store.find('areas', data.areaId);
-      if (area && elements.formNotes) {
-        const currentNotes = elements.formNotes.value || '';
-        elements.formNotes.value = `Consulta generada desde cita en ${area.name}. ${currentNotes} `;
-      }
-    }
-
-    // Si hay información de paciente, mostrarla
-    if (data.patientId && elements.formPatient) {
-      const patient = store.find('patients', data.patientId);
-      if (patient) {
-        showNotification(`Creando consulta para ${patient.name} `, 'info');
-      }
-    }
-  }
-
-  function closeModal() {
-    state.showModal = false;
-    state.editingId = null;
-
-    if (elements.modal) {
-      elements.modal.classList.add('hidden');
-    }
-
-    clearForm();
-  }
-
-  function populateForm(record) {
-    // Información básica
-    if (elements.formPatient) elements.formPatient.value = record.patientId;
-    if (elements.formDoctor) elements.formDoctor.value = record.doctorId;
-    if (elements.formDate) {
-      const date = new Date(record.date);
-      elements.formDate.value = date.toISOString().split('T')[0];
-    }
-    if (elements.formType) elements.formType.value = record.type;
-    if (elements.formStatus) elements.formStatus.value = record.status;
-    if (elements.formReason) elements.formReason.value = record.reason || '';
-
-    // Signos vitales
-    if (elements.formBp) elements.formBp.value = record.vitalSigns?.bloodPressure || '';
-    if (elements.formHeartRate) elements.formHeartRate.value = record.vitalSigns?.heartRate || '';
-    if (elements.formTemperature) elements.formTemperature.value = record.vitalSigns?.temperature || '';
-    if (elements.formSpo2) elements.formSpo2.value = record.vitalSigns?.spo2 || '';
-    if (elements.formWeight) elements.formWeight.value = record.vitalSigns?.weight || '';
-    if (elements.formHeight) elements.formHeight.value = record.vitalSigns?.height || '';
-
-    // Evaluación clínica
-    if (elements.formSymptoms) elements.formSymptoms.value = record.symptoms || '';
-    if (elements.formDiagnosis) elements.formDiagnosis.value = record.diagnosis || '';
-    if (elements.formTreatment) elements.formTreatment.value = record.treatment || '';
-
-    // Recetas
-    if (elements.formPrescriptions) {
-      if (Array.isArray(record.prescriptions)) {
-        elements.formPrescriptions.value = record.prescriptions
-          .map(p => `${p.medication} - ${p.dosage} - ${p.frequency} - ${p.duration} `)
-          .join('\n');
-      } else if (record.prescriptions) {
-        elements.formPrescriptions.value = record.prescriptions;
-      }
-    }
-
-    // Seguimiento
-    if (elements.formNotes) elements.formNotes.value = record.notes || '';
-    if (elements.formFollowup && record.followUp) {
-      const followupDate = new Date(record.followUp);
-      elements.formFollowup.value = followupDate.toISOString().split('T')[0];
-    }
-    if (elements.formRecommendations) elements.formRecommendations.value = record.recommendations || '';
-  }
-
-  function clearForm() {
-    if (elements.form) elements.form.reset();
-    updatePatientSelects();
-
-    // Restaurar valores por defecto
-    if (elements.formDate) {
-      elements.formDate.value = new Date().toISOString().split('T')[0];
-    }
-
-    if (elements.formStatus) {
-      elements.formStatus.value = 'draft';
-    }
-
-    // Si es doctor, auto-seleccionar
-    if (role === 'doctor' && user?.doctorId && elements.formDoctor) {
-      elements.formDoctor.value = user.doctorId;
-    }
-  }
-
-  async function saveRecord() {
-    if (!await validateForm()) {
-      return;
-    }
-    // Verificar permisos antes de guardar
-    if (!canCreateRecords()) {
-      showNotification('No tiene permiso para crear o editar registros clínicos', 'error');
-      return;
-    }
-
-    // Si está editando, verificar permisos para ese registro específico
-    if (state.editingId) {
-      const originalRecord = store.find('clinicalRecords', state.editingId);
-      if (originalRecord && !hasPermissionToEdit(originalRecord)) {
-        showNotification('No tiene permiso para editar este registro', 'error');
-        return;
-      }
-    }
-
-    state.isLoading = true;
-    if (elements.btnSave) {
-      elements.btnSave.disabled = true;
-      elements.btnSave.textContent = 'Guardando...';
-    }
-
-    try {
-      const formData = getFormData();
-
-      if (state.editingId) {
-        // Actualizar registro existente
-        await updateRecord(state.editingId, formData);
-        showNotification('Registro actualizado correctamente', 'success');
-      } else {
-        // Crear nuevo registro
-        await createRecord(formData);
-        showNotification('Registro creado correctamente', 'success');
-      }
-
-      closeModal();
-      loadClinicalRecords();
-
-    } catch (error) {
-      console.error('Error guardando registro:', error);
-      showNotification('Error al guardar el registro', 'error');
-    } finally {
-      state.isLoading = false;
-      if (elements.btnSave) {
-        elements.btnSave.disabled = false;
-        elements.btnSave.textContent = state.editingId ? 'Actualizar' : 'Guardar';
-      }
-    }
-  }
-
-  async function validateForm() {
-    let isValid = true;
-    window.hospitalFieldValidation.clearAll(elements.form);
-
-    const requiredFields = [
-      { field: elements.formPatient, label: 'Debe seleccionar un paciente' },
-      { field: elements.formDoctor, label: 'Médico requerido' },
-      { field: elements.formDate, label: 'Fecha requerida' },
-      { field: elements.formType, label: 'Indique el tipo de registro' },
-      { field: elements.formDiagnosis, label: 'El diagnóstico es obligatorio' }
-    ];
-
-    requiredFields.forEach(({ field, label }) => {
-      if (field) {
-        if (!field.value.trim()) {
-          window.hospitalFieldValidation.show(field, label);
-          isValid = false;
-        }
-      }
-    });
-
-    if (!isValid) {
-      const firstError = elements.form.querySelector('.error-field');
-      if (firstError) firstError.focus();
-    }
-
-    return isValid;
-  }
-
-  function getFormData() {
-    // Parsear recetas
-    const prescriptions = [];
-    if (elements.formPrescriptions && elements.formPrescriptions.value.trim()) {
-      const lines = elements.formPrescriptions.value.split('\n');
-      lines.forEach(line => {
-        const parts = line.split('-').map(part => part.trim());
-        if (parts.length >= 4) {
-          prescriptions.push({
-            medication: parts[0],
-            dosage: parts[1],
-            frequency: parts[2],
-            duration: parts[3]
-          });
-        }
-      });
-    }
-
-    return {
-      patientId: elements.formPatient.value,
-      doctorId: elements.formDoctor ? elements.formDoctor.value : user.doctorId,
-      date: new Date(elements.formDate.value).getTime(),
-      type: elements.formType.value,
-      status: elements.formStatus.value,
-      reason: elements.formReason.value || '',
+    const presEl = document.getElementById('rf-prescriptions');
+    const rawPres = presEl?.value.trim() || '';
+    const prescriptions = rawPres ? rawPres.split('\n').map(line => {
+      const parts = line.split('-').map(x => x.trim());
+      return { medication: parts[0] || '', dosage: parts[1] || '', frequency: parts[2] || '', duration: parts[3] || '' };
+    }).filter(x => x.medication) : null;
+
+    const data = {
+      patientId: p.id,
+      doctorId: authorEl?.value || user.id, // Compatibilidad retroactiva
+      creatorId: user.id,
+      creatorName: user.name,
+      creatorRole: role,
+      date: new Date(dateEl.value).getTime(),
+      timestamp: Date.now(), // Marca de tiempo exacta para ordenamiento
+      type: typeEl?.value || 'consultation',
+      status: document.getElementById('rf-status')?.value || 'draft',
+      reason: document.getElementById('rf-reason')?.value || '',
+      diagnosis: diagEl.value,
+      treatment: document.getElementById('rf-treatment')?.value || '',
+      prescriptions,
+      notes: document.getElementById('rf-notes')?.value || '',
+      followUp: document.getElementById('rf-followup')?.value ? new Date(document.getElementById('rf-followup').value).getTime() : null,
       vitalSigns: {
-        bloodPressure: elements.formBp.value || null,
-        heartRate: elements.formHeartRate.value || null,
-        temperature: elements.formTemperature.value || null,
-        spo2: elements.formSpo2.value || null,
-        weight: elements.formWeight.value || null,
-        height: elements.formHeight.value || null
+        bloodPressure: document.getElementById('rf-bp')?.value || null,
+        heartRate: document.getElementById('rf-hr')?.value || null,
+        temperature: document.getElementById('rf-temp')?.value || null,
+        spo2: document.getElementById('rf-spo2')?.value || null,
+        weight: document.getElementById('rf-weight')?.value || null,
+        height: document.getElementById('rf-height')?.value || null
       },
-      symptoms: elements.formSymptoms.value || '',
-      diagnosis: elements.formDiagnosis.value,
-      treatment: elements.formTreatment.value || '',
-      prescriptions: prescriptions.length > 0 ? prescriptions : null,
-      notes: elements.formNotes.value || '',
-      followUp: elements.formFollowup.value ? new Date(elements.formFollowup.value).getTime() : null,
-      recommendations: elements.formRecommendations.value || '',
       createdBy: user.id
     };
+
+    if (state.editingRecord) {
+      store.update('clinicalRecords', state.editingRecord.id, data);
+      notify('Registro actualizado', 'success');
+    } else {
+      store.add('clinicalRecords', data);
+      notify('Registro creado', 'success');
+    }
+
+    // Cerrar modal de nuevo registro
+    document.getElementById('cl-record-modal')?.remove();
+    state.editingRecord = null;
+    refreshHCModal();
   }
 
-  async function createRecord(data) {
-    return store.add('clinicalRecords', data);
-  }
-
-  async function updateRecord(id, data) {
-    return store.update('clinicalRecords', id, data);
-  }
-
-  // ===== MODAL DE DETALLES - FORMATO PROFESIONAL DE INFORME CLÍNICO =====
-  function viewRecordDetail(record) {
-    const patient = store.find('patients', record.patientId);
-    const doctor = store.find('doctors', record.doctorId);
-    const appointment = record.appointmentId ? store.find('appointments', record.appointmentId) : null;
-
-    const date = new Date(record.date);
-    const vitals = record.vitalSigns || {};
-
-    // Crear modal de visualización
-    const modalContainer = document.createElement('div');
-    modalContainer.id = 'view-clinical-record-modal';
-    modalContainer.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    padding: 1rem;
-    overflow: auto;
-    `;
-
-    // Determinar si el usuario puede editar este registro
-    const canEditThisRecord = hasPermissionToEdit(record);
-
-    modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">HISTORIA CLÍNICA ELECTRÓNICA</div>
-          <button class="btn-close-modal" id="close-record-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
-        </div>
-        
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 4px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
-          <!-- Encabezado de Datos -->
-          <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
-            <div>
-              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">N° DE REGISTRO</div>
-              <div style="font-family: monospace; font-size: 1.25rem; font-weight: 700;">${record.id.split('_').pop()}</div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-size: 0.75rem; font-weight: 700; color: #666;">FECHA DE ATENCIÓN</div>
-              <div style="font-size: 1.125rem; font-weight: 700;">
-                ${date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </div>
-              <div style="margin-top: 0.25rem;">
-                <span class="badge badge-success" style="font-size: 0.7rem; padding: 2px 8px;">Finalizado</span>
-                <span style="font-size: 0.75rem; color: #666;">• ${getTypeText(record.type)}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Paciente y Médico (Cajas Verdes) -->
-          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-bottom: 2rem;">
-            <div style="background: var(--card-patient); border-radius: 4px; padding: 1.25rem; position: relative;">
-               <div style="display: flex; align-items: center; gap: 1rem;">
-                  <div style="width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                  <div>
-                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">PACIENTE</div>
-                    <div style="font-weight: 700; font-size: 1.1rem;">${patient?.name || 'María Gómez'}</div>
-                  </div>
-               </div>
-               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
-                  <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">CÉDULA</div>
-                    <div>${patient?.docType || 'V'}-${patient?.dni || '0'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">EDAD</div>
-                    <div>${patient?.birthDate ? calculateAge(patient.birthDate) + ' años' : '40 años'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">TELÉFONO</div>
-                    <div>${patient?.phone || '555-0101'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">EMAIL</div>
-                    <div style="word-break: break-all;">${patient?.email || 'maria@email.com'}</div>
-                  </div>
-               </div>
-            </div>
-
-            <div style="background: var(--card-doctor); border-radius: 4px; padding: 1.25rem;">
-               <div style="display: flex; align-items: center; gap: 1rem;">
-                  <div style="width: 40px; height: 40px; background: white; border-radius: 50%; opacity: 0.6;"></div>
-                  <div>
-                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">MÉDICO TRATANTE</div>
-                    <div style="font-weight: 700; font-size: 1.1rem;">${doctor?.name || 'Dra. Ana Ruiz'}</div>
-                  </div>
-               </div>
-               <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
-                  <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">ESPECIALIDAD</div>
-                    <div>${doctor?.specialty || 'Medicina General'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">MATRÍCULA</div>
-                    <div>${doctor?.license || 'MG-12345'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: 700; color: var(--modal-text-muted);">CITA ORIGINAL</div>
-                    <div>#${record.appointmentId ? record.appointmentId.split('_').pop() : 'Directo'}</div>
-                  </div>
-               </div>
-            </div>
-          </div>
-
-          <!-- Signos Vitales (Cabecera Verde Grisácea) -->
-          <div class="clinical-section">
-            <div class="clinical-section-header sage" style="background: #5a8973;">SIGNOS VITALES</div>
-            <div class="clinical-section-content" style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; border: 1px solid #ddd; border-top: none;">
-              <div style="padding: 1rem; border-right: 1px solid #ddd;">
-                <div style="font-size: 0.65rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">Presión Arterial</div>
-                <div style="font-weight: 700; font-size: 1.1rem;">${vitals.bloodPressure || '-'}</div>
-                <div style="font-size: 0.65rem; color: #999;">mmHg</div>
-              </div>
-              <div style="padding: 1rem; border-right: 1px solid #ddd;">
-                <div style="font-size: 0.65rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">Frec. Cardíaca</div>
-                <div style="font-weight: 700; font-size: 1.1rem;">${vitals.heartRate || '-'}</div>
-                <div style="font-size: 0.65rem; color: #999;">lpm</div>
-              </div>
-              <div style="padding: 1rem; border-right: 1px solid #ddd;">
-                <div style="font-size: 0.65rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">Temperatura</div>
-                <div style="font-weight: 700; font-size: 1.1rem;">${vitals.temperature || '-'}</div>
-                <div style="font-size: 0.65rem; color: #999;">°C</div>
-              </div>
-              <div style="padding: 1rem; border-right: 1px solid #ddd;">
-                <div style="font-size: 0.65rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">Saturación O₂</div>
-                <div style="font-weight: 700; font-size: 1.1rem;">${vitals.spo2 || '-'}</div>
-                <div style="font-size: 0.65rem; color: #999;">%</div>
-              </div>
-              <div style="padding: 1rem; border-right: 1px solid #ddd;">
-                <div style="font-size: 0.65rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">Peso</div>
-                <div style="font-weight: 700; font-size: 1.1rem;">${vitals.weight || '-'}</div>
-                <div style="font-size: 0.65rem; color: #999;">kg</div>
-              </div>
-              <div style="padding: 1rem;">
-                <div style="font-size: 0.65rem; font-weight: 700; color: #666; margin-bottom: 0.5rem;">Altura</div>
-                <div style="font-weight: 700; font-size: 1.1rem;">${vitals.height || '-'}</div>
-                <div style="font-size: 0.65rem; color: #999;">cm</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Motivo de Consulta y Síntomas (CABECERA AMARILLA) -->
-          <div class="clinical-section" style="margin-top: 1.5rem;">
-            <div class="clinical-section-header gold" style="background: var(--modal-section-gold);">MOTIVO DE CONSULTA Y SÍNTOMAS</div>
-            <div class="clinical-section-content" style="background: var(--modal-section-gold-light); padding: 1.25rem;">
-               <div style="font-size: 0.75rem; font-weight: 700; color: var(--modal-highlight); margin-bottom: 0.5rem;">SÍNTOMAS REPORTADOS</div>
-               <div style="font-size: 0.95rem; line-height: 1.5;">${record.reason || ''} ${record.symptoms || 'No especificados'}</div>
-            </div>
-          </div>
-
-          <!-- Diagnóstico (CABECERA OLIVA) -->
-          <div class="clinical-section" style="margin-top: 1.5rem;">
-            <div class="clinical-section-header olive" style="background: var(--modal-section-olive);">DIAGNÓSTICO</div>
-            <div class="clinical-section-content" style="background: var(--modal-section-olive-light); padding: 1.25rem;">
-               <div style="font-size: 0.95rem; font-weight: 700;">${record.diagnosis || 'Resultados pendientes'}</div>
-            </div>
-          </div>
-
-          <!-- Tratamiento Prescrito (CABECERA OLIVA) -->
-          <div class="clinical-section" style="margin-top: 1.5rem;">
-            <div class="clinical-section-header olive" style="background: var(--modal-section-olive);">TRATAMIENTO PRESCRITO</div>
-            <div class="clinical-section-content" style="background: var(--modal-section-olive-light); padding: 1.25rem;">
-               <div style="font-size: 0.95rem; line-height: 1.5;">${record.treatment || 'Seguimiento según evolución'}</div>
-            </div>
-          </div>
-
-          <!-- Recetas Médicas (CABECERA BOSQUE) -->
-          <div class="clinical-section" style="margin-top: 1.5rem;">
-            <div class="clinical-section-header forest" style="background: var(--modal-section-forest);">RECETAS MÉDICAS</div>
-            <div class="clinical-section-content" style="background: var(--modal-section-forest-light); padding: 0;">
-               <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                 <thead>
-                    <tr style="text-align: left; color: var(--modal-text-muted);">
-                      <th style="padding: 0.75rem 1.25rem; font-weight: 700;">MEDICAMENTO</th>
-                      <th style="padding: 0.75rem; font-weight: 700;">DOSIS</th>
-                      <th style="padding: 0.75rem; font-weight: 700;">FRECUENCIA</th>
-                      <th style="padding: 0.75rem; font-weight: 700;">DURACIÓN</th>
-                    </tr>
-                 </thead>
-                 <tbody>
-                    ${record.prescriptions && Array.isArray(record.prescriptions) ?
-        record.prescriptions.map(p => `
-                        <tr>
-                          <td style="padding: 0.75rem 1.25rem; font-weight: 700;">${p.medication}</td>
-                          <td style="padding: 0.75rem;">${p.dosage}</td>
-                          <td style="padding: 0.75rem;">${p.frequency}</td>
-                          <td style="padding: 0.75rem;">${p.duration}</td>
-                        </tr>
-                      `).join('') : `
-                        <tr>
-                          <td colspan="4" style="padding: 1.25rem; text-align: center; color: var(--modal-text-muted);">Sin prescripciones activas</td>
-                        </tr>
-                      `
-      }
-                 </tbody>
-               </table>
-            </div>
-          </div>
-
-          <!-- Observaciones y Seguimiento (CABECERA BOSQUE) -->
-          <div class="clinical-section" style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: none;">
-            <div style="background: var(--modal-section-forest-light); padding: 1.25rem; border: 1px solid var(--modal-border); border-right: none; border-radius: 4px 0 0 4px;">
-               <div class="clinical-section-header forest" style="background: var(--modal-section-forest); margin: -1.25rem -1.25rem 1.25rem -1.25rem;">OBSERVACIONES Y SEGUIMIENTO</div>
-               <div style="margin-bottom: 1rem;">
-                  <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">NOTAS ADICIONALES</div>
-                  <div style="font-size: 0.85rem;">${record.notes || 'Ninguna observación relevante'}</div>
-               </div>
-               <div>
-                  <div style="font-size: 0.7rem; font-weight: 700; color: var(--modal-text-muted);">RECOMENDACIONES</div>
-                  <div style="font-size: 0.85rem;">${record.recommendations || 'Acudir a urgencias si presenta síntomas de alarma'}</div>
-               </div>
-            </div>
-            
-            <div style="background: var(--modal-section-forest-light); padding: 1.25rem; border: 1px solid var(--modal-border); border-radius: 0 4px 4px 0; display: flex; align-items: center; justify-content: center;">
-               <div style="background: var(--modal-highlight-light); border: 1px solid var(--modal-highlight); padding: 1rem; border-radius: 4px; width: 100%;">
-                  <div style="font-size: 0.65rem; font-weight: 700; color: var(--modal-highlight);">PRÓXIMO CONTROL</div>
-                  <div style="font-weight: 700; font-size: 1rem; margin-top: 0.25rem;">
-                    ${record.followUp ? new Date(record.followUp).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'A demanda'}
-                  </div>
-                  <div style="font-size: 0.75rem; color: var(--modal-highlight); margin-top: 0.25rem;">
-                    ${record.followUp ? 'En ' + calculateDaysUntil(record.followUp).replace('en ', '') : ''}
-                  </div>
-               </div>
-            </div>
-          </div>
-
-          <!-- Footer del Documento -->
-          <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; justify-content: space-between; font-size: 0.7rem; color: #999;">
-            <div>
-              <div style="font-weight: 700; color: #666;">REGISTRO CREADO POR</div>
-              <div>${user.name}</div>
-              <div>${new Date(record.createdAt).toLocaleString()}</div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-weight: 700; color: #666;">ÚLTIMA ACTUALIZACIÓN</div>
-              <div>${record.updatedAt ? new Date(record.updatedAt).toLocaleString() : 'Sin modificaciones'}</div>
-            </div>
-          </div>
-        </div>
-        
-        <div style="padding: 1rem 1.5rem; text-align: center; color: #666; font-size: 0.75rem; border-top: 1px solid var(--modal-border);">
-            Documento clínico electrónico • Generado automáticamente por Hospital Universitario Manuel Nuñez Tovar
-        </div>
-
-        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
-          <button class="btn-circle btn-circle-view" id="print-record-btn" title="Imprimir Informe">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
-          </button>
-          ${canEditThisRecord ? `
-            <button class="btn-circle btn-circle-edit" id="edit-record-btn" data-id="${record.id}" title="Editar Registro">
-              ${ICONS.edit}
-            </button>
-          ` : ''}
-          <button class="btn-circle btn-circle-cancel" id="close-detail-modal-btn" title="Cerrar">
-            ${ICONS.close}
-          </button>
-        </div>
-      </div>
-      `;
-
-    // Agregar al DOM
-    document.body.appendChild(modalContainer);
-
-    // Configurar event listeners del modal de detalles
-    setupDetailModalListeners(modalContainer, record, patient, doctor, appointment);
-  }
-
-  // ===== FUNCIÓN PARA IMPRIMIR INFORME CLÍNICO EN FORMATO OFICIO - UNA SOLA PÁGINA =====
-  // Función para descargar PDF directo en escala de grises
-  async function generateClinicalReport(record) {
-    const patient = store.find('patients', record.patientId);
-    const doctor = store.find('doctors', record.doctorId);
-    const date = new Date(record.date);
-    const vitals = record.vitalSigns || {};
-
-    showNotification('Generando PDF en escala de grises...', 'info');
-
+  // ── GENERADOR PDF (mismo diseño aprobado, escala grises) ─────────────────
+  async function generatePDF(records, p) {
+    notify('Generando PDF en escala de grises...', 'info');
     try {
-      // Verificar si jsPDF está disponible
       if (typeof window.jspdf === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-
-        await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        await new Promise((res, rej) => { s.onload = res; s.onerror = rej; document.head.appendChild(s); });
       }
-
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
-
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
+      const pW = doc.internal.pageSize.getWidth();
       const margin = 15;
-      const contentWidth = pageWidth - 2 * margin;
+      const cW = pW - 2 * margin;
 
-      // Auxiliares de escala de grises
-      const toGrayscale = (r, g, b) => {
-        const gsc = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
-        return [gsc, gsc, gsc];
-      };
+      const gs = (r, g, b) => { const v = Math.round(r * .299 + g * .587 + b * .114); return [v, v, v]; };
+      const fill = (r, g, b) => { const [a] = gs(r, g, b); doc.setFillColor(a, a, a); };
+      const text = (r, g, b) => { const [a] = gs(r, g, b); doc.setTextColor(a, a, a); };
 
-      const safeSetFillColor = (color) => {
-        let r, g, b;
-        if (Array.isArray(color)) [r, g, b] = color;
-        else if (typeof color === 'string' && color.startsWith('#')) {
-          const hex = color.replace('#', '');
-          r = parseInt(hex.substring(0, 2), 16);
-          g = parseInt(hex.substring(2, 4), 16);
-          b = parseInt(hex.substring(4, 6), 16);
-        } else[r, g, b] = [0, 0, 0];
-        const [gr, gg, gb] = toGrayscale(r, g, b);
-        doc.setFillColor(gr, gg, gb);
-      };
+      const recsToExport = Array.isArray(records) ? records : [records];
 
-      const safeSetTextColor = (color) => {
-        let r, g, b;
-        if (Array.isArray(color)) [r, g, b] = color;
-        else if (typeof color === 'string' && color.startsWith('#')) {
-          const hex = color.replace('#', '');
-          r = parseInt(hex.substring(0, 2), 16);
-          g = parseInt(hex.substring(2, 4), 16);
-          b = parseInt(hex.substring(4, 6), 16);
-        } else[r, g, b] = [0, 0, 0];
-        const [gr, gg, gb] = toGrayscale(r, g, b);
-        doc.setTextColor(gr, gg, gb);
-      };
+      recsToExport.forEach((record, idx) => {
+        if (idx > 0) doc.addPage();
+        const dr = store.find('doctors', record.doctorId);
+        const date = new Date(record.date);
+        const vitals = record.vitalSigns || {};
+        let y = margin;
 
-      // --- ENCABEZADO ---
-      doc.setFontSize(18);
-      safeSetTextColor([10, 40, 80]);
-      doc.setFont('helvetica', 'bold');
-      doc.text('HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR', pageWidth / 2, margin + 5, { align: 'center' });
+        // Encabezado
+        doc.setFontSize(16); text(10, 40, 80); doc.setFont('helvetica', 'bold');
+        doc.text('HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR', pW / 2, y + 5, { align: 'center' });
+        doc.setFontSize(10); text(80, 80, 80);
+        doc.text('HISTORIA CLÍNICA ELECTRÓNICA', pW / 2, y + 12, { align: 'center' });
+        const [lr, lg, lb] = gs(10, 40, 80);
+        doc.setDrawColor(lr, lg, lb); doc.setLineWidth(0.5);
+        doc.line(margin, y + 18, pW - margin, y + 18);
+        y += 26;
 
-      doc.setFontSize(12);
-      safeSetTextColor([80, 80, 80]);
-      doc.text('HISTORIA CLÍNICA ELECTRÓNICA', pageWidth / 2, margin + 12, { align: 'center' });
+        doc.setFontSize(9); text(100, 100, 100); doc.setFont('helvetica', 'normal');
+        doc.text(`Registro ID: ${record.id?.split('_').pop() || '—'}`, margin, y);
+        doc.text(`Fecha: ${date.toLocaleDateString('es-ES')}`, pW - margin, y, { align: 'right' });
+        doc.text(`Tipo: ${typeLabel(record.type)}`, pW / 2, y, { align: 'center' });
+        y += 8;
 
-      const [dr, dg, db] = toGrayscale(10, 40, 80);
-      doc.setDrawColor(dr, dg, db);
-      doc.setLineWidth(0.5);
-      doc.line(margin, margin + 18, pageWidth - margin, margin + 18);
+        // Paciente y Responsable
+        fill(240, 245, 240); doc.rect(margin, y, cW / 2 - 2, 32, 'F');
+        fill(240, 240, 245); doc.rect(pW / 2 + 2, y, cW / 2 - 2, 32, 'F');
+        doc.setFont('helvetica', 'bold'); text(40, 80, 40);
+        doc.text('PACIENTE', margin + 3, y + 6);
+        doc.setFont('helvetica', 'normal'); text(0, 0, 0);
+        doc.text(`${p.name}`, margin + 3, y + 12);
+        doc.text(`CI: ${p.docType || 'V'}-${p.dni || '—'}`, margin + 3, y + 18);
+        doc.text(`Edad: ${calcAge(p.birthDate)} años`, margin + 3, y + 24);
+        doc.text(`Tel: ${p.phone || '—'}`, margin + 3, y + 30);
+        doc.setFont('helvetica', 'bold'); text(40, 40, 80);
+        doc.text('PROFESIONAL RESPONSABLE', pW / 2 + 5, y + 6);
+        doc.setFont('helvetica', 'normal'); text(0, 0, 0);
+        const respName = record.creatorName ? ((record.creatorRole === 'nurse' ? 'Lic. ' : record.creatorRole === 'doctor' ? 'Dr. ' : '') + record.creatorName) : ('Dr. ' + (dr?.name || '—'));
+        doc.text(respName, pW / 2 + 5, y + 12);
+        doc.text(`${record.creatorRole === 'nurse' ? 'Área de Enfermería' : dr?.specialty || 'Medicina General'}`, pW / 2 + 5, y + 18);
+        if (dr?.license) doc.text(`Mat: ${dr.license}`, pW / 2 + 5, y + 24);
+        y += 40;
 
-      let yPos = margin + 28;
-
-      // --- INFO DEL REGISTRO ---
-      doc.setFontSize(9);
-      safeSetTextColor([100, 100, 100]);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Registro ID: ${record.id.split('_').pop()}`, margin, yPos);
-      doc.text(`Fecha: ${date.toLocaleDateString('es-ES')}`, pageWidth - margin, yPos, { align: 'right' });
-      yPos += 8;
-
-      // --- BLOQUES DE PACIENTE Y MÉDICO ---
-      safeSetFillColor([240, 245, 240]);
-      doc.rect(margin, yPos, contentWidth / 2 - 2, 35, 'F');
-
-      safeSetFillColor([240, 240, 245]);
-      doc.rect(pageWidth / 2 + 2, yPos, contentWidth / 2 - 2, 35, 'F');
-
-      doc.setFont('helvetica', 'bold');
-      safeSetTextColor([40, 80, 40]);
-      doc.text('DATOS DEL PACIENTE', margin + 3, yPos + 6);
-
-      doc.setFont('helvetica', 'normal');
-      safeSetTextColor([0, 0, 0]);
-      doc.text(`Nombre: ${patient?.name || 'N/A'}`, margin + 3, yPos + 12);
-      doc.text(`C.I.: ${patient?.docType || 'V'}-${patient?.dni || 'N/A'}`, margin + 3, yPos + 18);
-      doc.text(`Edad: ${patient?.birthDate ? calculateAge(patient.birthDate) + ' años' : 'N/A'}`, margin + 3, yPos + 24);
-      doc.text(`Tel: ${patient?.phone || 'N/A'}`, margin + 3, yPos + 30);
-
-      doc.setFont('helvetica', 'bold');
-      safeSetTextColor([40, 40, 80]);
-      doc.text('MÉDICO TRATANTE', pageWidth / 2 + 5, yPos + 6);
-
-      doc.setFont('helvetica', 'normal');
-      safeSetTextColor([0, 0, 0]);
-      doc.text(`Nombre: ${doctor?.name || 'N/A'}`, pageWidth / 2 + 5, yPos + 12);
-      doc.text(`Especialidad: ${doctor?.specialty || 'N/A'}`, pageWidth / 2 + 5, yPos + 18);
-      doc.text(`Matrícula: ${doctor?.license || 'N/A'}`, pageWidth / 2 + 5, yPos + 24);
-
-      yPos += 45;
-
-      // --- SIGNOS VITALES ---
-      safeSetFillColor([90, 137, 115]); // Sage
-      doc.rect(margin, yPos, contentWidth, 7, 'F');
-      safeSetTextColor([255, 255, 255]);
-      doc.setFont('helvetica', 'bold');
-      doc.text('SIGNOS VITALES', margin + 3, yPos + 5);
-
-      yPos += 7;
-      doc.setFontSize(8);
-      safeSetTextColor([0, 0, 0]);
-      doc.setFont('helvetica', 'normal');
-
-      const vitalLabels = ['P. Arterial', 'F. Cardíaca', 'Temp.', 'Sat. O2', 'Peso', 'Altura'];
-      const vitalValues = [`${vitals.bloodPressure || '-'} mmHg`, `${vitals.heartRate || '-'} lpm`, `${vitals.temperature || '-'} °C`, `${vitals.spo2 || '-'} %`, `${vitals.weight || '-'} kg`, `${vitals.height || '-'} cm`];
-
-      let xOffset = margin;
-      const colW = contentWidth / 6;
-
-      vitalLabels.forEach((label, i) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, xOffset + colW / 2, yPos + 5, { align: 'center' });
-        doc.setFont('helvetica', 'normal');
-        doc.text(vitalValues[i], xOffset + colW / 2, yPos + 10, { align: 'center' });
-        xOffset += colW;
-      });
-
-      yPos += 18;
-
-      // --- SECCIONES DE TEXTO ---
-      const sections = [
-        { title: 'MOTIVO DE CONSULTA Y SÍNTOMAS', content: `${record.reason || ''} ${record.symptoms || 'No especificados'}`, color: [214, 158, 46] },
-        { title: 'DIAGNÓSTICO', content: record.diagnosis || 'Pendiente', color: [104, 159, 56] },
-        { title: 'PLAN DE TRATAMIENTO', content: record.treatment || 'No especificado', color: [104, 159, 56] }
-      ];
-
-      sections.forEach(sec => {
-        safeSetFillColor(sec.color);
-        doc.rect(margin, yPos, contentWidth, 7, 'F');
-        safeSetTextColor([255, 255, 255]);
-        doc.setFont('helvetica', 'bold');
-        doc.text(sec.title, margin + 3, yPos + 5);
-
-        yPos += 7;
-        safeSetTextColor([0, 0, 0]);
-        doc.setFont('helvetica', 'normal');
-        const lines = doc.splitTextToSize(sec.content, contentWidth - 6);
-        doc.text(lines, margin + 3, yPos + 6);
-        yPos += (lines.length * 5) + 8;
-      });
-
-      // --- RECETAS ---
-      safeSetFillColor([39, 103, 73]); // Forest
-      doc.rect(margin, yPos, contentWidth, 7, 'F');
-      safeSetTextColor([255, 255, 255]);
-      doc.setFont('helvetica', 'bold');
-      doc.text('RECETAS MÉDICAS', margin + 3, yPos + 5);
-
-      yPos += 7;
-      doc.setFontSize(8);
-      safeSetTextColor([0, 0, 0]);
-      if (record.prescriptions && record.prescriptions.length > 0) {
-        record.prescriptions.forEach((p, idx) => {
-          doc.text(`${idx + 1}. ${p.medication} - ${p.dosage} - Cada ${p.frequency} - Durante ${p.duration}`, margin + 3, yPos + 6);
-          yPos += 6;
+        // Signos vitales
+        fill(90, 137, 115); doc.rect(margin, y, cW, 7, 'F');
+        text(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('SIGNOS VITALES', margin + 3, y + 5);
+        y += 7;
+        const vLabs = ['P. Arterial', 'F. Cardíaca', 'Temp.', 'Sat. O2', 'Peso', 'Talla'];
+        const vVals = [`${vitals.bloodPressure || '-'}`, `${vitals.heartRate || '-'} lpm`, `${vitals.temperature || '-'}°C`, `${vitals.spo2 || '-'}%`, `${vitals.weight || '-'} kg`, `${vitals.height || '-'} cm`];
+        doc.setFontSize(8); text(0, 0, 0);
+        let xo = margin; const colW = cW / 6;
+        vLabs.forEach((l, i) => {
+          doc.setFont('helvetica', 'bold'); doc.text(l, xo + colW / 2, y + 5, { align: 'center' });
+          doc.setFont('helvetica', 'normal'); doc.text(vVals[i], xo + colW / 2, y + 10, { align: 'center' });
+          xo += colW;
         });
-      } else {
-        doc.setFont('helvetica', 'italic');
-        doc.text('Sin prescripciones activas', margin + 3, yPos + 6);
-        yPos += 6;
-      }
-      yPos += 5;
+        y += 18;
 
-      // --- FIRMA ---
-      doc.setLineWidth(0.2);
-      doc.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 20;
-      doc.line(pageWidth - margin - 60, yPos, pageWidth - margin, yPos);
-      doc.text(doctor?.name || 'Médico Tratante', pageWidth - margin - 30, yPos + 5, { align: 'center' });
-      doc.text(`Mat. ${doctor?.license || 'N/A'}`, pageWidth - margin - 30, yPos + 10, { align: 'center' });
+        // Secciones clínicas
+        const secs = [
+          { title: 'MOTIVO DE CONSULTA', content: record.reason || 'No especificado', color: [214, 158, 46] },
+          { title: 'DIAGNÓSTICO', content: record.diagnosis || 'Pendiente', color: [104, 159, 56] },
+          { title: 'PLAN DE TRATAMIENTO', content: record.treatment || '—', color: [104, 159, 56] }
+        ];
+        doc.setFontSize(9);
+        secs.forEach(sec => {
+          fill(...sec.color); doc.rect(margin, y, cW, 7, 'F');
+          text(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.text(sec.title, margin + 3, y + 5);
+          y += 7; text(0, 0, 0); doc.setFont('helvetica', 'normal');
+          const lines = doc.splitTextToSize(sec.content, cW - 6);
+          doc.text(lines, margin + 3, y + 5);
+          y += (lines.length * 5) + 8;
+        });
 
-      doc.save(`Historia_Clinica_${patient?.name.replace(/\s+/g, '_') || 'Paciente'}.pdf`);
-      showNotification('PDF descargado exitosamente', 'success');
+        // Recetas
+        fill(39, 103, 73); doc.rect(margin, y, cW, 7, 'F');
+        text(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.text('RECETAS MÉDICAS', margin + 3, y + 5);
+        y += 7; text(0, 0, 0); doc.setFont('helvetica', 'normal');
+        const pres = record.prescriptions;
+        if (pres && pres.length > 0) {
+          pres.forEach((px, i) => {
+            doc.text(`${i + 1}. ${px.medication} — ${px.dosage} — ${px.frequency} — ${px.duration}`, margin + 3, y + 5);
+            y += 6;
+          });
+        } else {
+          doc.setFont('helvetica', 'italic'); doc.text('Sin prescripciones activas', margin + 3, y + 5);
+          y += 6;
+        }
+        y += 10;
 
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-      showNotification('Error al crear el PDF', 'error');
+        // Firma
+        doc.setLineWidth(0.2); doc.line(margin, y, pW - margin, y);
+        y += 15;
+        doc.line(pW - margin - 60, y, pW - margin, y);
+        doc.text(record.creatorName ? ((record.creatorRole === 'nurse' ? 'Lic. ' : record.creatorRole === 'doctor' ? 'Dr. ' : '') + record.creatorName) : ('Dr. ' + (dr?.name || 'Médico Tratante')), pW - margin - 30, y + 4, { align: 'center' });
+        if (dr?.license) doc.text(`Mat. ${dr.license}`, pW - margin - 30, y + 9, { align: 'center' });
+      });
+
+      const fname = `HC_${p.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fname);
+      notify('PDF generado exitosamente', 'success');
+    } catch (e) {
+      console.error(e);
+      notify('Error al generar PDF', 'error');
     }
   }
 
-  // Función para calcular edad
-  function calculateAge(birthDate) {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
-  }
-
-  // Función para calcular días hasta el próximo control
-  function calculateDaysUntil(followUpDate) {
-    const today = new Date();
-    const followUp = new Date(followUpDate);
-    const diffTime = followUp - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 0) {
-      return `En ${diffDays} ${diffDays === 1 ? 'día' : 'días'} `;
-    } else if (diffDays === 0) {
-      return 'Hoy';
-    } else {
-      return `Vencido hace ${Math.abs(diffDays)} días`;
-    }
-  }
-
-  // Configurar event listeners del modal de detalles
-  function setupDetailModalListeners(modalContainer, record, patient, doctor, appointment) {
-    // Función de limpieza
-    function cleanup() {
-      document.removeEventListener('keydown', escHandler);
-    }
-
-    // Función para cerrar el modal extendida
-    function enhancedCloseModal() {
-      cleanup();
-      if (modalContainer && modalContainer.parentNode) {
-        modalContainer.parentNode.removeChild(modalContainer);
-      }
-    }
-
-    // Cerrar con ESC
-    function escHandler(e) {
-      if (e.key === 'Escape') enhancedCloseModal();
-    }
-
-    document.addEventListener('keydown', escHandler);
-
-    // Botones de cerrar
-    const closeBtnHeader = modalContainer.querySelector('#close-record-modal');
-    const closeBtnFooter = modalContainer.querySelector('#close-detail-modal-btn');
-    if (closeBtnHeader) closeBtnHeader.addEventListener('click', enhancedCloseModal);
-    if (closeBtnFooter) closeBtnFooter.addEventListener('click', enhancedCloseModal);
-
-    // Botón de editar - SOLO si tiene permisos
-    const editBtn = modalContainer.querySelector('#edit-record-btn');
-    if (editBtn && hasPermissionToEdit(record)) {
-      editBtn.addEventListener('click', () => {
-        enhancedCloseModal();
-        openModal(record);
+  // ── EVENT LISTENERS ───────────────────────────────────────────────────────
+  function bindListEvents() {
+    const searchEl = root.querySelector('#cl-search');
+    if (searchEl) {
+      searchEl.addEventListener('input', e => {
+        state.search = e.target.value;
+        state.currentPage = 1;
+        applyFilters();
+        const body = root.querySelector('#cl-list-body');
+        const countEl = root.querySelector('#cl-count');
+        const pag = root.querySelector('#cl-pagination');
+        const pgInfo = root.querySelector('#cl-page-info');
+        const pgCtrl = root.querySelector('#cl-page-controls');
+        if (body) body.innerHTML = renderRows();
+        if (countEl) countEl.textContent = `Mostrando ${state.paginated.length} de ${state.filtered.length} pacientes`;
+        if (pag) pag.classList.toggle('hidden', state.totalPages <= 1);
+        if (pgInfo) pgInfo.textContent = `Página ${state.currentPage} de ${state.totalPages}`;
+        if (pgCtrl) pgCtrl.innerHTML = renderPageControls();
+        bindRowEvents();
       });
     }
 
-    // Botón de imprimir
-    const printBtn = modalContainer.querySelector('#print-record-btn');
-    if (printBtn) {
-      printBtn.addEventListener('click', () => {
-        generateClinicalReport(record);
+    const sortEl = root.querySelector('#cl-sort');
+    if (sortEl) {
+      sortEl.addEventListener('change', e => {
+        state.sortBy = e.target.value;
+        state.currentPage = 1;
+        applyFilters();
+        const body = root.querySelector('#cl-list-body');
+        if (body) body.innerHTML = renderRows();
+        bindRowEvents();
       });
     }
 
-    // Cerrar al hacer clic fuera del contenido
-    modalContainer.addEventListener('click', (e) => {
-      if (e.target === modalContainer) enhancedCloseModal();
+    const pagCtrl = root.querySelector('#cl-page-controls');
+    if (pagCtrl) {
+      pagCtrl.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-page]');
+        if (!btn) return;
+        const pg = btn.dataset.page;
+        if (pg === 'prev' && state.currentPage > 1) state.currentPage--;
+        else if (pg === 'next' && state.currentPage < state.totalPages) state.currentPage++;
+        else if (!isNaN(+pg)) state.currentPage = +pg;
+        applyFilters();
+        const body = root.querySelector('#cl-list-body');
+        const pgInfo = root.querySelector('#cl-page-info');
+        if (body) body.innerHTML = renderRows();
+        if (pgInfo) pgInfo.textContent = `Página ${state.currentPage} de ${state.totalPages}`;
+        pagCtrl.innerHTML = renderPageControls();
+        bindRowEvents();
+      });
+    }
+
+    bindRowEvents();
+  }
+
+  function bindRowEvents() {
+    root.querySelectorAll('.btn-view-hc').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        openHCModal(btn.dataset.id);
+      });
+    });
+    root.querySelectorAll('.cl-patient-row').forEach(row => {
+      row.addEventListener('click', () => {
+        openHCModal(row.dataset.id);
+      });
     });
   }
 
-  // ===== INICIALIZACIÓN Y DESTRUCCIÓN =====
-  const moduleInstance = init();
+  function bindHCModalEvents(overlay) {
+    overlay.querySelector('#hc-btn-close')?.addEventListener('click', () => {
+      state.selectedPatient = null;
+      overlay.remove();
+      renderList();
+    });
 
-  return {
-    refresh: loadClinicalRecords,
+    const openFormModal = (record = null) => {
+      if (!canCreate()) { notify('Sin permiso para crear registros', 'error'); return; }
+      state.editingRecord = record;
+      // Añadir modal encima del HC modal
+      const formOverlay = document.createElement('div');
+      formOverlay.id = 'cl-record-modal';
+      formOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1200;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:modalSlideIn 0.3s ease;';
+      formOverlay.innerHTML = renderRecordForm(state.selectedPatient);
+      document.body.appendChild(formOverlay);
 
-    destroy() {
-      if (moduleInstance && moduleInstance.destroy) moduleInstance.destroy();
-      // También limpiar cualquier modal abierto
-      const detailModal = document.querySelector('#view-clinical-record-modal');
-      if (detailModal && detailModal.parentNode) {
-        detailModal.parentNode.removeChild(detailModal);
+      // Eventos del form modal
+      const closeForm = () => { formOverlay.remove(); state.editingRecord = null; };
+      formOverlay.querySelector('#btn-close-record-modal')?.addEventListener('click', closeForm);
+      formOverlay.querySelector('#btn-cancel-record')?.addEventListener('click', closeForm);
+      formOverlay.querySelector('#btn-save-record')?.addEventListener('click', saveRecord);
+      formOverlay.addEventListener('click', e => { if (e.target === formOverlay) closeForm(); });
+    };
+
+    overlay.querySelector('#hc-btn-new')?.addEventListener('click', () => openFormModal());
+    overlay.querySelector('#btn-new-record-empty')?.addEventListener('click', () => openFormModal());
+
+    overlay.querySelector('#hc-btn-pdf')?.addEventListener('click', () => {
+      const records = (store.get('clinicalRecords') || []).filter(r => r.patientId === state.selectedPatient.id);
+      generatePDF(records, state.selectedPatient);
+    });
+
+    // Cerrar haciendo clic afuera si el usuario hace clic en el overlay de HC
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) {
+        state.selectedPatient = null;
+        overlay.remove();
+        renderList();
       }
+    });
+  }
+
+  // ── API pública ───────────────────────────────────────────────────────────
+  return {
+    refresh() { reload(); },
+    destroy() {
+      unsub();
+      unsubCR();
     }
   };
 }

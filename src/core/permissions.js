@@ -55,10 +55,10 @@ export function can(role, action) {
     // Los registros de tratamiento NUNCA se eliminan (inmutabilidad)
     'amend:treatments': ['admin', 'doctor', 'nurse'],
 
-    // === Triage ===
-    'view:triage': ['admin', 'doctor', 'nurse', 'receptionist'],
-    'create:triage': ['admin', 'doctor', 'nurse'],
-    'edit:triage': ['admin', 'doctor', 'nurse'],
+    // === Triaje ===
+    'view:triaje': ['admin', 'doctor', 'nurse', 'receptionist'],
+    'create:triaje': ['admin', 'doctor', 'nurse'],
+    'edit:triaje': ['admin', 'doctor', 'nurse'],
 
     // === Recursos ===
     'view:resources': ['admin', 'receptionist'],

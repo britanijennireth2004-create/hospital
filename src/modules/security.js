@@ -114,7 +114,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
       'doctors': `${svgDocMed} M\u00e9dicos`,
       'appointments': `${svgCal} Citas`,
       'clinical': `${svgClip} Historia Cl\u00ednica`,
-      'triage': `${svgPulse} Triage`,
+      'triaje': `${svgPulse} Triaje`,
       'areas': `${svgBldg} \u00c1reas`
     };
     return modules[module] || module;

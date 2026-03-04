@@ -95,7 +95,7 @@ window.hospitalConfirm = function (message, type = 'warning') {
         </div>
         <div style="padding: 1.5rem; display: flex; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9; gap: 1rem;">
           <button id="hc-cancel" style="flex: 1; padding: 0.85rem; font-weight: 700; border-radius: 12px; cursor: pointer; color: #64748b; background: white; border: 2px solid #e2e8f0; font-size: 0.95rem; transition: all 0.2s;">CANCELAR</button>
-          <button id="hc-ok" style="flex: 1.5; background: var(--triage-red); border: none; padding: 0.85rem; font-weight: 800; border-radius: 12px; cursor: pointer; color: white; font-size: 0.95rem; transition: all 0.2s; box-shadow: 0 4px 12px ${s.color}44;">CONFIRMAR</button>
+          <button id="hc-ok" style="flex: 1.5; background: var(--triaje-red); border: none; padding: 0.85rem; font-weight: 800; border-radius: 12px; cursor: pointer; color: white; font-size: 0.95rem; transition: all 0.2s; box-shadow: 0 4px 12px ${s.color}44;">CONFIRMAR</button>
         </div>
       </div>
     `;
@@ -222,16 +222,10 @@ const ROUTES = {
     permission: (role) => ['admin', 'doctor', 'receptionist', 'nurse', 'patient'].includes(role)
   },
   clinical: {
-    label: 'Historia Clínica',
+    label: 'Historia Clínica Integral',
     icon: ICONS.clipboard,
     module: () => import('../modules/clinical.js'),
-    permission: (role) => ['admin', 'doctor', 'patient', 'nurse'].includes(role)
-  },
-  treatments: {
-    label: 'Tratamientos / Relevo',
-    icon: ICONS.treatments,
-    module: () => import('../modules/treatments.js'),
-    permission: (role) => ['admin', 'doctor', 'nurse'].includes(role)
+    permission: (role) => ['admin', 'doctor', 'patient', 'nurse', 'receptionist'].includes(role)
   },
   profile: {
     label: 'Mi Perfil',
@@ -239,10 +233,10 @@ const ROUTES = {
     module: () => import('../modules/profile.js'),
     permission: (role) => role === 'patient'
   },
-  triage: {
-    label: 'Triage',
-    icon: ICONS.triage,
-    module: () => import('../modules/triage.js'),
+  triaje: {
+    label: 'Triaje',
+    icon: ICONS.triaje,
+    module: () => import('../modules/triaje.js'),
     permission: (role) => ['admin', 'doctor', 'nurse', 'receptionist'].includes(role)
   },
   resources: {

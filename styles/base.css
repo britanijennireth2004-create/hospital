@@ -839,14 +839,14 @@ textarea.error {
 
 /* ===== COMPONENTES NO-RESPONSIVE (fuera de media queries) ===== */
 
-.triage-level {
+.triaje-level {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
   background: var(--card);
   border-radius: var(--radius);
 }
 
-.triage-levels .triage-level:last-child {
+.triaje-levels .triaje-level:last-child {
   margin-bottom: 0;
 }
 
@@ -871,7 +871,7 @@ textarea.error {
   padding: 0.75rem;
 }
 
-/* ===== triage ===== */
+/* ===== triaje ===== */
 .step {
   display: none;
 }

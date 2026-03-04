@@ -109,16 +109,16 @@
   --modal-text: #2d4a3e;
   --modal-text-muted: #5a7a6a;
 
-  /* variables para niveles de triage */
-  --triage-gray: #cdd8cd;
-  --triage-red: #ea4632;
-  --triage-orange: #ea7d32;
-  --triage-yellow: #eace32;
-  --triage-green: #33ac2a;
-  --triage-blue: #226dc8;
-  --triage-red-light: #fed7d7;
-  --triage-orange-light: #feebc8;
-  --triage-yellow-light: #fefcbf;
-  --triage-green-light: #c6f6d5;
-  --triage-blue-light: #bee3f8;
+  /* variables para niveles de triaje */
+  --triaje-gray: #cdd8cd;
+  --triaje-red: #ea4632;
+  --triaje-orange: #ea7d32;
+  --triaje-yellow: #eace32;
+  --triaje-green: #33ac2a;
+  --triaje-blue: #226dc8;
+  --triaje-red-light: #fed7d7;
+  --triaje-orange-light: #feebc8;
+  --triaje-yellow-light: #fefcbf;
+  --triaje-green-light: #c6f6d5;
+  --triaje-blue-light: #bee3f8;
 }

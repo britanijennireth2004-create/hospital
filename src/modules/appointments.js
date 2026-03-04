@@ -409,9 +409,20 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       .filter(a => !excludeAppointmentId || a.id !== excludeAppointmentId);
 
     const slots = [];
+    const now = new Date();
+    const isToday = date === now.toISOString().split('T')[0];
+    const currentMinutesNow = now.getHours() * 60 + now.getMinutes();
 
     let currentMin = workStartMin;
+    const slotStep = 30; // Intervalos de 30 minutos para mayor flexibilidad
+
     while (currentMin + duration <= workEndMin) {
+      // Si es hoy, solo permitir slots en el futuro (margen de 15 min)
+      if (isToday && currentMin < currentMinutesNow + 15) {
+        currentMin += slotStep;
+        continue;
+      }
+
       const h = Math.floor(currentMin / 60);
       const m = currentMin % 60;
       const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
@@ -430,7 +441,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       });
 
       if (!hasConflict) slots.push(timeStr);
-      currentMin += 60; // Intervalos de 60 minutos (hora en hora) para selección
+      currentMin += slotStep;
     }
 
     return slots;
@@ -1257,6 +1268,10 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     let minHour = 8;
     let maxHour = 18;
 
+    const now = new Date();
+    const isToday = (dateStr === now.toISOString().split('T')[0]);
+    const currentHour = now.getHours();
+
     if (doctorsWorkingToday.length > 0) {
       const allStarts = doctorsWorkingToday.map(d => {
         if (d.schedule && d.schedule[dayEn]) return parseInt(d.schedule[dayEn].start.split(':')[0]);
@@ -1268,6 +1283,11 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       });
       minHour = Math.min(...allStarts, 8);
       maxHour = Math.max(...allEnds, 18);
+
+      // Si es hoy, la agenda comienza desde la hora actual o la hora de inicio laboral (la mayor de ambas)
+      if (isToday && currentHour > minHour) {
+        minHour = currentHour;
+      }
     }
 
     const timeSlots = [];
@@ -1477,7 +1497,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
   function openModalWithDate(dateStr, timeStr = null) {
     if (elements.dateTimeSection) {
-      elements.dateTimeSection.classList.toggle('hidden', !!timeStr);
+      elements.dateTimeSection.classList.remove('hidden');
     }
 
     // Usar skipAutoSlot: true porque ya tenemos una fecha/hora específica
@@ -1486,34 +1506,23 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.formDate) {
       elements.formDate.value = dateStr;
 
-      // Actualizar áreas y médicos ANTES de intentar poner la hora
+      // Importante: Guardar el tiempo solicitado en un atributo temporal para recuperarlo al seleccionar doctor
+      if (timeStr) {
+        elements.formTime.dataset.requestedTime = timeStr;
+      }
+
+      // Actualizar áreas y médicos del día
       updateAvailableAreas();
       updateDoctorsByAreaAndDate();
 
-      // Cargar los slots disponibles para que el SELECT tenga opciones antes de asignar el valor
-      updateAvailableTimeSlots();
-
+      // Forzar la hora si es posible
       if (timeStr && elements.formTime) {
-        // Verificar si el slot seleccionado está ocupado y buscar el siguiente si es necesario
-        let finalTime = timeStr;
-        const doctorId = elements.formDoctor ? elements.formDoctor.value : null;
-
-        if (doctorId) {
-          const slots = getAvailableTimeSlots(doctorId, dateStr, 30, state.editingId);
-          if (slots.length > 0) {
-            if (!slots.includes(timeStr)) {
-              // Si el slot original está ocupado, buscar el primero disponible a partir de esa hora
-              const nextAvailable = slots.find(s => s >= timeStr) || slots[0];
-              finalTime = nextAvailable;
-            }
-          }
-        }
-
-        elements.formTime.value = finalTime;
-      }
-
-      if (timeStr) {
-        validateDoctorSchedule();
+        // Asegurarnos de que el select tenga el item para poder seleccionarlo
+        const option = document.createElement('option');
+        option.value = timeStr;
+        option.textContent = timeStr;
+        elements.formTime.appendChild(option);
+        elements.formTime.value = timeStr;
       }
 
       updateModalSubtitle();
@@ -1615,6 +1624,20 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         updateAvailableAreas();
         updateDoctorsByAreaAndDate();
         updateAvailableResources();
+
+        // Si hay un médico seleccionado, actualizar sus slots
+        if (elements.formDoctor && elements.formDoctor.value) {
+          updateAvailableTimeSlots();
+
+          // Intentar pre-seleccionar el primer horario libre del médico en esta nueva fecha
+          if (!state.editingId) {
+            const slots = getAvailableTimeSlots(elements.formDoctor.value, elements.formDate.value, 30);
+            if (slots.length > 0 && !elements.formTime.value) {
+              elements.formTime.value = slots[0];
+              updateModalSubtitle();
+            }
+          }
+        }
       });
     }
     if (elements.formDoctor) {
@@ -1623,16 +1646,42 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
         // Si no estamos editando, intentar buscar el primer horario libre de ese médico
         if (!state.editingId && elements.formDoctor.value && elements.formDate.value) {
-          const slots = getAvailableTimeSlots(elements.formDoctor.value, elements.formDate.value, 30, state.editingId);
+          const doctorId = elements.formDoctor.value;
+          const date = elements.formDate.value;
+          const slots = getAvailableTimeSlots(doctorId, date, 30, state.editingId);
+
+          // Prioridad 1: Requested Time (del calendario)
+          const requestedTime = elements.formTime.dataset.requestedTime;
+          // Prioridad 2: Current selection
           const currentTime = elements.formTime.value;
 
+          const targetTime = requestedTime || currentTime;
+
           if (slots.length > 0) {
-            // Si no hay hora o la hora actual no es válida/disponible para el nuevo médico
-            if (!currentTime || !slots.includes(currentTime)) {
-              // Si había una hora seleccionada pero está ocupada para este médico, buscar la siguiente disponible
-              const nextBest = currentTime ? (slots.find(s => s >= currentTime) || slots[0]) : slots[0];
-              elements.formTime.value = nextBest;
+            // Si el objetivo no está disponible para este médico, buscar el siguiente
+            if (!targetTime || !slots.includes(targetTime)) {
+              const nextAvailable = targetTime ? (slots.find(s => s >= targetTime) || slots[0]) : slots[0];
+              elements.formTime.value = nextAvailable;
+
+              if (requestedTime && nextAvailable !== requestedTime) {
+                showNotification(`El horario ${requestedTime} no está disponible para el Dr. seleccionado. Se asignó ${nextAvailable}.`, 'info');
+              }
+            } else {
+              elements.formTime.value = targetTime;
+            }
+
+            // Limpiar el requested time una vez usado para un doctor
+            delete elements.formTime.dataset.requestedTime;
+            updateModalSubtitle();
+          } else {
+            // Si no hay slots hoy, buscar en los próximos días
+            const nextSlot = findNextAvailableSlot(doctorId);
+            if (nextSlot) {
+              elements.formDate.value = nextSlot.date;
+              updateAvailableTimeSlots();
+              elements.formTime.value = nextSlot.time;
               updateModalSubtitle();
+              showNotification(`No hay disponibilidad hoy para el Dr. seleccionado. Se sugirió el ${nextSlot.date} a las ${nextSlot.time}.`, 'success');
             }
           }
         }
@@ -1783,6 +1832,23 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           // Si es otro día, primer slot disponible
           return { date: dateStr, time: slots[0] };
         }
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return null;
+  }
+
+  function findNextAvailableDateForArea(areaId, startDate) {
+    let current = startDate ? new Date(startDate + 'T12:00:00') : new Date();
+    current.setDate(current.getDate() + 1); // Empezar a buscar desde el día siguiente
+
+    // Buscar en los próximos 15 días
+    for (let i = 0; i < 15; i++) {
+      const dateStr = current.toISOString().split('T')[0];
+      const availableDoctors = getAvailableDoctorsForDate(dateStr, areaId);
+
+      if (availableDoctors.length > 0) {
+        return dateStr;
       }
       current.setDate(current.getDate() + 1);
     }
@@ -2058,7 +2124,45 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     if (availableDoctors.length === 0) {
       elements.formDoctor.innerHTML = `<option value="">Sin médicos disponibles hoy</option>`;
-      showNoDoctorsMessage();
+
+      // Si hay área seleccionada pero no hay médicos, sugerir cambio de fecha
+      if (areaId) {
+        showNoDoctorsMessage();
+        if (elements.noDoctorsMessage) {
+          const area = store.find('areas', areaId);
+          elements.noDoctorsMessage.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+              <div style="background: #fff; border-radius: 50%; padding: 0.5rem; display: flex;">${icons.warning}</div>
+              <div style="flex:1;">
+                <strong>No hay médicos de ${area?.name || 'esta área'} disponibles para hoy.</strong>
+                <div style="font-size: 0.85rem; margin-top: 0.25rem;">
+                  Todos los especialistas están fuera de turno o tienen cupo lleno.
+                </div>
+              </div>
+              <button type="button" id="btn-suggest-next-day" class="btn btn-sm" style="background:#856404; color:white; border:none; padding: 5px 10px; border-radius:4px; font-size:0.75rem;">
+                Buscar próximo día
+              </button>
+            </div>
+          `;
+
+          const btnSuggest = elements.noDoctorsMessage.querySelector('#btn-suggest-next-day');
+          if (btnSuggest) {
+            btnSuggest.onclick = () => {
+              const nextDate = findNextAvailableDateForArea(areaId, selectedDate);
+              if (nextDate) {
+                elements.formDate.value = nextDate;
+                updateAvailableAreas();
+                updateDoctorsByAreaAndDate();
+                showNotification(`Se cambió al ${nextDate} donde hay médicos disponibles`, 'success');
+              } else {
+                showNotification('No se encontró disponibilidad próxima en esta área', 'warning');
+              }
+            };
+          }
+        }
+      } else {
+        hideNoDoctorsMessage();
+      }
     } else {
       const options = availableDoctors.map(d => {
         const remaining = getDoctorRemainingAvailability(d.id, selectedDate, state.editingId);
@@ -2093,7 +2197,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   }
 
   function updateAvailableTimeSlots() {
-    if (!elements.formDoctor || !elements.formDate || !elements.formDoctor.value || !elements.formDate.value) {
+    if (!elements.formDoctor || !elements.formDate || !elements.formDate.value) {
       if (elements.timeSlotInfo) {
         elements.timeSlotInfo.textContent = 'Seleccione un médico y fecha para ver horarios disponibles';
       }
@@ -2105,22 +2209,33 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     const date = elements.formDate.value;
     const duration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
 
+    // Si no hay doctor seleccionado todavía, pero hay un requestedTime (ej: del calendario)
+    if (!doctorId) {
+      const requestedTime = elements.formTime.dataset.requestedTime;
+      if (requestedTime && elements.formTime) {
+        elements.formTime.innerHTML = `<option value="${requestedTime}">${requestedTime}</option>`;
+        elements.formTime.value = requestedTime;
+      }
+      return;
+    }
+
     const availableSlots = getAvailableTimeSlots(doctorId, date, duration, state.editingId);
 
     if (elements.formTime) {
       const currentTime = elements.formTime.value;
+      const requestedTime = elements.formTime.dataset.requestedTime;
+      const targetTime = requestedTime || currentTime;
 
       if (availableSlots.length > 0) {
         elements.formTime.innerHTML = '<option value="">Seleccionar horario</option>' +
           availableSlots.map(slot => `<option value="${slot}">${slot}</option>`).join('');
 
-        // Si ya había una hora seleccionada y sigue estando disponible, mantenerla
-        if (currentTime && availableSlots.includes(currentTime)) {
-          elements.formTime.value = currentTime;
-        } else if (currentTime && !availableSlots.includes(currentTime)) {
-          // Si el horario ya no está disponible, limpiar
+        // Si ya había una hora seleccionada (o solicitada) y sigue estando disponible, mantenerla
+        if (targetTime && availableSlots.includes(targetTime)) {
+          elements.formTime.value = targetTime;
+        } else if (targetTime && !availableSlots.includes(targetTime)) {
+          // Si el horario ya no está disponible, limpiar pero dar opción de buscar
           elements.formTime.value = '';
-          showNotification('El horario seleccionado ya no está disponible para este médico.', 'warning');
         }
       } else {
         elements.formTime.innerHTML = '<option value="">No hay disponibilidad</option>';

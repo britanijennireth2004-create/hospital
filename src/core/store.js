@@ -313,15 +313,15 @@ export async function createStore(bus) {
       }
     ],
 
-    triage: [
+    triaje: [
       {
-        id: 'triage_1',
+        id: 'triaje_1',
         patientId: 'p_1',
         priority: 'orange',
         symptoms: 'Dolor torácico intenso',
         status: 'in_progress',
-        triagedBy: 'doctor_1',
-        triagedByName: 'Dra. Ana Ruiz',
+        triajeBy: 'doctor_1',
+        triajeByName: 'Dra. Ana Ruiz',
         createdAt: Date.now() - 15 * 60 * 1000
       }
     ],

@@ -54,7 +54,7 @@ export const Logger = {
         APPOINTMENTS: 'citas',
         CLINICAL: 'historia_clinica',
         TREATMENTS: 'tratamientos',   // Relevo de turno / registro de tratamientos
-        TRIAGE: 'triage',
+        TRIAJE: 'triaje',
         SECURITY: 'seguridad',
         AREAS: 'areas',
         AUDIT: 'auditoria',
