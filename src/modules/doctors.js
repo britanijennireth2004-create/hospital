@@ -459,7 +459,10 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                         <option value="J">J</option>
                         <option value="P">P</option>
                       </select>
-                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
+                      <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
+                        ${icons.search}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -813,6 +816,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       btnSave: root.querySelector('#btn-save'),
       btnNewDoctor: root.querySelector('#btn-new-doctor'),
       btnCreateFirst: root.querySelector('#btn-create-first'),
+      btnSearchRegistry: root.querySelector('#btn-search-registry'),
 
       // Modal de estado
       statusModal: root.querySelector('#status-modal'),
@@ -1191,6 +1195,58 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           updateCapacityImpact();
         });
       });
+    }
+
+    if (elements.btnSearchRegistry) {
+      elements.btnSearchRegistry.addEventListener('click', handleRegistryLookup);
+    }
+  }
+
+  // --- Lógica de Precarga por Cédula (SAIME Simulation) ---
+  function handleRegistryLookup() {
+    // Solo permitir si estamos creando un nuevo registro
+    if (state.editingId) return;
+
+    const docType = elements.formDocType.value;
+    const dni = elements.formDni.value.trim();
+
+    if (dni && dni.length >= 6) {
+      // Mostrar estado de carga visual en el botón
+      const originalIcon = elements.btnSearchRegistry.innerHTML;
+      elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+
+      setTimeout(() => {
+        const found = store.fetchFromRegistry(docType, dni);
+        elements.btnSearchRegistry.innerHTML = originalIcon;
+
+        if (found) {
+          showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'info');
+
+          // Llenar campos
+          if (elements.formName) elements.formName.value = found.name;
+          if (elements.formBirthDate) elements.formBirthDate.value = found.birthDate;
+          if (elements.formGender) elements.formGender.value = found.gender;
+          if (elements.formAddress && !elements.formAddress.value) elements.formAddress.value = found.address || '';
+          if (elements.formPhone && !elements.formPhone.value) elements.formPhone.value = found.phone || '';
+          if (elements.formEmail && !elements.formEmail.value) elements.formEmail.value = found.email || '';
+
+          // Efecto visual de resaltado
+          const highlightFields = [elements.formName, elements.formBirthDate, elements.formGender];
+          highlightFields.forEach(f => {
+            if (f) {
+              f.style.transition = 'background 0.5s';
+              f.style.backgroundColor = '#f0fdf4';
+              setTimeout(() => {
+                f.style.backgroundColor = '';
+              }, 2000);
+            }
+          });
+        } else {
+          showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
+        }
+      }, 700);
+    } else {
+      showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
     }
   }
 

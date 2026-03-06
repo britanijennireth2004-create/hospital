@@ -47,7 +47,8 @@ const icons = {
   resource: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="5.5" width="15" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M6 5.5V4a2 2 0 012-2h4a2 2 0 012 2v1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 9v4M8 11h4"/></svg>`,
 
   hospital: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M10 5v4M8 7h4"/><path stroke="currentColor" stroke-width="1.5" d="M7 14h2v4H7zM11 14h2v4h-2z"/></svg>`,
-  search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M13 13l4 4"/></svg>`
+  search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="6" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M13 13l4 4"/></svg>`,
+  phone: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M3 4a2 2 0 012-2h2.28a1 1 0 01.95.68l1.05 3.15a1 1 0 01-.24 1L7.54 8.32a12 12 0 004.14 4.14l1.5-1.5a1 1 0 011-.24l3.15 1.05a1 1 0 01.68.95V15a2 2 0 01-2 2h-1A13 13 0 013 5V4z"/></svg>`
 };
 
 export default function mountAppointments(root, { bus, store, user, role }) {
@@ -410,7 +411,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     const slots = [];
     const now = new Date();
-    const isToday = date === now.toISOString().split('T')[0];
+    const todayStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+    const isToday = (date === todayStr);
     const currentMinutesNow = now.getHours() * 60 + now.getMinutes();
 
     let currentMin = workStartMin;
@@ -663,10 +665,28 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                 
                 <div class="grid grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">PACIENTE *</label>
-                    <select class="input" id="form-patient" required style="border-color: var(--neutralTertiary); background: var(--white);">
-                      <option value="">Seleccionar paciente</option>
-                    </select>
+                    <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">PACIENTE (BUSCAR POR CÉDULA) *</label>
+                    <div style="display: flex; gap: 0;">
+                      <select class="input" id="form-patient-doc-type" style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px;">
+                        <option value="V">V</option>
+                        <option value="E">E</option>
+                        <option value="J">J</option>
+                        <option value="P">P</option>
+                      </select>
+                      <input type="text" class="input" id="form-patient-cedula" placeholder="Ingrese número de cédula..." style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;" autocomplete="off">
+                    </div>
+                    <input type="hidden" id="form-patient" value="">
+                    <div id="patient-search-feedback" class="hidden"></div>
+                    
+                    <!-- Campo Unificado para Nombre de Paciente (Registrado o Nuevo) -->
+                    <div id="patient-name-group" class="hidden" style="margin-top: 1rem; animation: fadeIn 0.3s ease;">
+                      <label class="form-label" id="patient-name-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.8rem;">NOMBRE DEL PACIENTE *</label>
+                      <div style="position: relative; display: flex; align-items: center;">
+                        <input type="text" class="input" id="form-patient-name-display" placeholder="Nombre completo..." style="height: 38px; padding-right: 40px; flex: 1;">
+                        <div id="patient-status-icon-container" style="position: absolute; right: 10px; display: flex; align-items: center; justify-content: center; pointer-events: none;"></div>
+                      </div>
+                      <div id="patient-helper-text" style="font-size: 0.7rem; color: #64748b; margin-top: 0.35rem; display: flex; align-items: center; gap: 0.35rem;"></div>
+                    </div>
                   </div>
                   
                   <div class="form-group">
@@ -857,6 +877,14 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       modal: root.querySelector('#appointment-modal'),
       form: root.querySelector('#appointment-form'),
       formPatient: root.querySelector('#form-patient'),
+      formPatientDocType: root.querySelector('#form-patient-doc-type'),
+      formPatientCedula: root.querySelector('#form-patient-cedula'),
+      patientSearchFeedback: root.querySelector('#patient-search-feedback'),
+      patientNameGroup: root.querySelector('#patient-name-group'),
+      formPatientNameDisplay: root.querySelector('#form-patient-name-display'),
+      patientStatusIconContainer: root.querySelector('#patient-status-icon-container'),
+      patientHelperText: root.querySelector('#patient-helper-text'),
+      btnClearPatient: root.querySelector('#btn-clear-patient'),
       formDoctor: root.querySelector('#form-doctor'),
       formArea: root.querySelector('#form-area'),
       formDate: root.querySelector('#form-date'),
@@ -900,9 +928,15 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (role === 'patient' && user?.patientId) {
       const patient = store.find('patients', user.patientId);
       if (patient) {
-        elements.formPatient.innerHTML = `<option value="${patient.id}">${patient.name}</option>`;
-        elements.formPatient.value = patient.id;
-        elements.formPatient.disabled = true;
+        if (elements.formPatientDocType) {
+          elements.formPatientDocType.value = patient.docType || 'V';
+          elements.formPatientDocType.disabled = true;
+        }
+        if (elements.formPatientCedula) {
+          elements.formPatientCedula.value = patient.dni || '';
+          elements.formPatientCedula.disabled = true;
+        }
+        if (elements.formPatient) elements.formPatient.value = patient.id;
       }
     }
 
@@ -920,11 +954,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       elements.filterPatient.innerHTML = `<option value="">Todos los pacientes</option>${options}`;
     }
 
-    if (elements.formPatient) {
-      const patients = store.get('patients');
-      const options = patients.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-      elements.formPatient.innerHTML = `<option value="">Seleccionar paciente</option>${options}`;
-    }
+    // Ya no necesitamos cargar un <select> de pacientes, la búsqueda se hace por cédula
 
     if (elements.filterDoctor) {
       const doctors = store.get('doctors');
@@ -1269,7 +1299,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     let maxHour = 18;
 
     const now = new Date();
-    const isToday = (dateStr === now.toISOString().split('T')[0]);
+    const todayStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+    const isToday = (dateStr === todayStr);
     const currentHour = now.getHours();
 
     if (doctorsWorkingToday.length > 0) {
@@ -1283,11 +1314,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       });
       minHour = Math.min(...allStarts, 8);
       maxHour = Math.max(...allEnds, 18);
-
-      // Si es hoy, la agenda comienza desde la hora actual o la hora de inicio laboral (la mayor de ambas)
-      if (isToday && currentHour > minHour) {
-        minHour = currentHour;
-      }
     }
 
     const timeSlots = [];
@@ -1349,11 +1375,13 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <div class="schedule-grid" style="display: flex; flex-direction: column; gap: 1rem;">
             ${timeSlots.map(slot => {
       const isOccupied = slot.appointments.length > 0;
-      const isWorking = slot.isWorkingHour;
+      const [sh, sm] = slot.time.split(':').map(Number);
+      const slotIsPast = isToday && (sh < currentHour || (sh === currentHour && sm < now.getMinutes()));
+      const isWorking = slot.isWorkingHour && !slotIsPast;
 
       let statusText = isOccupied
         ? (slot.appointments.length === 1 ? '1 Cita Programada' : `${slot.appointments.length} Citas Programadas`)
-        : (isWorking ? 'Horario Disponible' : 'Fuera de Horario');
+        : (isWorking ? 'Horario Disponible' : (slotIsPast ? 'Horario Pasado' : 'Fuera de Horario'));
 
       const statusColor = isOccupied ? '#dc2626' : (isWorking ? '#16a34a' : '#64748b');
       const background = isOccupied ? '#fef2f2' : (isWorking ? '#f0fdf4' : '#f1f5f9');
@@ -1440,7 +1468,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   function renderCalendarDays(year, month, startDay, daysInMonth, prevMonthLastDay) {
     let html = '';
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
 
     for (let i = startDay - 1; i >= 0; i--) {
       const d = prevMonthLastDay - i;
@@ -1616,6 +1644,26 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.appointmentsList) {
       elements.appointmentsList.addEventListener('click', handleListAction);
     }
+
+    // ===== BÚSQUEDA POR CÉDULA DEL PACIENTE =====
+    if (elements.formPatientCedula) {
+      elements.formPatientCedula.addEventListener('input', debounce(() => {
+        searchPatientByCedula();
+      }, 350));
+    }
+    if (elements.formPatientDocType) {
+      elements.formPatientDocType.addEventListener('change', () => {
+        if (elements.formPatientCedula && elements.formPatientCedula.value.trim()) {
+          searchPatientByCedula();
+        }
+      });
+    }
+    if (elements.btnClearPatient) {
+      elements.btnClearPatient.addEventListener('click', () => {
+        clearPatientSelection();
+      });
+    }
+
     if (elements.formArea) {
       elements.formArea.addEventListener('change', updateDoctorsByAreaAndDate);
     }
@@ -1761,8 +1809,129 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       }
       
       @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     `;
     document.head.appendChild(style);
+  }
+
+  // ===== FUNCIONES DE BÚSQUEDA POR CÉDULA =====
+
+  /**
+   * Busca un paciente en el store por su número de cédula y tipo de documento.
+   * Si lo encuentra, precarga sus datos en la tarjeta visual y establece el patientId.
+   */
+  function searchPatientByCedula() {
+    const cedulaValue = elements.formPatientCedula?.value.trim();
+    const docType = elements.formPatientDocType?.value || 'V';
+
+    if (!cedulaValue) {
+      clearPatientSelection();
+      return;
+    }
+
+    // Buscar el paciente por cédula en el store
+    const patients = store.get('patients');
+    const foundPatient = patients.find(p => {
+      const pDni = (p.dni || '').trim();
+      const pDocType = (p.docType || 'V').trim();
+      return pDni === cedulaValue && pDocType === docType;
+    });
+
+    if (foundPatient) {
+      // PACIENTE REGISTRADO
+      if (elements.formPatient) elements.formPatient.value = foundPatient.id;
+
+      // Configurar campo visual
+      if (elements.patientNameGroup) elements.patientNameGroup.classList.remove('hidden');
+      if (elements.formPatientNameDisplay) {
+        elements.formPatientNameDisplay.value = foundPatient.name;
+        elements.formPatientNameDisplay.readOnly = true;
+        elements.formPatientNameDisplay.style.borderColor = '#16a34a';
+        elements.formPatientNameDisplay.style.backgroundColor = '#f0fdf4';
+        elements.formPatientNameDisplay.style.color = '#166534';
+      }
+
+      if (elements.patientStatusIconContainer) {
+        elements.patientStatusIconContainer.innerHTML = `<span style="color: #16a34a;">${icons.successCheck}</span>`;
+      }
+
+      if (elements.patientHelperText) {
+        elements.patientHelperText.innerHTML = `${icons.info} Paciente ya registrado en el sistema.`;
+        elements.patientHelperText.style.color = '#16a34a';
+      }
+
+      // Estilos del input de cédula
+      if (elements.formPatientCedula) {
+        elements.formPatientCedula.style.borderColor = '#16a34a';
+        elements.formPatientCedula.style.backgroundColor = '#f0fdf4';
+      }
+    } else {
+      // PACIENTE NO REGISTRADO - BUSCAR EN REGISTRO EXTERNO
+      const registryEntry = store.fetchFromRegistry(docType, cedulaValue);
+
+      if (elements.formPatient) elements.formPatient.value = '';
+      if (elements.patientNameGroup) elements.patientNameGroup.classList.remove('hidden');
+
+      if (elements.formPatientNameDisplay) {
+        elements.formPatientNameDisplay.readOnly = false;
+        elements.formPatientNameDisplay.style.borderColor = registryEntry ? '#3b82f6' : '#f97316';
+        elements.formPatientNameDisplay.style.backgroundColor = registryEntry ? '#eff6ff' : '#fff7ed';
+        elements.formPatientNameDisplay.style.color = 'inherit';
+
+        // Si se encuentra en el registro externo, pre-rellenar el nombre
+        if (registryEntry) {
+          elements.formPatientNameDisplay.value = registryEntry.name;
+        } else {
+          // Si no se encuentra en el registro externo, limpiar el campo de nombre si la cédula es lo suficientemente larga
+          if (cedulaValue.length >= 3) {
+            // No limpiar si el usuario ya ha escrito algo, solo si está vacío
+            if (!elements.formPatientNameDisplay.value) {
+              elements.formPatientNameDisplay.value = '';
+            }
+          } else {
+            elements.formPatientNameDisplay.value = ''; // Limpiar si la cédula es muy corta
+          }
+        }
+      }
+
+      if (elements.patientStatusIconContainer) {
+        elements.patientStatusIconContainer.innerHTML = `<span style="color: ${registryEntry ? '#3b82f6' : '#f97316'};">${registryEntry ? icons.info : icons.warning}</span>`;
+      }
+
+      if (elements.patientHelperText) {
+        elements.patientHelperText.innerHTML = registryEntry
+          ? `${icons.info} Paciente identificado en Registro Civil. El sistema creará su acceso automáticamente.`
+          : `${icons.warning} El paciente no está registrado. Ingrese su nombre para crearlo automáticamente.`;
+        elements.patientHelperText.style.color = registryEntry ? '#1d4ed8' : '#c2410c';
+      }
+
+      if (elements.formPatientCedula) {
+        elements.formPatientCedula.style.borderColor = registryEntry ? '#3b82f6' : (cedulaValue.length >= 3 ? '#f97316' : '');
+        elements.formPatientCedula.style.backgroundColor = registryEntry ? '#eff6ff' : (cedulaValue.length >= 3 ? '#fff7ed' : '');
+      }
+    }
+  }
+
+  /**
+   * Limpia la selección del paciente (cédula, tarjeta, campos)
+   */
+  function clearPatientSelection() {
+    if (elements.formPatient) elements.formPatient.value = '';
+    if (elements.formPatientCedula) {
+      elements.formPatientCedula.value = '';
+      elements.formPatientCedula.style.borderColor = '';
+      elements.formPatientCedula.style.backgroundColor = '';
+    }
+    if (elements.patientNameGroup) elements.patientNameGroup.classList.add('hidden');
+    if (elements.formPatientNameDisplay) {
+      elements.formPatientNameDisplay.value = '';
+      elements.formPatientNameDisplay.style.borderColor = '';
+      elements.formPatientNameDisplay.style.backgroundColor = '';
+      elements.formPatientNameDisplay.style.color = 'inherit';
+      elements.formPatientNameDisplay.readOnly = false;
+    }
+    if (elements.patientStatusIconContainer) elements.patientStatusIconContainer.innerHTML = '';
+    if (elements.patientHelperText) elements.patientHelperText.innerHTML = '';
   }
 
   function switchView(view) {
@@ -1816,12 +1985,13 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     // Buscar en los próximos 15 días
     for (let i = 0; i < 15; i++) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = `${current.getFullYear()}-${(current.getMonth() + 1).toString().padStart(2, '0')}-${current.getDate().toString().padStart(2, '0')}`;
       const slots = getAvailableTimeSlots(doctorId, dateStr);
 
       if (slots.length > 0) {
         // Si es hoy, filtrar slots que ya pasaron
-        if (dateStr === today.toISOString().split('T')[0]) {
+        const todayStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+        if (dateStr === todayStr) {
           const nowMinutes = today.getHours() * 60 + today.getMinutes();
           const futureSlot = slots.find(s => {
             const [h, m] = s.split(':').map(Number);
@@ -1844,7 +2014,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     // Buscar en los próximos 15 días
     for (let i = 0; i < 15; i++) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = `${current.getFullYear()}-${(current.getMonth() + 1).toString().padStart(2, '0')}-${current.getDate().toString().padStart(2, '0')}`;
       const availableDoctors = getAvailableDoctorsForDate(dateStr, areaId);
 
       if (availableDoctors.length > 0) {
@@ -1911,10 +2081,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
       if (role === 'patient' && user?.patientId) {
         const patient = store.find('patients', user.patientId);
-        if (patient && elements.formPatient) {
-          elements.formPatient.innerHTML = `<option value="${patient.id}">${patient.name}</option>`;
-          elements.formPatient.value = patient.id;
-          elements.formPatient.disabled = true;
+        if (patient) {
+          if (elements.formPatientDocType) {
+            elements.formPatientDocType.value = patient.docType || 'V';
+            elements.formPatientDocType.disabled = true;
+          }
+          if (elements.formPatientCedula) {
+            elements.formPatientCedula.value = patient.dni || '';
+            elements.formPatientCedula.disabled = true;
+          }
+          if (elements.formPatient) elements.formPatient.value = patient.id;
+          searchPatientByCedula();
         }
       }
 
@@ -1958,13 +2135,41 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     const dateStr = date.toISOString().split('T')[0];
     const timeStr = date.toTimeString().slice(0, 5);
 
-    if (elements.formPatient) {
-      elements.formPatient.value = appointment.patientId;
-      if (role === 'patient' && user?.patientId === appointment.patientId) {
-        const patient = store.find('patients', user.patientId);
-        if (patient) {
-          elements.formPatient.innerHTML = `<option value="${patient.id}">${patient.name}</option>`;
-          elements.formPatient.disabled = true;
+    // Precargar paciente por cédula
+    if (appointment.patientId) {
+      const patient = store.find('patients', appointment.patientId);
+      if (patient) {
+        if (elements.formPatientDocType) elements.formPatientDocType.value = patient.docType || 'V';
+        if (elements.formPatientCedula) elements.formPatientCedula.value = patient.dni || '';
+        if (elements.formPatient) elements.formPatient.value = patient.id;
+
+        // Precargar campo unificado de nombre
+        if (elements.patientNameGroup) elements.patientNameGroup.classList.remove('hidden');
+        if (elements.formPatientNameDisplay) {
+          elements.formPatientNameDisplay.value = patient.name;
+          elements.formPatientNameDisplay.readOnly = true;
+          elements.formPatientNameDisplay.style.borderColor = '#166534';
+          elements.formPatientNameDisplay.style.backgroundColor = '#f0fdf4';
+          elements.formPatientNameDisplay.style.color = '#166534';
+        }
+
+        if (elements.patientStatusIconContainer) {
+          elements.patientStatusIconContainer.innerHTML = `<span style="color: #16a34a;">${icons.successCheck}</span>`;
+        }
+
+        if (elements.patientHelperText) {
+          elements.patientHelperText.innerHTML = `${icons.info} Paciente ya registrado en el sistema.`;
+          elements.patientHelperText.style.color = '#16a34a';
+        }
+
+        if (elements.formPatientCedula) {
+          elements.formPatientCedula.style.borderColor = '#86efac';
+          elements.formPatientCedula.style.backgroundColor = '#f0fdf4';
+        }
+
+        if (role === 'patient' && user?.patientId === appointment.patientId) {
+          if (elements.formPatientCedula) elements.formPatientCedula.disabled = true;
+          if (elements.formPatientDocType) elements.formPatientDocType.disabled = true;
         }
       }
     }
@@ -2017,17 +2222,27 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   function clearForm() {
     if (elements.form) elements.form.reset();
     loadSelectData();
+    clearPatientSelection();
     if (elements.formDate) {
       const today = new Date().toISOString().split('T')[0];
       elements.formDate.min = today;
       elements.formDate.value = today;
     }
-    if (role === 'patient' && user?.patientId && elements.formPatient) {
+    if (role === 'patient' && user?.patientId) {
+      // Precargar la cédula del paciente logueado
       const patient = store.find('patients', user.patientId);
       if (patient) {
-        elements.formPatient.innerHTML = `<option value="${patient.id}">${patient.name}</option>`;
-        elements.formPatient.value = patient.id;
-        elements.formPatient.disabled = true;
+        if (elements.formPatientDocType) {
+          elements.formPatientDocType.value = patient.docType || 'V';
+          elements.formPatientDocType.disabled = true;
+        }
+        if (elements.formPatientCedula) {
+          elements.formPatientCedula.value = patient.dni || '';
+          elements.formPatientCedula.disabled = true;
+        }
+        if (elements.formPatient) elements.formPatient.value = patient.id;
+        // Precargar tarjeta
+        searchPatientByCedula();
       }
     }
     if (role === 'doctor' && user?.doctorId && elements.formDoctor) {
@@ -2309,8 +2524,22 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     let isValid = true;
     window.hospitalFieldValidation.clearAll(elements.form);
 
+    // Validar paciente (existente o nuevo)
+    const hasExistingPatient = elements.formPatient?.value;
+    const hasNewPatientName = elements.formPatientNameDisplay?.value?.trim();
+    const isPatientGroupVisible = elements.patientNameGroup && !elements.patientNameGroup.classList.contains('hidden');
+
+    if (!hasExistingPatient && (!isPatientGroupVisible || !hasNewPatientName)) {
+      if (elements.formPatientCedula && !hasExistingPatient) {
+        window.hospitalFieldValidation.show(elements.formPatientCedula, 'Paciente no identificado');
+      }
+      if (isPatientGroupVisible && !hasNewPatientName) {
+        window.hospitalFieldValidation.show(elements.formPatientNameDisplay, 'Nombre completo requerido');
+      }
+      isValid = false;
+    }
+
     const requiredFields = [
-      { field: elements.formPatient, label: 'Debe seleccionar paciente' },
       { field: elements.formDoctor, label: 'Debe seleccionar médico' },
       { field: elements.formArea, label: 'Debe seleccionar área' },
       { field: elements.formDate, label: 'Fecha requerida' },
@@ -2439,6 +2668,42 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
 
     try {
+      // Si es un nuevo paciente, crearlo primero junto con su usuario
+      if (!elements.formPatient?.value && elements.formPatientNameDisplay?.value?.trim()) {
+        const patientName = elements.formPatientNameDisplay.value.trim();
+        const cedula = (elements.formPatientCedula?.value || '').trim();
+        const docType = elements.formPatientDocType?.value || 'V';
+
+        // 1. Crear el paciente
+        const newPatient = await store.add('patients', {
+          name: patientName,
+          dni: cedula,
+          docType: docType,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        });
+
+        // 2. Crear su usuario asociado (Cédula como user/pass)
+        await store.add('users', {
+          username: cedula,
+          password: cedula,
+          name: patientName,
+          role: 'patient',
+          patientId: newPatient.id,
+          isActive: true
+        });
+
+        // 3. Vincular al formulario
+        if (elements.formPatient) elements.formPatient.value = newPatient.id;
+
+        Logger.log(store, user, {
+          action: Logger.Actions.CREATE,
+          module: Logger.Modules.PATIENTS,
+          description: `Paciente creado desde cita: ${patientName}`,
+          details: { patientId: newPatient.id, cedula }
+        });
+      }
+
       const formData = getFormData();
       if (state.editingId) {
         await updateAppointment(state.editingId, formData);
@@ -2631,8 +2896,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
               </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; font-size: 0.8rem;">
                 <div>
-                  <div style="font-weight: 700; color: var(--modal-text-muted);">DNI</div>
-                  <div>${patient?.dni || 'No disponible'}</div>
+                  <div style="font-weight: 700; color: var(--modal-text-muted);">CÉDULA</div>
+                  <div>${patient?.docType ? patient.docType + '-' : ''}${patient?.dni || 'No disponible'}</div>
                 </div>
                 <div>
                   <div style="font-weight: 700; color: var(--modal-text-muted);">TELÉFONO</div>

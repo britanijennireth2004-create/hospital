@@ -760,8 +760,46 @@ export default function mountTriaje(root, { bus, store, user, role }) {
                 <div id="existing-patient-form" style="${state.isCreatingPatient ? 'display: none;' : ''}">
                   <form id="triaje-form">
                     <div class="form-group mb-4">
-                      <label class="form-label" style="font-weight: 600; color: var(--neutralPrimary);">SELECCIONAR PACIENTE *</label>
-                      <select class="input" id="patient-select" required></select>
+                      <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">IDENTIFICACIÓN DEL PACIENTE (V/E/J/P) *</label>
+                      <div style="display: flex; gap: 0;">
+                        <select class="input" id="form-patient-doc-type" style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px;">
+                          <option value="V">V</option>
+                          <option value="E">E</option>
+                          <option value="J">J</option>
+                          <option value="P">P</option>
+                        </select>
+                        <input type="text" class="input" id="form-patient-cedula" placeholder="Ingrese número de cédula..." style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;" autocomplete="off">
+                      </div>
+                      <input type="hidden" id="form-selected-patient-id" value="">
+                      <div id="patient-search-feedback" style="margin-top: 0.5rem; font-size: 0.8rem;"></div>
+                      
+                      <!-- Tarjeta de datos precargados del paciente -->
+                      <div id="patient-preloaded-card" class="hidden" style="margin-top: 0.75rem; background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 8px; padding: 1rem; position: relative; animation: fadeIn 0.3s ease;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                          <div style="width: 40px; height: 40px; background: var(--accent, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>
+                          </div>
+                          <div style="flex: 1;">
+                            <div id="preloaded-patient-name" style="font-weight: 700; font-size: 1rem; color: #166534;"></div>
+                            <div id="preloaded-patient-cedula" style="font-size: 0.8rem; color: #15803d; font-weight: 600;"></div>
+                          </div>
+                          <button type="button" id="btn-clear-patient" style="background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700;" title="Limpiar paciente">×</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                          <div style="font-size: 0.75rem; color: #4b5563;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            Tel: <strong id="preloaded-patient-phone" style="color: #111827;"></strong>
+                          </div>
+                          <div style="font-size: 0.75rem; color: #4b5563;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            Grupo: <strong id="preloaded-patient-blood" style="color: #111827;"></strong>
+                          </div>
+                          <div style="font-size: 0.75rem; color: #4b5563; grid-column: span 2;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15.5a5 5 0 1 1-7-1.42l-1.17 1.16a2 2 0 0 1-2.83 0l-1.17-1.16a5 5 0 1 1-7 1.42"/><path d="M10 21v-4"/><path d="M14 21v-4"/></svg>
+                            Expira carnet: <strong id="preloaded-patient-carnet" style="color: #111827;"></strong>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <!-- Resto de campos con estilo minimalista -->
                     <div class="grid grid-2 gap-4 mb-4">
@@ -850,7 +888,10 @@ export default function mountTriaje(root, { bus, store, user, role }) {
                               <option value="P">P</option>
                               <option value="J">J</option>
                             </select>
-                            <input type="text" class="input" id="quick-dni" placeholder="Número de cédula" required style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                            <input type="text" class="input" id="quick-dni" placeholder="Número de cédula" required style="flex: 1; border-radius: 0; height: 38px;">
+                            <button type="button" id="btn-search-registry-quick" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1054,7 +1095,18 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       newPatientForm: root.querySelector('#new-patient-form'),
 
       // Campos Formulario Existente
-      patientSelect: root.querySelector('#patient-select'),
+      formPatientDocType: root.querySelector('#form-patient-doc-type'),
+      formPatientCedula: root.querySelector('#form-patient-cedula'),
+      formPatient: root.querySelector('#form-selected-patient-id'),
+      patientSearchFeedback: root.querySelector('#patient-search-feedback'),
+      patientPreloadedCard: root.querySelector('#patient-preloaded-card'),
+      preloadedPatientName: root.querySelector('#preloaded-patient-name'),
+      preloadedPatientCedula: root.querySelector('#preloaded-patient-cedula'),
+      preloadedPatientPhone: root.querySelector('#preloaded-patient-phone'),
+      preloadedPatientBlood: root.querySelector('#preloaded-patient-blood'),
+      preloadedPatientCarnet: root.querySelector('#preloaded-patient-carnet'),
+      btnClearPatient: root.querySelector('#btn-clear-patient'),
+
       symptoms: root.querySelector('#symptoms'),
       observations: root.querySelector('#observations'),
       bloodPressure: root.querySelector('#blood-pressure'),
@@ -1102,6 +1154,7 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       quickSuggestionConfidence: root.querySelector('#quick-suggestion-confidence'),
       btnQuickAddAllergy: root.querySelector('#btn-quick-add-allergy'),
       quickAllergiesContainer: root.querySelector('#quick-allergies-container'),
+      btnSearchRegistryQuick: root.querySelector('#btn-search-registry-quick'),
 
       // Elementos del modal de emergencia
       emergencyType: root.querySelector('#emergency-type'),
@@ -1505,6 +1558,74 @@ export default function mountTriaje(root, { bus, store, user, role }) {
     }).join('');
   }
 
+  function searchPatientByCedula() {
+    const docType = elements.formPatientDocType?.value;
+    const cedula = elements.formPatientCedula?.value.trim();
+
+    if (!cedula) {
+      clearPatientSelection();
+      return;
+    }
+
+    const patients = store.get('patients');
+    const patient = patients.find(p => p.dni === cedula && (p.docType === docType || (!p.docType && docType === 'V')));
+
+    if (patient) {
+      // Poblar campos ocultos y tarjeta
+      if (elements.formPatient) elements.formPatient.value = patient.id;
+      if (elements.preloadedPatientName) elements.preloadedPatientName.textContent = patient.name;
+      if (elements.preloadedPatientCedula) elements.preloadedPatientCedula.textContent = `${patient.docType || 'V'}-${patient.dni}`;
+      if (elements.preloadedPatientPhone) elements.preloadedPatientPhone.textContent = patient.phone || 'No registrado';
+      if (elements.preloadedPatientBlood) elements.preloadedPatientBlood.textContent = patient.bloodType || 'Desconocido';
+
+      if (elements.preloadedPatientCarnet) {
+        if (patient.carnetExpiry) {
+          const expiryDate = new Date(patient.carnetExpiry + 'T12:00:00');
+          const formattedDate = expiryDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+          elements.preloadedPatientCarnet.textContent = formattedDate;
+          elements.preloadedPatientCarnet.style.color = expiryDate < new Date() ? '#dc2626' : '#166534';
+        } else {
+          elements.preloadedPatientCarnet.textContent = 'No registrado';
+          elements.preloadedPatientCarnet.style.color = '#9ca3af';
+        }
+      }
+
+      if (elements.patientPreloadedCard) elements.patientPreloadedCard.classList.remove('hidden');
+      if (elements.patientSearchFeedback) {
+        elements.patientSearchFeedback.innerHTML = '<span style="color: #16a34a; font-weight: 600;">✓ Paciente identificado</span>';
+      }
+      if (elements.formPatientCedula) {
+        elements.formPatientCedula.style.borderColor = '#86efac';
+        elements.formPatientCedula.style.backgroundColor = '#f0fdf4';
+      }
+
+      // Intentar actualizar sugerencia si ya hay síntomas
+      updatePrioritySuggestion();
+    } else {
+      if (elements.formPatient) elements.formPatient.value = '';
+      if (elements.patientPreloadedCard) elements.patientPreloadedCard.classList.add('hidden');
+      if (elements.patientSearchFeedback) {
+        elements.patientSearchFeedback.innerHTML = '<span style="color: #ca8a04;">ℹ Paciente no encontrado. Use la pestaña "+ NUEVO PACIENTE" si es necesario.</span>';
+      }
+      if (elements.formPatientCedula) {
+        elements.formPatientCedula.style.borderColor = '';
+        elements.formPatientCedula.style.backgroundColor = '';
+      }
+    }
+  }
+
+  function clearPatientSelection() {
+    if (elements.formPatient) elements.formPatient.value = '';
+    if (elements.formPatientCedula) {
+      elements.formPatientCedula.value = '';
+      elements.formPatientCedula.style.borderColor = '';
+      elements.formPatientCedula.style.backgroundColor = '';
+    }
+    if (elements.formPatientDocType) elements.formPatientDocType.value = 'V';
+    if (elements.patientPreloadedCard) elements.patientPreloadedCard.classList.add('hidden');
+    if (elements.patientSearchFeedback) elements.patientSearchFeedback.innerHTML = '';
+  }
+
   // Configurar event listeners
   function setupEventListeners() {
     // Pivot Filters (Status)
@@ -1729,6 +1850,68 @@ export default function mountTriaje(root, { bus, store, user, role }) {
         elements.btnQuickAddAllergy.addEventListener('click', () => addQuickAllergyField());
       }
 
+      // Búsqueda por cédula con debounce
+      if (elements.formPatientCedula) {
+        const debouncedSearch = debounce(() => searchPatientByCedula(), 400);
+        elements.formPatientCedula.addEventListener('input', debouncedSearch);
+      }
+
+      if (elements.formPatientDocType) {
+        elements.formPatientDocType.addEventListener('change', () => searchPatientByCedula());
+      }
+
+      if (elements.btnClearPatient) {
+        elements.btnClearPatient.addEventListener('click', () => clearPatientSelection());
+      }
+
+      // --- Lógica de Precarga por Cédula (SAIME Simulation para Formulario Rápido) ---
+      function handleQuickRegistryLookup() {
+        if (!state.isCreatingPatient) return;
+
+        const docType = elements.quickDocType?.value || 'V';
+        const dni = elements.quickDni?.value.trim();
+
+        if (dni && dni.length >= 6) {
+          const originalIcon = elements.btnSearchRegistryQuick.innerHTML;
+          elements.btnSearchRegistryQuick.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+
+          setTimeout(() => {
+            const found = store.fetchFromRegistry(docType, dni);
+            elements.btnSearchRegistryQuick.innerHTML = originalIcon;
+
+            if (found) {
+              showMiniNotification(`Datos de registro encontrados para C.I. ${docType}-${dni}. Precargando...`, 'success');
+
+              if (elements.quickName) elements.quickName.value = found.name;
+              if (elements.quickBirthdate) elements.quickBirthdate.value = found.birthDate;
+              if (elements.quickGender) elements.quickGender.value = found.gender;
+              if (elements.quickPhone && !elements.quickPhone.value) elements.quickPhone.value = found.phone || '';
+              if (elements.quickEmail && !elements.quickEmail.value) elements.quickEmail.value = found.email || '';
+
+              // Efecto visual
+              const fields = [elements.quickName, elements.quickBirthdate, elements.quickGender];
+              fields.forEach(f => {
+                if (f) {
+                  f.style.transition = 'background 0.5s';
+                  f.style.backgroundColor = '#f0fdf4';
+                  setTimeout(() => f.style.backgroundColor = '', 1500);
+                }
+              });
+            }
+          }, 700);
+        }
+      }
+
+      if (elements.quickDni) {
+        elements.quickDni.addEventListener('input', debounce(handleQuickRegistryLookup, 500));
+      }
+      if (elements.quickDocType) {
+        elements.quickDocType.addEventListener('change', handleQuickRegistryLookup);
+      }
+      if (elements.btnSearchRegistryQuick) {
+        elements.btnSearchRegistryQuick.addEventListener('click', handleQuickRegistryLookup);
+      }
+
       // Pestañas internas para formulario rápido
       const quickTabBtns = triajeModal.querySelectorAll('.tab-btn-sm');
       quickTabBtns.forEach(btn => {
@@ -1815,18 +1998,8 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       elements.btnBackToExisting.style.display = 'none';
     }
 
-    // Cargar lista de pacientes
-    if (elements.patientSelect) {
-      const patients = store.get('patients').filter(p => p.isActive);
-      elements.patientSelect.innerHTML = `
-        <option value="">Seleccione un paciente</option>
-        ${patients.map(patient => `
-          <option value="${patient.id}">
-            ${patient.name} (${patient.docType || 'V'}-${patient.dni || '0'}) - ${calculateAge(patient.birthDate)} años
-          </option>
-        `).join('')}
-      `;
-    }
+    // Resetear selección de paciente por cédula
+    clearPatientSelection();
 
     // Resetear formularios
     const form = modal.querySelector('#triaje-form');
@@ -1892,16 +2065,19 @@ export default function mountTriaje(root, { bus, store, user, role }) {
     const modal = root.querySelector('#triaje-modal');
     if (!modal) return;
 
-    const patientSelect = modal.querySelector('#patient-select');
-    const symptoms = modal.querySelector('#symptoms');
-    const observations = modal.querySelector('#observations');
+    const patientId = elements.formPatient?.value;
+    const symptoms = elements.symptoms;
+    const observations = elements.observations;
 
-    if (!patientSelect.value || !symptoms.value || !state.selectedPriority) {
+    if (!patientId || !symptoms.value || !state.selectedPriority) {
+      if (!patientId) {
+        window.hospitalFieldValidation.show(elements.formPatientCedula, 'Debe identificar al paciente con su cédula');
+      }
       showNotification('Por favor complete todos los campos requeridos', 'warning');
       return;
     }
 
-    const patient = store.find('patients', patientSelect.value);
+    const patient = store.find('patients', patientId);
     if (!patient) {
       showNotification('Paciente no encontrado', 'error');
       return;

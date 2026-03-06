@@ -249,13 +249,6 @@ export default function mountProfile(root, { bus, store, user, role }) {
 </style>
 
 <div class="profile-edit-wrap">
-
-  <!-- Aviso -->
-  <div class="edit-notice">
-    <span style="color:#3b82f6;">${I.shield}</span>
-    <span>Puede editar su información de contacto y datos personales. Los datos clínicos y fechas de nacimiento son gestionados por el personal médico.</span>
-  </div>
-
   <!-- DATOS PERSONALES -->
   <div class="edit-card">
     <div class="edit-hdr">${I.user} Datos Personales</div>

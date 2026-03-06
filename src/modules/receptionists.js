@@ -18,7 +18,8 @@ const icons = {
   close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="2" d="M6 6L14 14M14 6L6 14"/></svg>`,
   status: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>`,
   view: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M2 10c1.5-4 4.5-6.5 8-6.5s6.5 2.5 8 6.5c-1.5 4-4.5 6.5-8 6.5s-6.5-2.5-8-6.5z"/></svg>`,
-  filter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M2 4h16v2l-5 5v5l-2 2v-7L2 6V4z"/></svg>`
+  filter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="1.5" d="M2 4h16v2l-5 5v5l-2 2v-7L2 6V4z"/></svg>`,
+  search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
 };
 
 export default function mountReceptionists(root, { bus, store, user, role }) {
@@ -166,7 +167,10 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
                         <option value="J">J</option>
                         <option value="P">P</option>
                       </select>
-                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
+                      <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
+                        ${icons.search}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -335,6 +339,7 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
       btnCancel: root.querySelector('#btn-cancel'),
       btnClose: root.querySelector('#btn-close-modal'),
       btnNew: root.querySelector('#btn-new-rec'),
+      btnSearchRegistry: root.querySelector('#btn-search-registry'),
 
       btnSaveStatus: root.querySelector('#btn-save-status'),
       btnCancelStatus: root.querySelector('#btn-cancel-status'),
@@ -717,6 +722,10 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     }, 300);
     if (elements.search) elements.search.addEventListener('input', debouncedLoad);
 
+    if (elements.btnSearchRegistry) {
+      elements.btnSearchRegistry.addEventListener('click', handleRegistryLookup);
+    }
+
     [elements.area, elements.status, elements.spec].forEach(e => {
       if (e) e.addEventListener('change', () => {
         state.filters.search = elements.search ? elements.search.value : '';
@@ -810,6 +819,43 @@ export default function mountReceptionists(root, { bus, store, user, role }) {
     }
     closeModal();
     loadItems();
+    showNotification('Personal registrado correctamente', 'success');
+  }
+
+  // --- Lógica de Precarga por Cédula (SAIME Simulation) ---
+  function handleRegistryLookup() {
+    if (state.editingId) return;
+
+    const docType = elements.fDocType.value;
+    const dni = elements.fDni.value.trim();
+
+    if (dni && dni.length >= 6) {
+      const originalIcon = elements.btnSearchRegistry.innerHTML;
+      elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+
+      setTimeout(() => {
+        const found = store.fetchFromRegistry(docType, dni);
+        elements.btnSearchRegistry.innerHTML = originalIcon;
+
+        if (found) {
+          showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'info');
+
+          if (elements.fName) elements.fName.value = found.name;
+          if (elements.fEmail && !elements.fEmail.value) elements.fEmail.value = found.email || '';
+          if (elements.fPhone && !elements.fPhone.value) elements.fPhone.value = found.phone || '';
+
+          if (elements.fName) {
+            elements.fName.style.transition = 'background 0.5s';
+            elements.fName.style.backgroundColor = '#f0fdf4';
+            setTimeout(() => { elements.fName.style.backgroundColor = ''; }, 2000);
+          }
+        } else {
+          showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
+        }
+      }, 700);
+    } else {
+      showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
+    }
   }
 
   // Mostrar notificación toast (idéntico a doctors.js)

@@ -375,47 +375,38 @@ export default function mountTreatments(root, { bus, store, user, role }) {
                 <span style="font-size:0.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Paciente</span>
             </div>
 
-            <!-- Wrapper buscador -->
-            <div style="position:relative;flex:1;min-width:260px;max-width:480px;">
-                <span style="position:absolute;left:0.9rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </span>
-                <input type="text" id="patient-search-input" class="input"
-                    placeholder="Buscar por nombre o DNI…"
-                    value="${state.patients.find(p => p.id === state.selectedPatientId)?.name || ''}"
-                    style="padding-left:2.4rem;border-radius:20px;height:40px;background:var(--input-bg,#f8fafc);border:1.5px solid var(--border);">
-                <!-- Dropdown -->
-                <div id="patient-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
-                     background:var(--card-bg,white);border:1px solid var(--border);border-radius:10px;
-                     box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:1000;max-height:260px;overflow-y:auto;">
-                    ${state.patients.map(p => `
-                    <div class="pt-option" data-id="${p.id}"
-                         style="display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1rem;cursor:pointer;
-                                transition:background 0.15s;border-bottom:1px solid var(--border);">
-                        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#0a6e2e);
-                                    display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;flex-shrink:0;">
-                            ${p.name.charAt(0)}
-                        </div>
-                        <div style="flex:1;min-width:0;">
-                            <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-                            <div style="font-size:0.72rem;color:var(--muted);">${p.dni ? `DNI: ${p.dni}` : 'Sin DNI'}${p.bloodType ? ` · ${p.bloodType}` : ''}</div>
-                        </div>
-                        ${p.id === state.selectedPatientId ? `<span style="color:var(--primary);flex-shrink:0;">${SVG.check}</span>` : ''}
-                    </div>`).join('')}
-                </div>
+            <!-- Wrapper buscador (PATRÓN CÉDULA) -->
+            <div style="display: flex; gap: 0; flex: 1; max-width: 420px; position: relative;">
+                <select class="input" id="patient-doc-type" 
+                        style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 40px; border: 1.5px solid var(--border);">
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                    <option value="J">J</option>
+                    <option value="P">P</option>
+                </select>
+                <input type="text" id="patient-cedula-input" class="input"
+                    placeholder="Identificar paciente por cédula..."
+                    style="flex: 1; border-radius: 0 4px 4px 0; height: 40px; background: #fff; border: 1.5px solid var(--border); padding-left: 1rem;"
+                    autocomplete="off">
+                
+                <!-- Feedback de búsqueda -->
+                <div id="patient-search-feedback" style="position: absolute; top: calc(100% + 5px); left: 0; font-size: 0.72rem; z-index: 10;"></div>
             </div>
 
-            ${state.selectedPatientId ? `
-            <!-- Limpiar selección -->
-            <button id="btn-clear-patient" title="Deseleccionar paciente"
-                    style="background:none;border:1.5px solid var(--border);border-radius:50%;width:36px;height:36px;
-                           cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);
-                           transition:all 0.2s;flex-shrink:0;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>` : ''}
+            <!-- Tarjeta de datos precargados (Pattern Consistente) -->
+            <div id="patient-preloaded-mini-card" class="hidden" 
+                 style="background: white; border: 1px solid #86efac; border-radius: 8px; padding: 0.5rem 1rem; 
+                        display: flex; align-items: center; gap: 1rem; animation: tlFadeIn 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="width: 32px; height: 32px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; font-weight: 800;">
+                    <span id="mini-card-initial">P</span>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div id="mini-card-name" style="font-weight: 700; font-size: 0.85rem; color: #166534; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                    <div id="mini-card-cedula" style="font-size: 0.72rem; color: #15803d; font-weight: 600;"></div>
+                </div>
+                <button type="button" id="btn-clear-patient" 
+                        style="background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;" title="Limpiar selección">×</button>
+            </div>
 
             ${canWrite && state.selectedPatientId ? `
             <button class="btn btn-primary" id="btn-new-treatment" style="margin-left:auto;display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
@@ -1054,55 +1045,105 @@ export default function mountTreatments(root, { bus, store, user, role }) {
     // ─── Listeners ───────────────────────────────────────────────────────────────
     function setupListeners() {
 
-        // ── Búsqueda de paciente ────────────────────────────────────────────
-        function selectPatient(id) {
-            state.selectedPatientId = id || null;
+        // ── Búsqueda de paciente por Cédula (Refactorizado) ────────────────
+        function searchPatientByCedula() {
+            const cedulaInput = root.querySelector('#patient-cedula-input');
+            const docTypeSelect = root.querySelector('#patient-doc-type');
+            const feedback = root.querySelector('#patient-search-feedback');
+            const miniCard = root.querySelector('#patient-preloaded-mini-card');
+
+            const cedulaValue = cedulaInput?.value.trim();
+            const docType = docTypeSelect?.value || 'V';
+
+            if (!cedulaValue) {
+                clearPatientSelection();
+                return;
+            }
+
+            const foundPatient = state.patients.find(p => {
+                const pDni = (p.dni || '').trim();
+                const pDocType = (p.docType || 'V').trim();
+                return pDni === cedulaValue && pDocType === docType;
+            });
+
+            if (foundPatient) {
+                // Actualizar mini tarjeta
+                const nameEl = root.querySelector('#mini-card-name');
+                const initialEl = root.querySelector('#mini-card-initial');
+                const cedulaEl = root.querySelector('#mini-card-cedula');
+
+                if (nameEl) nameEl.textContent = foundPatient.name;
+                if (initialEl) initialEl.textContent = foundPatient.name.charAt(0).toUpperCase();
+                if (cedulaEl) cedulaEl.textContent = `${foundPatient.docType || 'V'}-${foundPatient.dni}`;
+
+                if (miniCard) miniCard.classList.remove('hidden');
+                if (cedulaInput) {
+                    cedulaInput.style.borderColor = '#86efac';
+                    cedulaInput.style.backgroundColor = '#f0fdf4';
+                    cedulaInput.closest('div').style.display = 'none'; // Ocultar input búsqueda al identificar
+                }
+
+                if (feedback) feedback.innerHTML = '';
+
+                // Establecer paciente seleccionado
+                state.selectedPatientId = foundPatient.id;
+                state.filterType = 'all';
+                loadLogs();
+                render();
+                notify(`Paciente ${foundPatient.name} identificado`, 'success');
+            } else {
+                // No se encontró localmente, buscar en el registro nacional simulado
+                const registryEntry = store.fetchFromRegistry(docType, cedulaValue);
+
+                if (registryEntry) {
+                    if (feedback) {
+                        feedback.innerHTML = `
+                            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:8px;margin-top:8px;font-size:0.8rem;">
+                                <span style="color:#1d4ed8;font-weight:700;">Identificado en Registro Civil</span><br>
+                                <span style="color:#1e40af;">${registryEntry.name}</span><br>
+                                <em style="font-size:0.75rem;color:#6b7280;">No registrado en este hospital.</em>
+                            </div>
+                        `;
+                    }
+                    if (cedulaInput) {
+                        cedulaInput.style.borderColor = '#bfdbfe';
+                        cedulaInput.style.backgroundColor = '#eff6ff';
+                    }
+                } else {
+                    if (feedback && cedulaValue.length >= 3) {
+                        feedback.innerHTML = `<span style="color:#dc2626;font-weight:700;">No encontrado</span>`;
+                    } else if (feedback) {
+                        feedback.innerHTML = '';
+                    }
+                    if (cedulaInput) {
+                        cedulaInput.style.borderColor = cedulaValue.length >= 3 ? '#fca5a5' : '';
+                        cedulaInput.style.backgroundColor = '';
+                    }
+                }
+            }
+        }
+
+        function clearPatientSelection() {
+            state.selectedPatientId = null;
+            state.logs = [];
             state.filterType = 'all';
-            loadLogs();
             render();
         }
 
-        const searchInput = root.querySelector('#patient-search-input');
-        const dropdown = root.querySelector('#patient-dropdown');
+        const cedulaInput = root.querySelector('#patient-cedula-input');
+        const docTypeSelect = root.querySelector('#patient-doc-type');
 
-        // Mostrar dropdown al hacer foco
-        searchInput?.addEventListener('focus', () => {
-            if (dropdown) dropdown.style.display = 'block';
+        cedulaInput?.addEventListener('input', debounce(() => {
+            searchPatientByCedula();
+        }, 350));
+
+        docTypeSelect?.addEventListener('change', () => {
+            if (cedulaInput?.value.trim()) searchPatientByCedula();
         });
 
-        // Filtrar cards en tiempo real
-        searchInput?.addEventListener('input', () => {
-            const q = searchInput.value.toLowerCase().trim();
-            root.querySelectorAll('.pt-option').forEach(opt => {
-                const id = opt.dataset.id;
-                const p = state.patients.find(x => x.id === id);
-                const text = `${p?.name || ''} ${p?.dni || ''}`.toLowerCase();
-                opt.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
-            });
-            if (dropdown) dropdown.style.display = 'block';
+        root.querySelector('#btn-clear-patient')?.addEventListener('click', () => {
+            clearPatientSelection();
         });
-
-        // Seleccionar paciente al hacer clic en una card
-        root.querySelectorAll('.pt-option').forEach(opt => {
-            opt.addEventListener('mouseenter', () => { opt.style.background = 'var(--hover-bg, #f1f5f9)'; });
-            opt.addEventListener('mouseleave', () => { opt.style.background = ''; });
-            opt.addEventListener('click', () => {
-                selectPatient(opt.dataset.id);
-            });
-        });
-
-        // Cerrar dropdown al hacer clic fuera
-        document.addEventListener('click', function handler(e) {
-            if (!root.contains(e.target)) {
-                if (dropdown) dropdown.style.display = 'none';
-                document.removeEventListener('click', handler);
-            } else if (!e.target.closest('#patient-search-input') && !e.target.closest('#patient-dropdown')) {
-                if (dropdown) dropdown.style.display = 'none';
-            }
-        });
-
-        // Limpiar selección
-        root.querySelector('#btn-clear-patient')?.addEventListener('click', () => selectPatient(null));
 
         // Filtros de tipo
         root.querySelectorAll('.filter-chip').forEach(btn => {

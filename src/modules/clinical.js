@@ -82,7 +82,12 @@ export default function mountClinical(root, { bus, store, user, role }) {
   reload();
 
   function reload() {
-    state.patients = store.get('patients') || [];
+    const allPatients = store.get('patients') || [];
+    if (role === 'patient') {
+      state.patients = allPatients.filter(p => p.id === user.patientId);
+    } else {
+      state.patients = allPatients;
+    }
     applyFilters();
     renderList();
     renderStats();
@@ -261,7 +266,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         
         <!-- Info del paciente -->
         <div style="padding:1rem 1.5rem;background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1.5rem;flex-shrink:0;">
-          <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#0a6e2e);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1.8rem;flex-shrink:0;box-shadow:0 4px 10px rgba(0,0,0,0.1);">${p.name.charAt(0)}</div>
+          <div style="width:60px;height:60px;border-radius:50%;background:var(--themeSecondary);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:1.8rem;flex-shrink:0;">${p.name.charAt(0)}</div>
           <div style="flex:1;">
             <div style="font-weight:800;font-size:1.2rem;color:var(--text);">${p.name}</div>
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.35rem;">

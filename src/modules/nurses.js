@@ -19,7 +19,8 @@ const icons = {
   close: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="2" d="M6 6L14 14M14 6L6 14"/></svg>`,
   status: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>`,
   capacity: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="2" y="8" width="4" height="8" stroke="currentColor" stroke-width="1.5"/><rect x="8" y="5" width="4" height="11" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="2" width="4" height="14" stroke="currentColor" stroke-width="1.5"/></svg>`,
-  add: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="2" d="M10 3v14M3 10h14"/></svg>`
+  add: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-width="2" d="M10 3v14M3 10h14"/></svg>`,
+  search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
 };
 
 export default function mountNurses(root, { bus, store, user, role }) {
@@ -178,7 +179,10 @@ export default function mountNurses(root, { bus, store, user, role }) {
                         <option value="J">J</option>
                         <option value="P">P</option>
                       </select>
-                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
+                      <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
+                        ${icons.search}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -424,6 +428,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
       btnSaveCapacity: root.querySelector('#btn-save-capacity'),
       btnCancelCapacity: root.querySelector('#btn-cancel-capacity'),
       btnCloseCapacity: root.querySelector('#btn-close-capacity-modal'),
+      btnSearchRegistry: root.querySelector('#btn-search-registry'),
       capacityValue: root.querySelector('#capacity-value'),
       capacitySlider: root.querySelector('#capacity-slider'),
       currentCapDisplay: root.querySelector('#current-capacity-display')
@@ -900,6 +905,46 @@ export default function mountNurses(root, { bus, store, user, role }) {
           loadNurses();
         }
       });
+    }
+
+    if (elements.btnSearchRegistry) {
+      elements.btnSearchRegistry.addEventListener('click', handleRegistryLookup);
+    }
+  }
+
+  // --- Lógica de Precarga por Cédula (SAIME Simulation) ---
+  function handleRegistryLookup() {
+    if (state.editingId) return;
+
+    const docType = elements.fDocType.value;
+    const dni = elements.fDni.value.trim();
+
+    if (dni && dni.length >= 6) {
+      const originalIcon = elements.btnSearchRegistry.innerHTML;
+      elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+
+      setTimeout(() => {
+        const found = store.fetchFromRegistry(docType, dni);
+        elements.btnSearchRegistry.innerHTML = originalIcon;
+
+        if (found) {
+          showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'info');
+
+          if (elements.fName) elements.fName.value = found.name;
+          if (elements.fEmail && !elements.fEmail.value) elements.fEmail.value = found.email || '';
+          if (elements.fPhone && !elements.fPhone.value) elements.fPhone.value = found.phone || '';
+
+          if (elements.fName) {
+            elements.fName.style.transition = 'background 0.5s';
+            elements.fName.style.backgroundColor = '#f0fdf4';
+            setTimeout(() => { elements.fName.style.backgroundColor = ''; }, 2000);
+          }
+        } else {
+          showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
+        }
+      }, 700);
+    } else {
+      showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
     }
   }
 

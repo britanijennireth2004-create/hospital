@@ -70,7 +70,8 @@ export async function createStore(bus) {
     patients: [
       {
         id: 'p_1',
-        dni: '12345678A',
+        docType: 'V',
+        dni: '12345678',
         name: 'María Gómez',
         birthDate: '1985-03-12',
         birthPlace: 'Maturín, Monagas',
@@ -82,6 +83,7 @@ export async function createStore(bus) {
         address: 'Calle Principal 123',
         bloodType: 'O+',
         allergies: [],
+        carnetExpiry: '2027-06-15',
         emergencyContact: {
           name: 'Pedro Gómez',
           phone: '555-0909',
@@ -97,7 +99,8 @@ export async function createStore(bus) {
       },
       {
         id: 'p_2',
-        dni: '87654321B',
+        docType: 'V',
+        dni: '87654321',
         name: 'Juan López',
         birthDate: '1990-11-02',
         birthPlace: 'Caracas, DC',
@@ -109,6 +112,7 @@ export async function createStore(bus) {
         address: 'Avenida Central 456',
         bloodType: 'A+',
         allergies: ['Penicilina'],
+        carnetExpiry: '2026-12-31',
         emergencyContact: {
           name: 'Laura de López',
           phone: '555-0808',
@@ -646,7 +650,50 @@ export async function createStore(bus) {
         facebook: '/hospitalmanuelnunez',
         whatsapp: '+58 424-1234567'
       }
-    }
+    },
+
+    // ===== REGISTRO SIMULADO (Simulación de SAIME/CNE para precarga) =====
+    simulatedRegistry: [
+      {
+        docType: 'V',
+        dni: '20123456',
+        name: 'Carlos Alberto Rodríguez',
+        birthDate: '1992-05-20',
+        birthPlace: 'Caracas, DC',
+        nationality: 'Venezolana',
+        gender: 'M',
+        civilStatus: 'Soltero/a',
+        carnetExpiry: '2029-08-10',
+        phone: '0412-5551234',
+        email: 'carlos.rod@email.com'
+      },
+      {
+        docType: 'V',
+        dni: '25987654',
+        name: 'Yulimar del Valle Rojas',
+        birthDate: '1995-10-21',
+        birthPlace: 'Barcelona, Anzoátegui',
+        nationality: 'Venezolana',
+        gender: 'F',
+        civilStatus: 'Casado/a',
+        carnetExpiry: '2030-01-05',
+        phone: '0424-9998877',
+        email: 'yulirojas@email.com'
+      },
+      {
+        docType: 'E',
+        dni: '82123456',
+        name: 'Jean Pierre Dupont',
+        birthDate: '1978-02-14',
+        birthPlace: 'París, Francia',
+        nationality: 'Francesa',
+        gender: 'M',
+        civilStatus: 'Casado/a',
+        carnetExpiry: '2025-11-30',
+        phone: '0416-1112233',
+        email: 'jp.dupont@email.com'
+      }
+    ]
   };
 
   // Cargar datos
@@ -675,6 +722,9 @@ export async function createStore(bus) {
 
     // Migrar todas las propiedades existentes del oldData
     Object.keys(oldData).forEach(key => {
+      // El simulatedRegistry siempre usa los datos nuevos (defaults)
+      if (key === 'simulatedRegistry') return;
+
       // Si es un array (colección), lo migramos solo si tiene datos
       if (Array.isArray(oldData[key])) {
         if (oldData[key].length > 0) {
@@ -900,6 +950,14 @@ export async function createStore(bus) {
       return () => {
         bus.off('store:changed', listener);
       };
+    },
+
+    // ===== REGISTRY SIMULADO (SAIME MOCK) =====
+    fetchFromRegistry(docType, dni) {
+      // Siempre leer del defaultData para que actualizaciones al registro surtan efecto sin resetear localStorage
+      const registry = defaultData.simulatedRegistry || [];
+      const entry = registry.find(r => r.docType === docType && r.dni === dni);
+      return entry ? deepClone(entry) : null;
     }
   };
 

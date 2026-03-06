@@ -24,7 +24,8 @@ export default function mountStaff(root, { bus, store, user, role }) {
     trash: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
     plus: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
     cancel: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
-    save: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    save: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    search: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
   };
 
   let elements = {};
@@ -121,18 +122,35 @@ export default function mountStaff(root, { bus, store, user, role }) {
           </div>
           <div class="modal-body">
             <form id="staff-form">
-              <div class="form-group mb-4">
-                <label class="form-label font-bold">NOMBRE COMPLETO</label>
-                <input type="text" class="input" name="name" required>
+              <div class="grid grid-2 gap-4 mb-4">
+                <div class="form-group">
+                  <label class="form-label font-bold">NOMBRE COMPLETO</label>
+                  <input type="text" class="input" name="name" id="form-name" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label font-bold">CÉDULA / C.I. *</label>
+                  <div class="doc-group" style="display: flex; gap: 0;">
+                    <select class="input" id="form-doc-type" name="docType" required style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px;">
+                      <option value="V">V</option>
+                      <option value="E">E</option>
+                      <option value="J">J</option>
+                      <option value="P">P</option>
+                    </select>
+                    <input type="text" class="input" id="form-dni" name="dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
+                    <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
+                      ${icons.search}
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group">
                   <label class="form-label font-bold">CORREO</label>
-                  <input type="email" class="input" name="email" required>
+                  <input type="email" class="input" name="email" id="form-email" required>
                 </div>
                 <div class="form-group">
                   <label class="form-label font-bold">TELÉFONO</label>
-                  <input type="tel" class="input" name="phone" required>
+                  <input type="tel" class="input" name="phone" id="form-phone" required>
                 </div>
               </div>
               <div class="form-group mb-4">
@@ -169,7 +187,13 @@ export default function mountStaff(root, { bus, store, user, role }) {
       modal: root.querySelector('#staff-modal'),
       form: root.querySelector('#staff-form'),
       areaFilter: root.querySelector('#area-filter'),
-      modalArea: root.querySelector('#modal-area-select')
+      modalArea: root.querySelector('#modal-area-select'),
+      fName: root.querySelector('#form-name'),
+      fDocType: root.querySelector('#form-doc-type'),
+      fDni: root.querySelector('#form-dni'),
+      fEmail: root.querySelector('#form-email'),
+      fPhone: root.querySelector('#form-phone'),
+      btnSearchRegistry: root.querySelector('#btn-search-registry')
     };
 
     const areas = store.get('areas') || [];
@@ -207,6 +231,10 @@ export default function mountStaff(root, { bus, store, user, role }) {
     root.querySelector('#close-modal').addEventListener('click', closeModal);
     root.querySelector('#btn-cancel').addEventListener('click', closeModal);
     root.querySelector('#btn-save').addEventListener('click', saveItem);
+
+    if (elements.btnSearchRegistry) {
+      elements.btnSearchRegistry.addEventListener('click', handleRegistryLookup);
+    }
   }
 
   function renderList() {
@@ -309,6 +337,75 @@ export default function mountStaff(root, { bus, store, user, role }) {
   }
 
   function closeModal() { elements.modal.classList.add('hidden'); state.editingItem = null; }
+
+  // --- Lógica de Precarga por Cédula (SAIME Simulation) ---
+  function handleRegistryLookup() {
+    if (state.editingItem) return;
+
+    const docType = elements.fDocType.value;
+    const dni = elements.fDni.value.trim();
+
+    if (dni && dni.length >= 6) {
+      const originalIcon = elements.btnSearchRegistry.innerHTML;
+      elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+
+      setTimeout(() => {
+        const found = store.fetchFromRegistry(docType, dni);
+        elements.btnSearchRegistry.innerHTML = originalIcon;
+
+        if (found) {
+          showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'info');
+
+          if (elements.fName) elements.fName.value = found.name;
+          if (elements.fEmail && !elements.fEmail.value) elements.fEmail.value = found.email || '';
+          if (elements.fPhone && !elements.fPhone.value) elements.fPhone.value = found.phone || '';
+
+          // Efecto visual de resaltado
+          [elements.fName, elements.fEmail, elements.fPhone].forEach(f => {
+            if (f) {
+              f.style.transition = 'background 0.5s';
+              f.style.backgroundColor = '#f0fdf4';
+              setTimeout(() => { f.style.backgroundColor = ''; }, 2000);
+            }
+          });
+        } else {
+          showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
+        }
+      }, 700);
+    } else {
+      showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
+    }
+  }
+
+  // Mostrar notificación toast
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      background: ${type === 'success' ? 'var(--success)' :
+        type === 'error' ? 'var(--danger)' :
+          type === 'warning' ? 'var(--warning)' : 'var(--info)'};
+      color: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 600;
+      min-width: 280px;
+    `;
+    notification.innerHTML = message;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      notification.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
 
   function saveItem() {
     if (!elements.form.checkValidity()) return elements.form.reportValidity();

@@ -271,7 +271,10 @@ export default function mountPatients(root, { bus, store, user, role }) {
                               <option value="J">J</option>
                               <option value="P">P</option>
                             </select>
-                            <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
+                            <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
+                            <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--border); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
+                              ${icons.search}
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -292,12 +295,19 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #856404; display: flex; align-items: center; gap: 8px;">
                          ${icons.calendar} FECHAS Y ESTADO CIVIL
                       </h4>
-                      <div class="grid grid-3 gap-4">
+                      <div class="grid grid-2 gap-4 mb-4">
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">FECHA NACIMIENTO *</label>
                           <input type="date" class="input" id="form-birthdate" required style="height: 38px;">
                         </div>
                         
+                        <div class="form-group">
+                          <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">VENCIMIENTO DEL CARNET</label>
+                          <input type="date" class="input" id="form-carnet-expiry" style="height: 38px;" placeholder="Fecha de vencimiento">
+                        </div>
+                      </div>
+
+                      <div class="grid grid-2 gap-4">
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">GÉNERO *</label>
                           <select class="input" id="form-gender" required style="height: 38px;">
@@ -541,6 +551,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       formBirthPlace: root.querySelector('#form-birthplace'),
       formNationality: root.querySelector('#form-nationality'),
       formCivilStatus: root.querySelector('#form-civil-status'),
+      formCarnetExpiry: root.querySelector('#form-carnet-expiry'),
       formConsent: root.querySelector('#form-consent'),
       allergiesContainer: root.querySelector('#allergies-container'),
       formChronicDiseases: root.querySelector('#form-chronic-diseases'),
@@ -571,7 +582,8 @@ export default function mountPatients(root, { bus, store, user, role }) {
       clinicalHistoryContent: root.querySelector('#clinical-history-content'),
       patientHistoryName: root.querySelector('#patient-history-name'),
       btnCloseHistory: root.querySelector('#btn-close-history'),
-      btnCloseHistoryFooter: root.querySelector('#btn-close-history-footer')
+      btnCloseHistoryFooter: root.querySelector('#btn-close-history-footer'),
+      btnSearchRegistry: root.querySelector('#btn-search-registry')
     };
 
     if (elements.allergiesContainer && elements.allergiesContainer.children.length === 0) {
@@ -1039,6 +1051,55 @@ export default function mountPatients(root, { bus, store, user, role }) {
       elements.btnCancel.addEventListener('click', closeModal);
     }
 
+    // --- Lógica de Precarga por Cédula (SAIME Simulation) ---
+    function handleRegistryLookup() {
+      if (state.editingId) return; // No precargar si estamos editando
+
+      const docType = elements.formDocType?.value || 'V';
+      const dni = elements.formDni?.value.trim();
+
+      if (dni && dni.length >= 6) {
+        // Mostrar estado de carga visual en el botón
+        const originalIcon = elements.btnSearchRegistry.innerHTML;
+        elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+
+        setTimeout(() => {
+          const found = store.fetchFromRegistry(docType, dni);
+          elements.btnSearchRegistry.innerHTML = originalIcon;
+
+          if (found) {
+            showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'success');
+
+            if (elements.formName) elements.formName.value = found.name;
+            if (elements.formBirthdate) elements.formBirthdate.value = found.birthDate;
+            if (elements.formBirthPlace) elements.formBirthPlace.value = found.birthPlace;
+            if (elements.formNationality) elements.formNationality.value = found.nationality;
+            if (elements.formGender) elements.formGender.value = found.gender;
+            if (elements.formCivilStatus && found.civilStatus) elements.formCivilStatus.value = found.civilStatus;
+            if (elements.formCarnetExpiry) elements.formCarnetExpiry.value = found.carnetExpiry;
+            if (elements.formPhone && !elements.formPhone.value) elements.formPhone.value = found.phone || '';
+            if (elements.formEmail && !elements.formEmail.value) elements.formEmail.value = found.email || '';
+
+            // Efecto visual de resaltado
+            const fields = [elements.formName, elements.formBirthdate, elements.formGender, elements.formCivilStatus, elements.formBirthPlace, elements.formNationality];
+            fields.forEach(f => {
+              if (f) {
+                f.style.transition = 'background 0.5s';
+                f.style.backgroundColor = '#f0fdf4';
+                setTimeout(() => f.style.backgroundColor = '', 1500);
+              }
+            });
+          } else {
+            showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
+          }
+        }, 700);
+      } else {
+        showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
+      }
+    }
+
+    elements.btnSearchRegistry?.addEventListener('click', handleRegistryLookup);
+
     if (elements.btnSave) {
       elements.btnSave.addEventListener('click', savePatient);
     }
@@ -1260,6 +1321,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
     if (elements.formBirthPlace) elements.formBirthPlace.value = patient.birthPlace || '';
     if (elements.formNationality) elements.formNationality.value = patient.nationality || '';
     if (elements.formCivilStatus) elements.formCivilStatus.value = patient.civilStatus || '';
+    if (elements.formCarnetExpiry) elements.formCarnetExpiry.value = patient.carnetExpiry || '';
     if (elements.formConsent) elements.formConsent.checked = patient.consent?.granted || false;
 
     if (elements.allergiesContainer && patient.allergies) {
@@ -1437,6 +1499,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
       birthPlace: elements.formBirthPlace?.value || '',
       nationality: elements.formNationality?.value || '',
       civilStatus: elements.formCivilStatus?.value || '',
+      carnetExpiry: elements.formCarnetExpiry?.value || '',
       consent: {
         granted: elements.formConsent?.checked || false,
         date: elements.formConsent?.checked ? (state.editingId ? (store.find('patients', state.editingId)?.consent?.date || Date.now()) : Date.now()) : null,
