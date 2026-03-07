@@ -197,7 +197,10 @@ export default function mountResources(container, { store, bus, user }) {
               <td><strong>${eq.name}</strong></td>
               <td><span class="badge ${getStatusBadgeClass(eq.status)}">${getStatusLabel(eq.status)}</span></td>
               <td><span class="badge badge-outline">${getConditionLabel(eq.condition)}</span></td>
-              <td>${eq.lastMaintenance || 'N/A'}</td>
+                            <td>
+                <div style="font-size: 0.85rem; font-weight: 500;">Pasado: ${eq.lastMaintenance || 'N/A'}</div>
+                ${eq.nextMaintenance ? `<div style="font-size: 0.75rem; color: var(--primary); font-weight: bold; margin-top: 2px;">Próximo: ${eq.nextMaintenance}</div>` : ''}
+              </td>
               <td>
                 <button class="btn-circle btn-circle-status btn-manage-equipment" data-id="${eq.id}" title="Gestionar">
                   ${ICONS.sync}
@@ -390,20 +393,20 @@ export default function mountResources(container, { store, bus, user }) {
     }
 
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 550px; width: 95%; background: white; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-lg);">
-        <div style="background: var(--primary); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 1.25rem;">${title}</h2>
-          <button class="close-modal" style="background: none; border: none; color: white; cursor: pointer;">${icons.close}</button>
+      <div class="modal-content" style="max-width: 550px;">
+        <div class="modal-header">
+          <h3 class="modal-title">${title}</h3>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
         </div>
-        <div style="padding: 2rem; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-body" style="padding: 2rem;">
           <form id="add-resource-form">
             ${formFields}
-            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+            <div class="modal-footer" style="padding: 0; margin-top: 2rem;">
               <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
-                ${ICONS.close}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <button type="submit" class="btn-circle btn-circle-save" title="Guardar Registro">
-                ${ICONS.check}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
             </div>
           </form>
@@ -466,12 +469,12 @@ export default function mountResources(container, { store, bus, user }) {
     `;
 
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 500px; width: 90%; background: white; border-radius: 8px; overflow: hidden;">
-        <div style="background: var(--primary); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 1.25rem;">Gestionar Consultorio</h2>
-          <button class="close-modal" style="background: none; border: none; color: white; cursor: pointer;">${icons.close}</button>
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Gestionar Consultorio</h3>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
         </div>
-        <div style="padding: 2rem;">
+        <div class="modal-body" style="padding: 2rem;">
           <div style="margin-bottom: 1.5rem;">
             <p style="margin: 0; font-weight: 700; font-size: 1.1rem; color: var(--primary);">${room.name}</p>
             <p style="margin: 0.25rem 0 0; color: var(--muted); font-size: 0.85rem;">Distribución: ${room.area} - Piso ${room.floor}</p>
@@ -487,12 +490,12 @@ export default function mountResources(container, { store, bus, user }) {
               </select>
             </div>
 
-            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+            <div class="modal-footer" style="padding: 0; margin-top: 2rem;">
               <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
-                ${ICONS.close}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <button type="submit" class="btn-circle btn-circle-save" title="Guardar Cambios">
-                ${ICONS.check}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
             </div>
           </form>
@@ -540,12 +543,12 @@ export default function mountResources(container, { store, bus, user }) {
     `;
 
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 500px; width: 90%; background: white; border-radius: 8px; overflow: hidden;">
-        <div style="background: var(--primary); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 1.25rem;">Gestionar Equipo</h2>
-          <button class="close-modal" style="background: none; border: none; color: white; cursor: pointer;">${icons.close}</button>
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Gestionar Equipo</h3>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
         </div>
-        <div style="padding: 2rem;">
+        <div class="modal-body" style="padding: 2rem;">
           <div style="margin-bottom: 1.5rem;">
             <p style="margin: 0; font-weight: 700; font-size: 1.1rem; color: var(--primary);">${eq.name}</p>
             <p style="margin: 0.25rem 0 0; color: var(--muted); font-size: 0.85rem;">Último mantenimiento: ${eq.lastMaintenance || 'N/A'}</p>
@@ -571,12 +574,31 @@ export default function mountResources(container, { store, bus, user }) {
               </select>
             </div>
 
-            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+            ${user.role === 'admin' ? `
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed #e2e8f0;">
+              <label class="form-label" style="font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                Programar Próximo Mantenimiento
+              </label>
+              <div class="grid-2 mt-2">
+                <div class="form-group">
+                  <label class="form-label">Fecha Programada</label>
+                  <input type="date" class="input" name="nextMaintenance" value="${eq.nextMaintenance || ''}" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Técnico Responsable</label>
+                  <input type="text" class="input" name="maintenanceTech" value="${eq.maintenanceTech || ''}" placeholder="Nombre del técnico" style="width: 100%;">
+                </div>
+              </div>
+            </div>
+            ` : ''}
+
+            <div class="modal-footer" style="padding: 0; margin-top: 2rem;">
               <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
-                ${ICONS.close}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <button type="submit" class="btn-circle btn-circle-save" title="Guardar Cambios">
-                ${ICONS.check}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
             </div>
           </form>
@@ -598,6 +620,11 @@ export default function mountResources(container, { store, bus, user }) {
         condition: formData.get('condition'),
         updatedAt: Date.now()
       };
+
+      if (user.role === 'admin') {
+        updates.nextMaintenance = formData.get('nextMaintenance');
+        updates.maintenanceTech = formData.get('maintenanceTech');
+      }
 
       try {
         await store.update('equiposMedicos', id, updates);
@@ -631,19 +658,19 @@ export default function mountResources(container, { store, bus, user }) {
     `;
 
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 500px; width: 90%; background: white; border-radius: 8px; overflow: hidden;">
-        <div style="background: var(--primary); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 1.25rem;">Ajustar Stock</h2>
-          <button class="close-modal" style="background: none; border: none; color: white; cursor: pointer;">${icons.close}</button>
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Ajustar Stock</h3>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
         </div>
-        <div style="padding: 2rem;">
+        <div class="modal-body" style="padding: 2rem;">
           <div style="margin-bottom: 1.5rem;">
             <p style="margin: 0; font-weight: 700; font-size: 1.1rem; color: var(--primary);">${supply.name}</p>
             <p style="margin: 0.25rem 0 0; color: var(--muted); font-size: 0.85rem;">Categoría: ${supply.category}</p>
           </div>
 
           <form id="manage-supply-form">
-             <div class="form-group mb-4">
+            <div class="form-group mb-4">
               <label class="form-label" style="font-weight: 600;">Stock Actual (${supply.unit})</label>
               <input type="number" class="input" name="stock" value="${supply.stock}" min="0" required style="width: 100%;">
             </div>
@@ -653,12 +680,12 @@ export default function mountResources(container, { store, bus, user }) {
               <input type="number" class="input" name="minStock" value="${supply.minStock}" min="0" required style="width: 100%;">
             </div>
 
-            <div style="display: flex; gap: 1.5rem; margin-top: 2rem; justify-content: flex-end;">
+            <div class="modal-footer" style="padding: 0; margin-top: 2rem;">
               <button type="button" class="btn-circle btn-circle-cancel close-modal" title="Cancelar">
-                ${ICONS.close}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <button type="submit" class="btn-circle btn-circle-save" title="Actualizar Stock">
-                ${ICONS.check}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
             </div>
           </form>

@@ -254,16 +254,18 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
       <!-- Modal para nueva/editar área -->
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="area-modal">
-        <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              ${state.editingId ? 'EDICIÓN DE ÁREA / SERVICIO' : 'CONFIGURACIÓN DE NUEVA ÁREA'}
+        <div class="modal-content" style="max-width: 800px;">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h3>
+              <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">
+                ${state.editingId ? 'EDICIÓN DE ÁREA / SERVICIO' : 'CONFIGURACIÓN DE NUEVA ÁREA'}
+              </div>
             </div>
-            <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+            <button class="close-modal btn-circle" id="btn-close-modal" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
           </div>
           
-          <div class="modal-body" style="background: white; padding: 2rem; max-height: 65vh; overflow-y: auto;">
+          <div class="modal-body" style="padding: 2rem;">
             <form id="area-form">
               <div style="font-size: 0.9rem; font-weight: 700; color: var(--modal-section-forest); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M15 18h.01"/><path d="M9 18h.01"/></svg>
@@ -391,12 +393,12 @@ export default function mountAreas(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+          <div class="modal-footer">
             <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
-              ${ICONS.close}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Área' : 'Confirmar Área'}" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? '<span class="loading-spinner"></span>' : ICONS.check}
+              ${state.isLoading ? '<span class="loading-spinner"></span>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'}
             </button>
           </div>
         </div>
@@ -404,18 +406,16 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
       <!-- Modal para cambiar estado -->
       <div class="modal-overlay hidden" id="status-modal">
-        <div class="modal-content" style="max-width: 500px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--warning); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">CAMBIAR ESTADO OPERATIVO</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;" id="status-area-name">
-              Área Seleccionada
+        <div class="modal-content" style="max-width: 500px;">
+          <div class="modal-header" style="background: var(--warning);">
+            <div>
+              <h3 class="modal-title">CAMBIAR ESTADO OPERATIVO</h3>
+              <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;" id="status-area-name">Área Seleccionada</div>
             </div>
-            <button class="btn-close-modal" id="btn-close-status-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              ×
-            </button>
+            <button class="close-modal btn-circle" id="btn-close-status-modal" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+          <div class="modal-body" style="padding: 2rem;">
             <form id="status-form">
               <div class="form-group mb-4">
                 <label class="form-label font-bold" style="color: var(--modal-text); font-size: 0.85rem;">ESTADO ACTUAL</label>
@@ -440,12 +440,12 @@ export default function mountAreas(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: #f8f9fa; padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #e9ecef;">
+          <div class="modal-footer">
             <button class="btn-circle btn-circle-cancel" id="btn-cancel-status" title="Cancelar">
-              ${ICONS.close}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <button class="btn-circle btn-circle-status" id="btn-save-status" title="Confirmar Cambio">
-              ${ICONS.check}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
           </div>
         </div>
@@ -1217,22 +1217,17 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
-    modal.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 5000; padding: 1rem;
-    `;
-
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 850px; width: 100%; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border-radius: 16px;">
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">FICHA DE ÁREA / SERVICIO MÉDICO</div>
-          <button class="close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+      <div class="modal-content" style="max-width: 850px;">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h3>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">FICHA DE ÁREA / SERVICIO MÉDICO</div>
+          </div>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
         </div>
         
-        <div class="modal-body" style="background: white; padding: 2rem; max-height: 65vh; overflow-y: auto;">
+        <div class="modal-body" style="padding: 2rem;">
           <!-- Encabezado del área -->
           <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 2rem;">
             <div style="width: 80px; height: 80px; background: ${area.color || '#2196F3'}; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 800; box-shadow: 0 4px 10px ${area.color || '#2196F3'}44; flex-shrink: 0;">
@@ -1357,13 +1352,13 @@ export default function mountAreas(root, { bus, store, user, role }) {
           ` : ''}
         </div>
         
-        <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
+        <div class="modal-footer">
           <button class="btn-circle btn-circle-view" id="btn-view-doctors" title="Ver Equipo Médico">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </button>
           ${role === 'admin' ? `
             <button class="btn-circle btn-circle-edit" id="edit-area-from-view" title="Editar Área">
-              ${ICONS.edit}
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           ` : ''}
           <button class="btn-circle btn-circle-cancel" id="close-view-area" title="Cerrar">
@@ -1408,12 +1403,6 @@ export default function mountAreas(root, { bus, store, user, role }) {
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
-    modal.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 6000; padding: 1rem;
-    `;
 
     const doctorsHtml = areaDoctors.length > 0 ? areaDoctors.map(d => `
       <div style="background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 1rem; transition: transform 0.2s, box-shadow 0.2s;">
@@ -1446,23 +1435,25 @@ export default function mountAreas(root, { bus, store, user, role }) {
     `;
 
     modal.innerHTML = `
-      <div class="modal-content animated-scale-up" style="max-width: 700px; width: 100%; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border-radius: 16px;">
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-            EQUIPO MÉDICO DE ${area.name.toUpperCase()}
+      <div class="modal-content animated-scale-up" style="max-width: 700px;">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h3>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">EQUIPO MÉDICO DE ${area.name.toUpperCase()}</div>
           </div>
-          <button class="close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">&times;</button>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
         </div>
         
-        <div class="modal-body" style="background: white; padding: 1.5rem; max-height: 60vh; overflow-y: auto;">
+        <div class="modal-body" style="padding: 1.5rem;">
           <div style="display: flex; flex-direction: column; gap: 1rem;">
             ${doctorsHtml}
           </div>
         </div>
 
-        <div class="modal-footer" style="background: #f8fafc; padding: 1.25rem; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0;">
-          <button class="btn btn-primary" id="close-doctors-modal" style="padding: 0.75rem 2rem; border-radius: 8px; font-weight: 700;">VOLVER AL ÁREA</button>
+        <div class="modal-footer">
+          <button class="btn-circle btn-circle-cancel" id="close-doctors-modal" title="Volver al área">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
     `;

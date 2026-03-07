@@ -203,17 +203,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         <!-- Header con logo SVG -->
         <header class="landing-header">
           <div class="landing-logo">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2L5 10V20C5 28.5 11 36 20 40C29 36 35 28.5 35 20V10L20 2Z" fill="url(#grad1)"/>
-              <path d="M20 8L12 13V20C12 24 16 28 20 30C24 28 28 24 28 20V13L20 8Z" fill="white" fill-opacity="0.9"/>
-              <defs>
-                <linearGradient id="grad1" x1="5" y1="2" x2="35" y2="40" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#166534"/>
-                  <stop offset="1" stop-color="#10b981"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <span class="landing-logo-text">HUMNT</span>
+            <img src="img/logotipo.png" alt="Logo HUMNT" style="height: 48px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" />
           </div>
           <nav class="landing-nav">
             <a href="#inicio" class="landing-nav-link active">Inicio</a>
@@ -230,7 +220,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         <!-- Hero Section unificada con imagen de fondo y gradiente -->
         <section class="landing-hero" id="inicio">
           <div class="landing-hero-background">
-            <img src="${hero.backgroundImage || 'img/hospital.jpg'}" alt="${hero.subtitle}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221200%22%20height%3D%22600%22%20viewBox%3D%220%200%201200%20600%22%3E%3Crect%20width%3D%221200%22%20height%3D%22600%22%20fill%3D%22%2310b981%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23ffffff%22%20font-size%3D%2236%22%20font-family%3D%22Arial%22%3EHospital%20Universitario%3C%2Ftext%3E%3C%2Fsvg%3E'">
+            <img src="${hero.backgroundImage || 'img/hospital.jpg'}" alt="${hero.subtitle}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221200%22%20height%3D%22600%22%20viewBox%3D%220%200%201200%20600%22%3E%3Crect%20width%3D%221200%22%20height%3D%22600%22%20fill%3D%22%230078b4%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23ffffff%22%20font-size%3D%2236%22%20font-family%3D%22Arial%22%3EHospital%20Universitario%3C%2Ftext%3E%3C%2Fsvg%3E'">
           </div>
           <div class="landing-hero-overlay"></div>
           <div class="landing-hero-content">
@@ -336,17 +326,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
           <div class="landing-footer-content">
             <div class="landing-footer-section">
               <div class="landing-footer-logo">
-                <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 2L5 10V20C5 28.5 11 36 20 40C29 36 35 28.5 35 20V10L20 2Z" fill="url(#footerGrad)"/>
-                  <path d="M20 8L12 13V20C12 24 16 28 20 30C24 28 28 24 28 20V13L20 8Z" fill="white" fill-opacity="0.9"/>
-                  <defs>
-                    <linearGradient id="footerGrad" x1="5" y1="2" x2="35" y2="40" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#166534"/>
-                      <stop offset="1" stop-color="#10b981"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <span class="landing-footer-logo-text">HUMNT</span>
+                <img src="img/logotipo_blanco.png" alt="Logo HUMNT" style="height: 52px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));" />
               </div>
               <p class="landing-footer-description">Sistema de Gestión de Citas Médicas del Hospital Universitario Manuel Núñez Tovar</p>
               <p class="landing-footer-copyright">© 2024 HUMNT. Todos los derechos reservados.</p>
@@ -497,7 +477,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         }
 
         .landing-logo-text {
-          background: linear-gradient(135deg, #1e3a2b, #2d5a27);
+          background: linear-gradient(135deg, var(--themeDarker), var(--themePrimary));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -522,7 +502,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
           left: 0;
           width: 0;
           height: 2px;
-          background: #2d5a27;
+          background: var(--themePrimary);
           transition: width 0.3s ease;
         }
 
@@ -558,23 +538,23 @@ export default function mountLanding(container, { onGetStarted, store }) {
         }
 
         .landing-btn-primary {
-          background: linear-gradient(135deg, #1e3a2b, #2d5a27);
+          background: linear-gradient(135deg, var(--themeDarker), var(--themeDark));
           color: white;
         }
 
         .landing-btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(30, 58, 43, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 120, 180, 0.3);
         }
 
         .landing-btn-outline {
           background: transparent;
-          border: 2px solid #2d5a27;
-          color: #1e3a2b;
+          border: 2px solid var(--themePrimary);
+          color: var(--themeDark);
         }
 
         .landing-btn-outline:hover {
-          background: rgba(45, 90, 39, 0.1);
+          background: rgba(0, 120, 180, 0.1);
         }
 
         .landing-btn-large {
@@ -609,7 +589,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         .landing-hero-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(20, 50, 30, 0.85) 0%, rgba(30, 70, 45, 0.75) 40%, rgba(45, 90, 60, 0.65) 100%);
+          background: linear-gradient(135deg, rgba(0, 32, 80, 0.85) 0%, rgba(0, 69, 120, 0.75) 40%, rgba(0, 120, 180, 0.65) 100%);
           z-index: 1;
         }
 

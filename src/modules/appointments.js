@@ -644,15 +644,15 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
       <!-- Modal para nueva/editar cita -->
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="appointment-modal">
-        <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-            <div id="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              REGISTRO DE CITA MÉDICA
+        <div class="modal-content" style="max-width: 800px;">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h3>
+              <div id="modal-subtitle" style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">
+                REGISTRO DE CITA MÉDICA
+              </div>
             </div>
-            <button class="btn-close-modal" id="btn-close-appointment-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-              ${icons.close}
-            </button>
+            <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-appointment-modal">&times;</button>
           </div>
           
           <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
@@ -854,12 +854,12 @@ export default function mountAppointments(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+          <div class="modal-footer">
             <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
-              ${icons.close}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Cita' : 'Registrar Cita'}" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? '<span class="loading-spinner"></span>' : icons.successCheck}
+              ${state.isLoading ? '<span class="loading-spinner"></span>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'}
             </button>
           </div>
         </div>
@@ -1006,6 +1006,27 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       state.filters.doctorId = doctorFilter;
       if (elements.filterDoctor) elements.filterDoctor.value = doctorFilter;
       localStorage.removeItem('appointment_doctor_filter');
+    }
+
+    // Soporte para crear cita desde el módulo de pacientes
+    const formDataStr = localStorage.getItem('appointment_form_data');
+    if (formDataStr) {
+      try {
+        const formData = JSON.parse(formDataStr);
+        localStorage.removeItem('appointment_form_data');
+
+        if (formData.patientId) {
+          // Usar un pequeño delay para asegurar que el módulo se haya montado correctamente
+          setTimeout(() => {
+            openModal(null, {
+              preselectedPatientId: formData.patientId,
+              preselectedDoctorId: formData.doctorId || null
+            });
+          }, 200);
+        }
+      } catch (e) {
+        console.error('Error parsing appointment_form_data:', e);
+      }
     }
   }
 
@@ -1260,21 +1281,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     const modalContainer = document.createElement('div');
     modalContainer.id = 'day-schedule-modal';
-    modalContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(15, 23, 42, 0.75);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2500;
-      padding: 1rem;
-      backdrop-filter: blur(8px);
-      animation: fadeIn 0.2s ease-out;
-    `;
+    modalContainer.className = 'modal-overlay';
+    modalContainer.style.zIndex = '2500';
 
     const formattedDate = new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', {
       weekday: 'long',
@@ -1355,23 +1363,16 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     }
 
     modalContainer.innerHTML = `
-      <style>
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .schedule-slot:hover { transform: scale(1.01); }
-      </style>
-      <div class="modal-content" style="max-width: 550px; width: 100%; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s ease-out;">
-        <div class="modal-header" style="background: var(--modal-header); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+      <div class="modal-content" style="max-width: 550px;">
+        <div class="modal-header">
           <div>
-            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Agenda del Día</h3>
-            <p style="margin: 0.25rem 0 0; opacity: 0.9; font-size: 0.875rem;">${formattedDate}</p>
+            <h3 class="modal-title">Agenda del Día</h3>
+            <p style="margin: 0.25rem 0 0; opacity: 0.8; font-size: 0.875rem; font-weight: 500;">${formattedDate}</p>
           </div>
-          <button id="close-schedule" style="background: rgba(255,255,255,0.2); border: none; color: white; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
-            ${icons.close}
-          </button>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="close-schedule">&times;</button>
         </div>
         
-        <div class="modal-body" style="padding: 1.5rem; max-height: 500px; overflow-y: auto; background: #f8fafc;">
+        <div class="modal-body" style="padding: 1.5rem; max-height: 500px; overflow-y: auto;">
           <div class="schedule-grid" style="display: flex; flex-direction: column; gap: 1rem;">
             ${timeSlots.map(slot => {
       const isOccupied = slot.appointments.length > 0;
@@ -1433,9 +1434,9 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           </div>
         </div>
         
-        <div class="modal-footer" style="padding: 1.25rem; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: center;">
+        <div class="modal-footer">
           <button id="close-schedule-footer" class="btn-circle btn-circle-cancel" title="Cerrar Calendario">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
@@ -2026,7 +2027,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
   }
 
   function openModal(appointment = null, options = {}) {
-    const { preselectedDoctorId = null, skipAutoSlot = false } = options;
+    const { preselectedDoctorId = null, preselectedPatientId = null, skipAutoSlot = false } = options;
     state.editingId = appointment?.id || null;
     state.showModal = true;
     if (elements.modal) elements.modal.classList.remove('hidden');
@@ -2041,6 +2042,33 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       populateForm(appointment);
     } else {
       clearForm();
+
+      // Prioridad 1: Paciente preseleccionado (desde el módulo de pacientes)
+      if (preselectedPatientId) {
+        const patient = store.find('patients', preselectedPatientId);
+        if (patient) {
+          if (elements.formPatientDocType) elements.formPatientDocType.value = patient.docType || 'V';
+          if (elements.formPatientCedula) elements.formPatientCedula.value = patient.dni || '';
+          if (elements.formPatient) elements.formPatient.value = patient.id;
+          searchPatientByCedula();
+        }
+      }
+      // Prioridad 2: Usuario logueado como paciente
+      else if (role === 'patient' && user?.patientId) {
+        const patient = store.find('patients', user.patientId);
+        if (patient) {
+          if (elements.formPatientDocType) {
+            elements.formPatientDocType.value = patient.docType || 'V';
+            elements.formPatientDocType.disabled = true;
+          }
+          if (elements.formPatientCedula) {
+            elements.formPatientCedula.value = patient.dni || '';
+            elements.formPatientCedula.disabled = true;
+          }
+          if (elements.formPatient) elements.formPatient.value = patient.id;
+          searchPatientByCedula();
+        }
+      }
 
       // Si hay un médico preseleccionado o el usuario es un médico
       const doctorId = preselectedDoctorId || (role === 'doctor' ? user?.doctorId : null);
@@ -2076,22 +2104,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           elements.formDoctor.value = doctor.id;
           if (elements.formArea && doctor.areaId) elements.formArea.value = doctor.areaId;
           if (role === 'doctor') elements.formDoctor.disabled = true;
-        }
-      }
-
-      if (role === 'patient' && user?.patientId) {
-        const patient = store.find('patients', user.patientId);
-        if (patient) {
-          if (elements.formPatientDocType) {
-            elements.formPatientDocType.value = patient.docType || 'V';
-            elements.formPatientDocType.disabled = true;
-          }
-          if (elements.formPatientCedula) {
-            elements.formPatientCedula.value = patient.dni || '';
-            elements.formPatientCedula.disabled = true;
-          }
-          if (elements.formPatient) elements.formPatient.value = patient.id;
-          searchPatientByCedula();
         }
       }
 
@@ -2833,20 +2845,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-appointment-modal';
-    modalContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      padding: 1rem;
-      overflow: auto;
-    `;
+    modalContainer.className = 'modal-overlay';
+    modalContainer.style.zIndex = '2000';
 
     const canEdit = role === 'admin' ||
       role === 'receptionist' ||
@@ -2857,16 +2857,16 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     const canCancel = canEdit && appointment.status !== 'completed' && appointment.status !== 'cancelled';
 
     modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">INFORME DE CITA MÉDICA</div>
-          <button class="btn-close-modal" id="close-view-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-            ${icons.close}
-          </button>
+      <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h3>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">INFORME DE CITA MÉDICA</div>
+          </div>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="close-view-modal">&times;</button>
         </div>
         
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 4px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
+        <div class="modal-body" style="padding: 2rem; max-height: 70vh; overflow-y: auto;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
             <div>
               <div style="font-size: 0.75rem; font-weight: 700; color: #666;">N° DE CITA</div>
@@ -3063,17 +3063,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           Documento administrativo • Generado automáticamente por Hospital Universitario Manuel Núñez Tovar
         </div>
 
-        <div class="modal-footer" style="background: var(--modal-header); border: none; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; gap: 0.75rem; align-items: center;">
+        <div class="modal-footer">
           <div style="display: flex; gap: 0.75rem;">
             ${canCancel ? `
-              <button class="btn-circle btn-circle-cancel" id="cancel-appointment-btn" data-id="${appointment.id}" title="Cancelar Cita">
+              <button class="btn-circle btn-circle-danger" id="cancel-appointment-btn" data-id="${appointment.id}" title="Anular Cita">
                 ${icons.cancel}
               </button>
             ` : ''}
             
             ${canEdit ? `
               <button class="btn-circle btn-circle-edit" id="edit-appointment-btn" data-id="${appointment.id}" title="Editar Cita">
-                ${icons.edit}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
             ` : ''}
           </div>
@@ -3081,17 +3081,17 @@ export default function mountAppointments(root, { bus, store, user, role }) {
           <div style="display: flex; gap: 0.75rem;">
             ${canCreateClinical ? `
               <button class="btn-circle btn-circle-save" id="create-clinical-from-appointment" data-id="${appointment.id}" title="Crear Consulta Clínica">
-                ${icons.clinical}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </button>
             ` : ''}
             
             ${hasClinicalRecord(appointment.id) ? `
               <button class="btn-circle btn-circle-view" id="view-clinical-record" data-id="${appointment.id}" title="Ver Historia Clínica">
-                ${icons.view}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             ` : ''}
             
-            <button class="btn-circle btn-circle-cancel" id="close-appointment-modal" title="Cerrar">
+            <button class="btn-circle" id="close-appointment-modal" title="Cerrar" style="background-color: #64748b;">
               ${icons.close}
             </button>
           </div>

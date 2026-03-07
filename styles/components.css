@@ -43,7 +43,7 @@
 .header-search-input:focus {
   outline: none;
   border-color: var(--themeTertiary);
-  box-shadow: 0 0 0 4px rgba(15, 141, 58, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0 0 4px rgba(0, 120, 180, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .header-search-results {
@@ -456,19 +456,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(45, 74, 62, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 5000;
   padding: 1.5rem;
   animation: fadeIn 0.15s ease-out;
 }
 
 .modal-content {
-  background: var(--modal-bg);
-  border-radius: var(--radius-lg);
+  background: white;
+  border-radius: 12px;
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
@@ -476,44 +476,44 @@
   flex-direction: column;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  border: 1px solid var(--modal-border);
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-header {
-  background: var(--modal-header);
-  color: var(--modal-header-text);
-  padding: 1.25rem 1.5rem;
+  background: var(--themePrimary);
+  color: white;
+  padding: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
+.modal-title,
 .modal-header h1,
 .modal-header h2,
 .modal-header h3 {
   color: white !important;
   margin: 0;
   font-size: 1.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 2rem;
   overflow-y: auto;
-  color: var(--modal-text);
+  color: var(--neutralPrimary);
 }
 
 .modal-footer {
-  padding: 1.25rem 1.5rem;
-  background: white;
-  border-top: 1px solid var(--modal-border);
+  padding: 1rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid var(--neutralQuaternaryAlt);
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 /* Soporte para Secciones Clínicas (Estilo Imagen) */
@@ -904,7 +904,7 @@
 .login-title {
   font-size: 1.65rem;
   font-weight: 700;
-  color: var(--greenDark);
+  color: var(--themeDark);
   line-height: 1.25;
   margin-bottom: 0.35rem;
 }
@@ -945,18 +945,19 @@
   font-size: 0.9rem;
   background: var(--white);
   color: var(--themeDark);
-  box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);
+  box-shadow: 0 0 0 1px rgba(0, 120, 180, 0.12);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .login-input:hover {
-  background: var(--neutralLighter);
+  background: var(--themeLighterAlt);
+  border-color: var(--themeTertiary);
 }
 
 .login-input:focus {
   outline: none;
-  border-color: var(--green);
-  box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);
+  border-color: var(--themePrimary);
+  box-shadow: 0 0 0 1px rgba(0, 120, 180, 0.12);
 }
 
 .login-input::placeholder {
@@ -981,8 +982,8 @@
 }
 
 .login-submit-btn:hover {
-  background: var(--greenDark);
-  box-shadow: 0 4px 14px rgba(15, 141, 58, 0.25);
+  background: var(--themeDarkAlt);
+  box-shadow: 0 4px 14px rgba(0, 120, 180, 0.25);
 }
 
 .login-submit-btn:active {
@@ -995,7 +996,7 @@
 }
 
 .login-recover a {
-  color: var(--greenDark);
+  color: var(--themeDark);
   font-size: 0.85rem;
   text-decoration: none;
   font-weight: 500;
@@ -1003,7 +1004,7 @@
 }
 
 .login-recover a:hover {
-  color: var(--accent-dark);
+  color: var(--themePrimary);
   text-decoration: underline;
 }
 
@@ -1035,7 +1036,7 @@
 .login-image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(rgba(29, 53, 87, 0.8), rgba(63, 230, 57, 0.8)), url(../img/hospital.jpg);
+  background: linear-gradient(135deg, rgba(0, 32, 80, 0.85) 0%, rgba(0, 69, 120, 0.75) 40%, rgba(0, 120, 180, 0.65) 100%), url(../img/hospital.jpg);
   background-size: cover;
   background-position: center;
   display: flex;
@@ -1309,7 +1310,7 @@ textarea.error-field {
 }
 
 .filter-btn.active {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Entrada individual del timeline */

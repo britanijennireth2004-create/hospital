@@ -117,10 +117,12 @@ export default function mountStaff(root, { bus, store, user, role }) {
       <div class="modal-overlay hidden" id="staff-modal">
         <div class="modal-content" style="max-width: 600px;">
           <div class="modal-header">
-            <h2 id="modal-title">Registrar Personal</h2>
-            <button class="btn-close-modal" id="close-modal">&times;</button>
+            <div>
+              <h3 class="modal-title" id="modal-title">Registrar Personal</h3>
+            </div>
+            <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="close-modal">&times;</button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="padding: 2rem;">
             <form id="staff-form">
               <div class="grid grid-2 gap-4 mb-4">
                 <div class="form-group">
@@ -130,16 +132,13 @@ export default function mountStaff(root, { bus, store, user, role }) {
                 <div class="form-group">
                   <label class="form-label font-bold">CÉDULA / C.I. *</label>
                   <div class="doc-group" style="display: flex; gap: 0;">
-                    <select class="input" id="form-doc-type" name="docType" required style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px;">
+                    <select class="input" id="form-doc-type" name="docType" required style="width: 70px; border-radius: 4px 0 0 4px; border-right: none; background: #fff; height: 38px; border: 1px solid var(--border);">
                       <option value="V">V</option>
                       <option value="E">E</option>
                       <option value="J">J</option>
                       <option value="P">P</option>
                     </select>
-                    <input type="text" class="input" id="form-dni" name="dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
-                    <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
-                      ${icons.search}
-                    </button>
+                    <input type="text" class="input" id="form-dni" name="dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px; border: 1px solid var(--border); border-left: none;">
                   </div>
                 </div>
               </div>
@@ -192,8 +191,7 @@ export default function mountStaff(root, { bus, store, user, role }) {
       fDocType: root.querySelector('#form-doc-type'),
       fDni: root.querySelector('#form-dni'),
       fEmail: root.querySelector('#form-email'),
-      fPhone: root.querySelector('#form-phone'),
-      btnSearchRegistry: root.querySelector('#btn-search-registry')
+      fPhone: root.querySelector('#form-phone')
     };
 
     const areas = store.get('areas') || [];
@@ -232,8 +230,11 @@ export default function mountStaff(root, { bus, store, user, role }) {
     root.querySelector('#btn-cancel').addEventListener('click', closeModal);
     root.querySelector('#btn-save').addEventListener('click', saveItem);
 
-    if (elements.btnSearchRegistry) {
-      elements.btnSearchRegistry.addEventListener('click', handleRegistryLookup);
+    if (elements.fDni) {
+      elements.fDni.addEventListener('input', debounce(handleRegistryLookup, 500));
+    }
+    if (elements.fDocType) {
+      elements.fDocType.addEventListener('change', handleRegistryLookup);
     }
   }
 
@@ -346,12 +347,11 @@ export default function mountStaff(root, { bus, store, user, role }) {
     const dni = elements.fDni.value.trim();
 
     if (dni && dni.length >= 6) {
-      const originalIcon = elements.btnSearchRegistry.innerHTML;
-      elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+      if (elements.fDni) elements.fDni.style.opacity = '0.7';
 
       setTimeout(() => {
         const found = store.fetchFromRegistry(docType, dni);
-        elements.btnSearchRegistry.innerHTML = originalIcon;
+        if (elements.fDni) elements.fDni.style.opacity = '1';
 
         if (found) {
           showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'info');
@@ -368,13 +368,18 @@ export default function mountStaff(root, { bus, store, user, role }) {
               setTimeout(() => { f.style.backgroundColor = ''; }, 2000);
             }
           });
-        } else {
-          showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
         }
       }, 700);
-    } else {
-      showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
     }
+  }
+
+  // Debounce helper
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
   }
 
   // Mostrar notificación toast

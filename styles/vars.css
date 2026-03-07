@@ -16,15 +16,15 @@
   --green: #107c10;
   /* Colores principales */
   /* Primary */
-  --themeDarker: #19291c;
-  --themeDark: #223826;
-  --themeDarkAlt: #29432d;
-  --themePrimary: #2d4a32;
-  --themeSecondary: #3f6044;
-  --themeTertiary: #709276;
-  --themeLight: #b1c9b5;
-  --themeLighter: #d4e2d6;
-  --themeLighterAlt: #f4f8f5;
+  --themeDarker: #004578;
+  --themeDark: #005a9e;
+  --themeDarkAlt: #106ebe;
+  --themePrimary: #0078b4;
+  --themeSecondary: #2b88d8;
+  --themeTertiary: #71afe5;
+  --themeLight: #c7e0f4;
+  --themeLighter: #deecf9;
+  --themeLighterAlt: #eff6fc;
   /* Foreground */
   --black: #000000;
   --neutralDark: #201f1e;

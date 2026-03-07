@@ -744,13 +744,16 @@ export default function mountTriaje(root, { bus, store, user, role }) {
         
         <!-- Modales Fluent -->
         <div class="modal-overlay hidden" id="triaje-modal">
-          <div class="modal-content" style="max-width: 900px; border-radius: 4px; border: none; box-shadow: 0 32px 64px rgba(0,0,0,0.24), 0 2px 21px rgba(0,0,0,0.22);">
-            <div class="modal-header" style="background: var(--themePrimary); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
-              <h2 style="margin: 0; color: white; font-size: 20px; font-weight: 600;">Nuevo Registro de Triaje</h2>
-              <button class="btn-close-modal" id="btn-close-modal" style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+          <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+              <div>
+                <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h3>
+                <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">NUEVO REGISTRO DE TRIAJE</div>
+              </div>
+              <button class="close-modal btn-circle" id="btn-close-modal" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
             </div>
             
-            <div class="modal-body" style="padding: 24px; background: #faf9f8;">
+            <div class="modal-body" style="padding: 24px;">
               <div class="f-pivot-container" style="margin-bottom: 24px;">
                 <button type="button" class="f-pivot-item ${!state.isCreatingPatient ? 'active' : ''}" id="tab-existing-patient">PACIENTE EXISTENTE</button>
                 <button type="button" class="f-pivot-item ${state.isCreatingPatient ? 'active' : ''}" id="tab-new-patient">+ NUEVO PACIENTE</button>
@@ -771,34 +774,16 @@ export default function mountTriaje(root, { bus, store, user, role }) {
                         <input type="text" class="input" id="form-patient-cedula" placeholder="Ingrese número de cédula..." style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;" autocomplete="off">
                       </div>
                       <input type="hidden" id="form-selected-patient-id" value="">
-                      <div id="patient-search-feedback" style="margin-top: 0.5rem; font-size: 0.8rem;"></div>
+                      <div id="patient-search-feedback" class="hidden" style="margin-top: 0.5rem; font-size: 0.8rem;"></div>
                       
-                      <!-- Tarjeta de datos precargados del paciente -->
-                      <div id="patient-preloaded-card" class="hidden" style="margin-top: 0.75rem; background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 8px; padding: 1rem; position: relative; animation: fadeIn 0.3s ease;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                          <div style="width: 40px; height: 40px; background: var(--accent, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>
-                          </div>
-                          <div style="flex: 1;">
-                            <div id="preloaded-patient-name" style="font-weight: 700; font-size: 1rem; color: #166534;"></div>
-                            <div id="preloaded-patient-cedula" style="font-size: 0.8rem; color: #15803d; font-weight: 600;"></div>
-                          </div>
-                          <button type="button" id="btn-clear-patient" style="background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700;" title="Limpiar paciente">×</button>
+                      <!-- Campo Unificado para Nombre de Paciente (Estilo Citas) -->
+                      <div id="patient-name-group" class="hidden" style="margin-top: 1rem; animation: fadeIn 0.3s ease;">
+                        <label class="form-label" id="patient-name-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.8rem;">NOMBRE DEL PACIENTE *</label>
+                        <div style="position: relative; display: flex; align-items: center;">
+                          <input type="text" class="input" id="form-patient-name-display" placeholder="Nombre completo..." style="height: 38px; padding-right: 40px; flex: 1;" readonly>
+                          <div id="patient-status-icon-container" style="position: absolute; right: 10px; display: flex; align-items: center; justify-content: center; pointer-events: none;"></div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                          <div style="font-size: 0.75rem; color: #4b5563;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                            Tel: <strong id="preloaded-patient-phone" style="color: #111827;"></strong>
-                          </div>
-                          <div style="font-size: 0.75rem; color: #4b5563;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                            Grupo: <strong id="preloaded-patient-blood" style="color: #111827;"></strong>
-                          </div>
-                          <div style="font-size: 0.75rem; color: #4b5563; grid-column: span 2;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15.5a5 5 0 1 1-7-1.42l-1.17 1.16a2 2 0 0 1-2.83 0l-1.17-1.16a5 5 0 1 1-7 1.42"/><path d="M10 21v-4"/><path d="M14 21v-4"/></svg>
-                            Expira carnet: <strong id="preloaded-patient-carnet" style="color: #111827;"></strong>
-                          </div>
-                        </div>
+                        <div id="patient-helper-text" style="font-size: 0.7rem; color: #64748b; margin-top: 0.35rem; display: flex; align-items: center; gap: 0.35rem;"></div>
                       </div>
                     </div>
                     <!-- Resto de campos con estilo minimalista -->
@@ -848,6 +833,7 @@ export default function mountTriaje(root, { bus, store, user, role }) {
                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">Sugerencia de Inteligencia del Sistema:</div>
                        <div id="priority-suggestion"></div>
                        <div id="suggestion-reason" style="font-size: 12px; color: var(--neutralSecondary); margin-top: 4px;"></div>
+                       <div id="suggestion-confidence" style="font-size: 10px; color: var(--neutralSecondary); margin-top: 2px;"></div>
                     </div>
 
                     <div class="form-group">
@@ -888,10 +874,7 @@ export default function mountTriaje(root, { bus, store, user, role }) {
                               <option value="P">P</option>
                               <option value="J">J</option>
                             </select>
-                            <input type="text" class="input" id="quick-dni" placeholder="Número de cédula" required style="flex: 1; border-radius: 0; height: 38px;">
-                            <button type="button" id="btn-search-registry-quick" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            </button>
+                            <input type="text" class="input" id="quick-dni" placeholder="Número de cédula" required style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
                           </div>
                         </div>
                       </div>
@@ -994,6 +977,8 @@ export default function mountTriaje(root, { bus, store, user, role }) {
                     </div>
                     <div id="quick-priority-suggestion-container" class="mb-4" style="display:none; padding: 12px; border-radius: 4px; border-left: 4px solid var(--themePrimary); background: var(--neutralLighter);">
                        <div id="quick-priority-suggestion"></div>
+                       <div id="quick-suggestion-reason" style="font-size: 11px; color: var(--neutralSecondary); margin-top: 4px;"></div>
+                       <div id="quick-suggestion-confidence" style="font-size: 10px; color: var(--neutralSecondary); margin-top: 2px;"></div>
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-weight: 600;">PRIORIDAD *</label>
@@ -1011,12 +996,12 @@ export default function mountTriaje(root, { bus, store, user, role }) {
               </div>
             </div>
             
-            <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--neutralLight); background: #f3f2f1; display: flex; justify-content: flex-end; gap: 12px;">
+            <div class="modal-footer">
               <button class="btn-circle btn-circle-cancel" id="btn-cancel-triaje" title="Cancelar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <button class="btn-circle btn-circle-save" id="btn-save-triaje" title="Guardar Registro">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
             </div>
           </div>
@@ -1024,16 +1009,16 @@ export default function mountTriaje(root, { bus, store, user, role }) {
 
         <!-- Emergency Alert Modal (Diseño Fluent UI) -->
         <div class="modal-overlay hidden" id="emergency-modal">
-          <div class="modal-content" style="max-width: 500px; border-radius: 4px; border: none; box-shadow: 0 32px 64px rgba(0,0,0,0.24), 0 2px 21px rgba(0,0,0,0.22);">
-            <div class="modal-header emergency" style="background: var(--red); padding: 16px 20px; color: white; display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <h2 style="margin: 0; font-size: 18px; font-weight: 600;">ALERTA DE EMERGENCIA</h2>
+          <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: var(--red);">
+              <div>
+                <h3 class="modal-title">ALERTA DE EMERGENCIA CRÍTICA</h3>
+                <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">NOTIFICACIÓN INMEDIATA A PERSONAL DE GUARDIA</div>
               </div>
-              <button class="btn-close-modal" id="btn-close-emergency" style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+              <button class="close-modal btn-circle" id="btn-close-emergency" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
             </div>
             
-            <div class="modal-body" style="padding: 24px; background: white;">
+            <div class="modal-body" style="padding: 24px;">
               <div style="background: #fde7e9; border-left: 4px solid var(--red); padding: 12px; margin-bottom: 20px; font-size: 13px; color: var(--neutralPrimary);">
                 <strong>ATENCIÓN:</strong> Esta acción notificará a todo el personal de guardia de forma inmediata.
               </div>
@@ -1061,12 +1046,12 @@ export default function mountTriaje(root, { bus, store, user, role }) {
               </div>
             </div>
             
-            <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--neutralLight); background: #f3f2f1; display: flex; justify-content: flex-end; gap: 12px;">
+            <div class="modal-footer">
               <button class="btn-circle btn-circle-cancel" id="btn-cancel-emergency" title="Cancelar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <button class="btn-circle" id="btn-activate-emergency" style="background: var(--red); color: white;" title="Activar Alerta de Emergencia">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               </button>
             </div>
           </div>
@@ -1099,13 +1084,10 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       formPatientCedula: root.querySelector('#form-patient-cedula'),
       formPatient: root.querySelector('#form-selected-patient-id'),
       patientSearchFeedback: root.querySelector('#patient-search-feedback'),
-      patientPreloadedCard: root.querySelector('#patient-preloaded-card'),
-      preloadedPatientName: root.querySelector('#preloaded-patient-name'),
-      preloadedPatientCedula: root.querySelector('#preloaded-patient-cedula'),
-      preloadedPatientPhone: root.querySelector('#preloaded-patient-phone'),
-      preloadedPatientBlood: root.querySelector('#preloaded-patient-blood'),
-      preloadedPatientCarnet: root.querySelector('#preloaded-patient-carnet'),
-      btnClearPatient: root.querySelector('#btn-clear-patient'),
+      patientNameGroup: root.querySelector('#patient-name-group'),
+      formPatientNameDisplay: root.querySelector('#form-patient-name-display'),
+      patientStatusIconContainer: root.querySelector('#patient-status-icon-container'),
+      patientHelperText: root.querySelector('#patient-helper-text'),
 
       symptoms: root.querySelector('#symptoms'),
       observations: root.querySelector('#observations'),
@@ -1154,7 +1136,6 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       quickSuggestionConfidence: root.querySelector('#quick-suggestion-confidence'),
       btnQuickAddAllergy: root.querySelector('#btn-quick-add-allergy'),
       quickAllergiesContainer: root.querySelector('#quick-allergies-container'),
-      btnSearchRegistryQuick: root.querySelector('#btn-search-registry-quick'),
 
       // Elementos del modal de emergencia
       emergencyType: root.querySelector('#emergency-type'),
@@ -1177,50 +1158,35 @@ export default function mountTriaje(root, { bus, store, user, role }) {
     }
 
     const isQuickForm = state.isCreatingPatient;
-
-    const symptoms = isQuickForm ?
-      (elements.quickSymptoms?.value || '') :
-      (elements.symptoms?.value || '');
+    const symptoms = isQuickForm ? (elements.quickSymptoms?.value || '') : (elements.symptoms?.value || '');
 
     const vitalSigns = {
-      bloodPressure: isQuickForm ?
-        (elements.quickBp?.value || '') :
-        (elements.bloodPressure?.value || ''),
-      heartRate: isQuickForm ?
-        (elements.quickHr?.value || '') :
-        (elements.heartRate?.value || ''),
-      temperature: isQuickForm ?
-        (elements.quickTemp?.value || '') :
-        (elements.temperature?.value || ''),
-      spo2: isQuickForm ?
-        (elements.quickSpo2?.value || '') :
-        (elements.spo2?.value || ''),
-      respiratoryRate: isQuickForm ?
-        (elements.quickRr?.value || '') :
-        (elements.respiratoryRate?.value || ''),
-      painLevel: isQuickForm ?
-        (elements.quickPain?.value || '') :
-        (elements.painLevel?.value || '')
+      bloodPressure: isQuickForm ? (elements.quickBp?.value || '') : (elements.bloodPressure?.value || ''),
+      heartRate: isQuickForm ? (elements.quickHr?.value || '') : (elements.heartRate?.value || ''),
+      temperature: isQuickForm ? (elements.quickTemp?.value || '') : (elements.temperature?.value || ''),
+      spo2: isQuickForm ? (elements.quickSpo2?.value || '') : (elements.spo2?.value || ''),
+      respiratoryRate: isQuickForm ? (elements.quickRr?.value || '') : (elements.respiratoryRate?.value || ''),
+      painLevel: isQuickForm ? (elements.quickPain?.value || '') : (elements.painLevel?.value || '')
     };
 
     // Solo sugerir si hay síntomas
     if (!symptoms.trim()) {
+      if (isQuickForm) {
+        if (elements.quickPrioritySuggestionContainer) elements.quickPrioritySuggestionContainer.style.display = 'none';
+      } else {
+        if (elements.prioritySuggestionContainer) elements.prioritySuggestionContainer.style.display = 'none';
+      }
       return;
     }
 
     const suggestedPriority = suggestPriority(symptoms, vitalSigns);
     state.suggestedPriority = suggestedPriority;
-
     const triajeLevel = TRIAJE_LEVELS[suggestedPriority];
 
-    // Determinar confianza
+    // Determinar confianza y razón
     let confidence = 'Media';
     let confidenceColor = '#ca8a04';
-    let reason = '';
-
-    // Generar razón basada en los datos
     const reasons = [];
-
     const symptomsLower = symptoms.toLowerCase();
 
     if (symptomsLower.includes('paro') || symptomsLower.includes('parada')) {
@@ -1258,38 +1224,46 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       }
     }
 
-    reason = reasons.length > 0 ? reasons.join(', ') : 'Basado en síntomas reportados';
+    const reason = reasons.length > 0 ? reasons.join(', ') : 'Basado en síntomas reportados';
 
     // Actualizar UI de sugerencia
     if (isQuickForm) {
       if (elements.quickPrioritySuggestionContainer) {
         elements.quickPrioritySuggestionContainer.style.display = 'block';
-        elements.quickPrioritySuggestion.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: ${triajeLevel.lightColor}; border: 2px solid ${triajeLevel.color}; border-radius: var(--radius);">
-            <div style="font-size: 1.5rem;">${triajeLevel.icon}</div>
-            <div style="flex: 1;">
-              <div style="font-weight: 600; font-size: 1rem; color: ${triajeLevel.color};">${triajeLevel.name}</div>
-              <div style="font-size: 0.75rem; color: var(--muted);">${triajeLevel.description}</div>
+        if (elements.quickPrioritySuggestion) {
+          elements.quickPrioritySuggestion.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: ${triajeLevel.lightColor}; border: 2px solid ${triajeLevel.color}; border-radius: 4px;">
+              <div style="font-size: 1.5rem;">${triajeLevel.icon}</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 1rem; color: ${triajeLevel.color};">${triajeLevel.name}</div>
+                <div style="font-size: 0.75rem; color: var(--neutralSecondary);">${triajeLevel.description}</div>
+              </div>
             </div>
-          </div>
-        `;
-        elements.quickSuggestionReason.textContent = reason;
-        elements.quickSuggestionConfidence.innerHTML = `· Confianza: <span style="color: ${confidenceColor}; font-weight: 500;">${confidence}</span>`;
+          `;
+        }
+        if (elements.quickSuggestionReason) elements.quickSuggestionReason.textContent = reason;
+        if (elements.quickSuggestionConfidence) {
+          elements.quickSuggestionConfidence.innerHTML = `· Confianza: <span style="color: ${confidenceColor}; font-weight: 500;">${confidence}</span>`;
+        }
       }
     } else {
       if (elements.prioritySuggestionContainer) {
         elements.prioritySuggestionContainer.style.display = 'block';
-        elements.prioritySuggestion.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: ${triajeLevel.lightColor}; border: 2px solid ${triajeLevel.color}; border-radius: var(--radius);">
-            <div style="font-size: 1.5rem;">${triajeLevel.icon}</div>
-            <div style="flex: 1;">
-              <div style="font-weight: 600; font-size: 1rem; color: ${triajeLevel.color};">${triajeLevel.name}</div>
-              <div style="font-size: 0.75rem; color: var(--muted);">${triajeLevel.description}</div>
+        if (elements.prioritySuggestion) {
+          elements.prioritySuggestion.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: ${triajeLevel.lightColor}; border: 2px solid ${triajeLevel.color}; border-radius: 4px;">
+              <div style="font-size: 1.5rem;">${triajeLevel.icon}</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 1rem; color: ${triajeLevel.color};">${triajeLevel.name}</div>
+                <div style="font-size: 0.75rem; color: var(--neutralSecondary);">${triajeLevel.description}</div>
+              </div>
             </div>
-          </div>
-        `;
-        elements.suggestionReason.textContent = reason;
-        elements.suggestionConfidence.innerHTML = `· Confianza: <span style="color: ${confidenceColor}; font-weight: 500;">${confidence}</span>`;
+          `;
+        }
+        if (elements.suggestionReason) elements.suggestionReason.textContent = reason;
+        if (elements.suggestionConfidence) {
+          elements.suggestionConfidence.innerHTML = `· Confianza: <span style="color: ${confidenceColor}; font-weight: 500;">${confidence}</span>`;
+        }
       }
     }
   }
@@ -1571,45 +1545,45 @@ export default function mountTriaje(root, { bus, store, user, role }) {
     const patient = patients.find(p => p.dni === cedula && (p.docType === docType || (!p.docType && docType === 'V')));
 
     if (patient) {
-      // Poblar campos ocultos y tarjeta
       if (elements.formPatient) elements.formPatient.value = patient.id;
-      if (elements.preloadedPatientName) elements.preloadedPatientName.textContent = patient.name;
-      if (elements.preloadedPatientCedula) elements.preloadedPatientCedula.textContent = `${patient.docType || 'V'}-${patient.dni}`;
-      if (elements.preloadedPatientPhone) elements.preloadedPatientPhone.textContent = patient.phone || 'No registrado';
-      if (elements.preloadedPatientBlood) elements.preloadedPatientBlood.textContent = patient.bloodType || 'Desconocido';
 
-      if (elements.preloadedPatientCarnet) {
-        if (patient.carnetExpiry) {
-          const expiryDate = new Date(patient.carnetExpiry + 'T12:00:00');
-          const formattedDate = expiryDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-          elements.preloadedPatientCarnet.textContent = formattedDate;
-          elements.preloadedPatientCarnet.style.color = expiryDate < new Date() ? '#dc2626' : '#166534';
-        } else {
-          elements.preloadedPatientCarnet.textContent = 'No registrado';
-          elements.preloadedPatientCarnet.style.color = '#9ca3af';
-        }
+      if (elements.patientNameGroup) elements.patientNameGroup.classList.remove('hidden');
+      if (elements.formPatientNameDisplay) {
+        elements.formPatientNameDisplay.value = patient.name;
+        elements.formPatientNameDisplay.style.borderColor = '#16a34a';
+        elements.formPatientNameDisplay.style.backgroundColor = '#f0fdf4';
+        elements.formPatientNameDisplay.style.color = '#166534';
       }
 
-      if (elements.patientPreloadedCard) elements.patientPreloadedCard.classList.remove('hidden');
-      if (elements.patientSearchFeedback) {
-        elements.patientSearchFeedback.innerHTML = '<span style="color: #16a34a; font-weight: 600;">✓ Paciente identificado</span>';
+      if (elements.patientStatusIconContainer) {
+        elements.patientStatusIconContainer.innerHTML = `<span style="color: #16a34a;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" d="M6 10.5l2.5 2 5-5"/></svg></span>`;
       }
+
+      if (elements.patientHelperText) {
+        elements.patientHelperText.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" d="M10 7v5"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg> Paciente verificado. Tel: ${patient.phone || 'N/D'}`;
+        elements.patientHelperText.style.color = '#16a34a';
+      }
+
+      if (elements.patientSearchFeedback) elements.patientSearchFeedback.classList.add('hidden');
+
       if (elements.formPatientCedula) {
-        elements.formPatientCedula.style.borderColor = '#86efac';
+        elements.formPatientCedula.style.borderColor = '#16a34a';
         elements.formPatientCedula.style.backgroundColor = '#f0fdf4';
       }
 
-      // Intentar actualizar sugerencia si ya hay síntomas
       updatePrioritySuggestion();
     } else {
       if (elements.formPatient) elements.formPatient.value = '';
-      if (elements.patientPreloadedCard) elements.patientPreloadedCard.classList.add('hidden');
+      if (elements.patientNameGroup) elements.patientNameGroup.classList.add('hidden');
+      if (elements.patientHelperText) elements.patientHelperText.innerHTML = '';
+
       if (elements.patientSearchFeedback) {
         elements.patientSearchFeedback.innerHTML = '<span style="color: #ca8a04;">ℹ Paciente no encontrado. Use la pestaña "+ NUEVO PACIENTE" si es necesario.</span>';
+        elements.patientSearchFeedback.classList.remove('hidden');
       }
       if (elements.formPatientCedula) {
-        elements.formPatientCedula.style.borderColor = '';
-        elements.formPatientCedula.style.backgroundColor = '';
+        elements.formPatientCedula.style.borderColor = '#f97316';
+        elements.formPatientCedula.style.backgroundColor = '#fff7ed';
       }
     }
   }
@@ -1622,8 +1596,11 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       elements.formPatientCedula.style.backgroundColor = '';
     }
     if (elements.formPatientDocType) elements.formPatientDocType.value = 'V';
-    if (elements.patientPreloadedCard) elements.patientPreloadedCard.classList.add('hidden');
-    if (elements.patientSearchFeedback) elements.patientSearchFeedback.innerHTML = '';
+    if (elements.patientNameGroup) elements.patientNameGroup.classList.add('hidden');
+    if (elements.patientSearchFeedback) {
+      elements.patientSearchFeedback.innerHTML = '';
+      elements.patientSearchFeedback.classList.add('hidden');
+    }
   }
 
   // Configurar event listeners
@@ -1872,12 +1849,11 @@ export default function mountTriaje(root, { bus, store, user, role }) {
         const dni = elements.quickDni?.value.trim();
 
         if (dni && dni.length >= 6) {
-          const originalIcon = elements.btnSearchRegistryQuick.innerHTML;
-          elements.btnSearchRegistryQuick.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+          if (elements.quickDni) elements.quickDni.style.opacity = '0.7';
 
           setTimeout(() => {
             const found = store.fetchFromRegistry(docType, dni);
-            elements.btnSearchRegistryQuick.innerHTML = originalIcon;
+            if (elements.quickDni) elements.quickDni.style.opacity = '1';
 
             if (found) {
               showMiniNotification(`Datos de registro encontrados para C.I. ${docType}-${dni}. Precargando...`, 'success');
@@ -1907,9 +1883,6 @@ export default function mountTriaje(root, { bus, store, user, role }) {
       }
       if (elements.quickDocType) {
         elements.quickDocType.addEventListener('change', handleQuickRegistryLookup);
-      }
-      if (elements.btnSearchRegistryQuick) {
-        elements.btnSearchRegistryQuick.addEventListener('click', handleQuickRegistryLookup);
       }
 
       // Pestañas internas para formulario rápido

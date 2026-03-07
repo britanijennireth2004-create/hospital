@@ -33,24 +33,24 @@ const CSS = `
 .notif-toolbar { display:flex; align-items:center; gap:0.5rem; padding:0.75rem 1.25rem; border-bottom:1px solid var(--border); background:white; min-height:56px; flex-shrink:0; }
 .notif-toolbar-btn { width:36px; height:36px; border:none; background:transparent; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); transition:all .15s; }
 .notif-toolbar-btn:hover { background:var(--bg-light); color:var(--text); }
-.notif-toolbar-btn.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); }
-.notif-new-btn { display:flex; align-items:center; gap:8px; padding:0.6rem 1.5rem; background:var(--accent); color:white; border:none; border-radius:24px; font-size:0.85rem; font-weight:700; cursor:pointer; transition:all .2s; box-shadow:0 4px 10px rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 0.025em; }
-.notif-new-btn:hover { box-shadow:0 6px 15px rgba(16, 185, 129, 0.4); transform:translateY(-1px); }
+.notif-toolbar-btn.active { color: var(--themePrimary); background: rgba(0, 120, 180, 0.1); }
+.notif-new-btn { display:flex; align-items:center; justify-content:center; padding:0; width:44px; height:44px; background:var(--themePrimary); color:white; border:none; border-radius:50%; cursor:pointer; transition:all .2s; box-shadow:0 4px 10px rgba(0, 120, 180, 0.3); }
+.notif-new-btn:hover { box-shadow:0 6px 15px rgba(0, 120, 180, 0.4); transform:translateY(-1px); }
 .notif-search { flex:1; max-width:450px; position:relative; }
 .notif-search input { width:100%; padding:0.6rem 1rem 0.6rem 2.5rem; border:1px solid var(--border); border-radius:20px; font-size:0.85rem; background:var(--bg-light); box-sizing:border-box; transition:all .2s; }
-.notif-search input:focus { background:white; box-shadow:0 0 0 3px rgba(16, 185, 129, 0.1); border-color:var(--accent); outline:none; }
+.notif-search input:focus { background:white; box-shadow:0 0 0 3px rgba(0, 120, 180, 0.1); border-color:var(--themePrimary); outline:none; }
 .notif-search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
 .notif-info { font-size:0.75rem; color:var(--muted); white-space:nowrap; margin-left:auto; font-weight: 500; }
 .notif-list { flex:1; overflow-y:auto; background: white; }
 .notif-row { display:flex; align-items:center; gap:0; padding:0; border-bottom:1px solid #f3f4f6; cursor:pointer; transition:all .1s; position: relative; }
 .notif-row:hover { background:#f9fafb; z-index:1; }
-.notif-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--accent); transition: width 0.15s; }
-.notif-row.unread { background:rgba(16, 185, 129, 0.03); }
+.notif-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--themePrimary); transition: width 0.15s; }
+.notif-row.unread { background:rgba(0, 120, 180, 0.03); }
 .notif-row.unread::before { width: 3px; }
 .notif-row.unread .msg-sender, .notif-row.unread .msg-subject { font-weight:700; color: #1a202c; }
-.notif-row.selected { background:rgba(59, 130, 246, 0.08) !important; }
+.notif-row.selected { background:rgba(0, 120, 180, 0.08) !important; }
 .notif-row .row-check { width:48px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.notif-row .row-check input { width:17px; height:17px; cursor:pointer; accent-color:var(--accent); }
+.notif-row .row-check input { width:17px; height:17px; cursor:pointer; accent-color:var(--themePrimary); }
 .notif-row .row-star { width:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; color: #d1d5db; transition: color 0.2s; }
 .notif-row .row-star:hover { color: #f59e0b; }
 .notif-row .msg-sender { width:200px; font-size:0.88rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0.85rem 0.5rem; flex-shrink:0; }
@@ -59,7 +59,7 @@ const CSS = `
 .notif-row .msg-preview { font-size:0.82rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
 .notif-row .msg-badges { display:flex; gap:6px; align-items:center; flex-shrink:0; padding:0 8px; }
 .notif-row .msg-date { width:90px; text-align:right; font-size:0.75rem; padding:0.85rem 1rem 0.85rem 0; flex-shrink:0; color:var(--muted); }
-.notif-row.unread .msg-date { color:var(--accent-dark); font-weight:700; }
+.notif-row.unread .msg-date { color:var(--themeDark); font-weight:700; }
 .notif-row .row-actions { display:none; gap:4px; flex-shrink:0; padding-right:1rem; background: inherit; height: 100%; align-items: center; }
 .notif-row:hover .row-actions { display:flex; }
 .notif-row .row-actions .notif-toolbar-btn { width:32px; height:32px; }
@@ -96,14 +96,14 @@ const CSS = `
 .notif-compose-field select { cursor:pointer; }
 .notif-compose-textarea { flex:1; border:none; padding:2rem; font-size:1.05rem; resize:none; outline:none; font-family:inherit; line-height:1.75; color: #2d3748; }
 .notif-compose-footer { padding:1.25rem 2rem; border-top:1px solid var(--border); display:flex; align-items:center; gap:1rem; background: #f8fafc; }
-.notif-send-btn { padding:0.75rem 2.5rem; background:var(--accent); color:white; border:none; border-radius:12px; font-size:0.95rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all .2s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); text-transform: uppercase; }
-.notif-send-btn:hover { box-shadow:0 8px 20px rgba(16, 185, 129, 0.3); transform: translateY(-2px); }
-.notif-discard-btn { margin-left:auto; width:42px; height:42px; border:none; background:transparent; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); transition: all 0.2s; }
+.notif-send-btn { display:flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; background:var(--success, #107c10); color:white; border:none; border-radius:50%; cursor:pointer; transition:all .2s; box-shadow: 0 4px 12px rgba(16, 124, 16, 0.2); }
+.notif-send-btn:hover { box-shadow:0 8px 20px rgba(16, 124, 16, 0.3); transform: translateY(-2px); }
+.notif-discard-btn { margin-left:auto; width:44px; height:44px; border:none; background:var(--red); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--white); transition: all 0.2s; }
 .notif-discard-btn:hover { background:#fee2e2; color:#ef4444; transform: rotate(90deg); }
 
 /* Botón de guardar borrador */
-.notif-save-draft-btn { padding:0.75rem 1.5rem; background: #f59e0b; color:white; border:none; border-radius:12px; font-size:0.9rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s; }
-.notif-save-draft-btn:hover { background: #d97706; box-shadow:0 4px 12px rgba(245, 158, 11, 0.2); }
+.notif-save-draft-btn { display:flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; background:var(--warning, #ffb900); color:white; border:none; border-radius:50%; cursor:pointer; transition:all .2s; box-shadow: 0 4px 12px rgba(255, 185, 0, 0.2); }
+.notif-save-draft-btn:hover { box-shadow:0 8px 20px rgba(255, 185, 0, 0.3); transform: translateY(-2px); }
 
 @media(max-width:768px){ .notif-row .msg-sender{width:120px;} .notif-row .msg-subject{max-width:180px;} .notif-detail-header{padding:1.5rem; flex-direction: column;} }
 </style>
@@ -288,14 +288,14 @@ export default function mountNotifications(root, { bus, store, user, role, route
   function renderList(items, unreadMap) {
     return `
       <div class="notif-toolbar">
-        ${canSend ? `<button class="notif-new-btn" id="btn-new">${ico.plus} Redactar</button>` : ''}
+        ${canSend ? `<button class="notif-new-btn" id="btn-new" title="Redactar">${ico.plus}</button>` : ''}
         <div style="width:1px;height:24px;background:var(--border);margin:0 0.5rem;"></div>
         <button class="notif-toolbar-btn" id="tb-refresh" title="Actualizar">${ico.refresh}</button>
         <button class="notif-toolbar-btn" id="tb-selectall" title="Seleccionar todo">${ico.selectAll}</button>
         ${state.selectedIds.size > 0 ? `
-          ${state.folder !== 'drafts' ? `<button class="notif-toolbar-btn" id="tb-markread" title="Marcar leídos" style="color:var(--accent);">${ico.markRead}</button>` : ''}
+          ${state.folder !== 'drafts' ? `<button class="notif-toolbar-btn" id="tb-markread" title="Marcar leídos" style="color:var(--themePrimary);">${ico.markRead}</button>` : ''}
           <button class="notif-toolbar-btn" id="tb-delete" title="${state.folder === 'trash' ? 'Eliminar permanentemente' : 'Mover a papelera'}" style="color:var(--danger);">${ico.trash}</button>
-          <div style="font-size:0.8rem; color:var(--accent); font-weight:700; margin-left: 0.5rem; padding: 0.2rem 0.6rem; background:rgba(16,185,129,0.1); border-radius:12px;">${state.selectedIds.size} seleccionados</div>
+          <div style="font-size:0.8rem; color:var(--themePrimary); font-weight:700; margin-left: 0.5rem; padding: 0.2rem 0.6rem; background:rgba(0,120,180,0.1); border-radius:12px;">${state.selectedIds.size} seleccionados</div>
         ` : ''}
         <div class="notif-search">
           <span class="notif-search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
@@ -303,7 +303,7 @@ export default function mountNotifications(root, { bus, store, user, role, route
         </div>
         <div class="notif-info">
           <span style="color: var(--text); font-weight: 700;">${folderTitle()}</span>
-          ${unreadMap[state.folder] ? `<span style="background:var(--accent); color:white; padding:1px 8px; border-radius:10px; margin-left:8px; font-size:0.7rem;">${unreadMap[state.folder]} nuevos</span>` : ''}
+          ${unreadMap[state.folder] ? `<span style="background:var(--themePrimary); color:white; padding:1px 8px; border-radius:10px; margin-left:8px; font-size:0.7rem;">${unreadMap[state.folder]} nuevos</span>` : ''}
         </div>
       </div>
       <div class="notif-list">
@@ -424,10 +424,10 @@ export default function mountNotifications(root, { bus, store, user, role, route
         </div>
         <div class="notif-detail-body">
           <div style="font-size:0.88rem;color:var(--text);line-height:1.75;white-space:pre-wrap;padding:0.5rem 0;">${item.content || 'Sin contenido'}</div>
-          ${item.appointmentId ? `<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:var(--modal-section-green-light);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:0.8rem;color:var(--accent-dark);"><strong>Cita vinculada:</strong> ${item.appointmentId}</div>` : ''}
+          ${item.appointmentId ? `<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:var(--bg-light);border-left:3px solid var(--themePrimary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:0.8rem;color:var(--themeDark);"><strong>Cita vinculada:</strong> ${item.appointmentId}</div>` : ''}
           ${canSend && state.folder !== 'drafts' ? `
           <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
-            <button class="notif-new-btn" id="detail-reply" style="font-size:0.82rem;">${ico.reply} Responder</button>
+            <button class="notif-new-btn" id="detail-reply" title="Responder">${ico.reply}</button>
           </div>` : ''}
         </div>
       </div>`;
@@ -527,8 +527,8 @@ export default function mountNotifications(root, { bus, store, user, role, route
         </div>
         <textarea id="cmp-body" class="notif-compose-textarea" required placeholder="Escriba el contenido del mensaje...">${initialBody}</textarea>
         <div class="notif-compose-footer">
-          <button type="submit" class="notif-send-btn">${ico.sent} Enviar</button>
-          <button type="button" class="notif-save-draft-btn" id="compose-save-draft">${ico.draft} Guardar borrador</button>
+          <button type="submit" class="notif-send-btn" title="Enviar">${ico.sent}</button>
+          <button type="button" class="notif-save-draft-btn" id="compose-save-draft" title="Guardar borrador">${ico.draft}</button>
           <button type="button" class="notif-discard-btn" id="compose-discard" title="Descartar">${ico.trash}</button>
         </div>
       </form>`;

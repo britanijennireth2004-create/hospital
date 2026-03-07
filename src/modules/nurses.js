@@ -148,18 +148,18 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
       <!-- Modal Edición -->
       <div class="modal-overlay hidden" id="nurse-modal">
-        <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              REGISTRO DE PERSONAL DE ENFERMERÍA
+        <div class="modal-content" style="max-width: 800px;">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h3>
+              <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">
+                REGISTRO DE PERSONAL DE ENFERMERÍA
+              </div>
             </div>
-            <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              ${icons.close}
-            </button>
+            <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-modal">&times;</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
+          <div class="modal-body" style="padding: 1.5rem; max-height: 65vh; overflow-y: auto;">
             <form id="nurse-form">
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 20px;">
                 <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: var(--neutralPrimary); display: flex; align-items: center; gap: 8px;">
@@ -179,10 +179,7 @@ export default function mountNurses(root, { bus, store, user, role }) {
                         <option value="J">J</option>
                         <option value="P">P</option>
                       </select>
-                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
-                      <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
-                        ${icons.search}
-                      </button>
+                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
                     </div>
                   </div>
                 </div>
@@ -276,12 +273,12 @@ export default function mountNurses(root, { bus, store, user, role }) {
               </div>
             </form>
           </div>
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+          <div class="modal-footer">
              <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
-               ${ICONS.close}
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
              </button>
              <button class="btn-circle btn-circle-save" id="btn-save" title="Guardar Cambios">
-               ${ICONS.check}
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
              </button>
           </div>
         </div>
@@ -289,18 +286,18 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
       <!-- Modal Estado (idéntico a doctors.js) -->
       <div class="modal-overlay hidden" id="status-modal">
-        <div class="modal-content" style="max-width: 500px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--warning); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">CAMBIAR ESTADO</h2>
-            <div id="status-modal-name" style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              Personal de Enfermería
+        <div class="modal-content" style="max-width: 500px;">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">CAMBIAR ESTADO</h3>
+              <div id="status-modal-name" style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">
+                Personal de Enfermería
+              </div>
             </div>
-            <button class="btn-close-modal" id="btn-close-status-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              ${ICONS.close}
-            </button>
+            <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-status-modal">&times;</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+          <div class="modal-body" style="padding: 1.5rem;">
             <form id="status-form">
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO ACTUAL</label>
@@ -334,12 +331,12 @@ export default function mountNurses(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn-circle btn-circle-cancel" id="btn-cancel-status" title="Cancelar">
-              ${ICONS.close}
+          <div class="modal-footer">
+            <button class="btn-circle" id="btn-cancel-status" title="Cancelar" style="background-color: #64748b; color: white;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <button class="btn-circle btn-circle-status" id="btn-save-status" title="Actualizar Estado">
-              ${ICONS.check}
+            <button class="btn-circle" id="btn-save-status" title="Actualizar Estado" style="background-color: var(--success); color: white;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
           </div>
         </div>
@@ -347,11 +344,13 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
       <!-- Modal Capacidad (idéntico a doctors.js) -->
       <div class="modal-overlay hidden" id="capacity-modal">
-        <div class="modal-content" style="max-width: 500px; padding: 0;">
-           <div class="modal-header" style="background: var(--modal-text); color: white; padding: 1.5rem; flex-direction: column; align-items:center; position:relative;">
-              <h2 style="margin:0; font-size:1.25rem;">AJUSTAR CAPACIDAD</h2>
-              <div style="font-size:0.85rem; opacity:0.8; margin-top:0.25rem;">Límite de atención diaria</div>
-              <button class="btn-close-modal" id="btn-close-capacity-modal" style="position:absolute; top:1rem; right:1rem; background:rgba(255,255,255,0.1); border:none; color:white; width:32px; height:32px; border-radius:50%;">${icons.close}</button>
+        <div class="modal-content" style="max-width: 500px;">
+           <div class="modal-header">
+              <div>
+                <h3 class="modal-title">AJUSTAR CAPACIDAD</h3>
+                <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">Límite de atención diaria</div>
+              </div>
+              <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-capacity-modal">&times;</button>
            </div>
            <div class="modal-body" style="padding: 1.5rem;">
               <div class="bg-blue-50 p-4 rounded mb-4 flex items-center gap-4">
@@ -369,12 +368,12 @@ export default function mountNurses(root, { bus, store, user, role }) {
               </div>
               <div class="flex justify-between text-xs text-muted mb-4"><span>1 paciente</span><span>50 pacientes</span></div>
            </div>
-           <div class="modal-footer" style="padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; background: #f8fafc;">
-              <button class="btn-circle btn-circle-cancel" id="btn-cancel-capacity" title="Cancelar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+           <div class="modal-footer">
+              <button class="btn-circle" id="btn-cancel-capacity" title="Cancelar" style="background-color: #64748b; color: white;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-              <button class="btn-circle btn-circle-save" id="btn-save-capacity" title="Guardar Cambios">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <button class="btn-circle" id="btn-save-capacity" title="Guardar Cambios" style="background-color: var(--themePrimary); color: white;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
            </div>
         </div>
@@ -428,7 +427,6 @@ export default function mountNurses(root, { bus, store, user, role }) {
       btnSaveCapacity: root.querySelector('#btn-save-capacity'),
       btnCancelCapacity: root.querySelector('#btn-cancel-capacity'),
       btnCloseCapacity: root.querySelector('#btn-close-capacity-modal'),
-      btnSearchRegistry: root.querySelector('#btn-search-registry'),
       capacityValue: root.querySelector('#capacity-value'),
       capacitySlider: root.querySelector('#capacity-slider'),
       currentCapDisplay: root.querySelector('#current-capacity-display')
@@ -622,24 +620,22 @@ export default function mountNurses(root, { bus, store, user, role }) {
 
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-nurse-modal';
-    modalContainer.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000; padding: 1rem;
-    `;
+    modalContainer.className = 'modal-overlay';
+    modalContainer.style.zIndex = '1000';
 
     modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
+      <div class="modal-content" style="max-width: 850px;">
         <!-- Cabecera institucional -->
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">PERSONAL DE ENFERMERÍA</div>
-          <button id="close-nurse-hdr" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">×</button>
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h3>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">PERSONAL DE ENFERMERÍA</div>
+          </div>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="close-nurse-hdr">&times;</button>
         </div>
 
         <!-- Cuerpo -->
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
+        <div class="modal-body" style="padding: 2rem; max-height: 70vh; overflow-y: auto;">
 
           <!-- Encabezado de Perfil -->
           <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2.5rem; border-bottom: 1px solid #eee; padding-bottom: 2rem;">
@@ -760,19 +756,19 @@ export default function mountNurses(root, { bus, store, user, role }) {
         </div>
 
         <!-- Footer con btn-circle -->
-        <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
+        <div class="modal-footer">
           ${(canManageAll || isOwnNurse(nurse)) ? `
             <button class="btn-circle btn-circle-edit" id="edit-nurse-btn" data-id="${nurse.id}" title="Editar Perfil">
-              ${icons.edit}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           ` : ''}
           ${canManageAll ? `
             <button class="btn-circle btn-circle-cancel" id="status-nurse-btn" data-id="${nurse.id}" title="Cambiar Estado">
-              ${icons.status}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             </button>
           ` : ''}
           <button class="btn-circle btn-circle-cancel" id="close-nurse-ftr" title="Cerrar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
@@ -907,8 +903,11 @@ export default function mountNurses(root, { bus, store, user, role }) {
       });
     }
 
-    if (elements.btnSearchRegistry) {
-      elements.btnSearchRegistry.addEventListener('click', handleRegistryLookup);
+    if (elements.fDni) {
+      elements.fDni.addEventListener('input', debounce(handleRegistryLookup, 500));
+    }
+    if (elements.fDocType) {
+      elements.fDocType.addEventListener('change', handleRegistryLookup);
     }
   }
 
@@ -920,12 +919,11 @@ export default function mountNurses(root, { bus, store, user, role }) {
     const dni = elements.fDni.value.trim();
 
     if (dni && dni.length >= 6) {
-      const originalIcon = elements.btnSearchRegistry.innerHTML;
-      elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+      if (elements.fDni) elements.fDni.style.opacity = '0.7';
 
       setTimeout(() => {
         const found = store.fetchFromRegistry(docType, dni);
-        elements.btnSearchRegistry.innerHTML = originalIcon;
+        if (elements.fDni) elements.fDni.style.opacity = '1';
 
         if (found) {
           showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'info');
@@ -939,12 +937,8 @@ export default function mountNurses(root, { bus, store, user, role }) {
             elements.fName.style.backgroundColor = '#f0fdf4';
             setTimeout(() => { elements.fName.style.backgroundColor = ''; }, 2000);
           }
-        } else {
-          showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
         }
       }, 700);
-    } else {
-      showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
     }
   }
 

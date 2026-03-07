@@ -288,7 +288,7 @@ const ROUTES = {
     parent: 'comunicaciones'
   },
   security: {
-    label: 'Seguridad',
+    label: 'Seguridad y Auditoría',
     icon: ICONS.lock,
     module: () => import('../modules/security.js'),
     permission: (role) => ['admin'].includes(role)
@@ -565,8 +565,8 @@ function mountLogin(root, { onSuccess }) {
     .auth-rec-head{text-align:center;margin-bottom:0.5rem;}
     .auth-rec-head h3{margin:0.75rem 0 0.25rem;font-size:1.15rem;color:#1a202c;}
     .auth-rec-head p{margin:0;font-size:0.82rem;color:#6b7280;line-height:1.55;}
-    .auth-rec-ico{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background: var(--greenDark);color:var(--white);box-shadow:0 4px 12px rgba(16,185,129,0.25);}
-    .auth-ico-ok{background:linear-gradient(135deg,#059669,#34d399);}
+    .auth-rec-ico{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background: var(--themeDark);color:var(--white);box-shadow:0 4px 12px rgba(0,120,180,0.25);}
+    .auth-ico-ok{background:linear-gradient(135deg,var(--themeDark),var(--themePrimary));}
     .auth-str{display:flex;align-items:center;gap:8px;margin-top:6px;}
     .auth-str-bar{flex:1;height:4px;background:#e5e7eb;border-radius:4px;overflow:hidden;}
     .auth-str-fill{height:100%;border-radius:4px;transition:all .3s ease;}
@@ -581,12 +581,12 @@ function mountLogin(root, { onSuccess }) {
     .auth-modal-close:hover{background:#f3f4f6;color:#1f2937;}
     .auth-modal .login-field{margin-bottom:1rem;}
     .auth-modal .login-label{display:block;margin-bottom:0.35rem;font-size:0.8rem;font-weight:600;color:#374151;}
-    .auth-modal .login-input{width: 100%; padding: 0.3rem 0.85rem; border-color: var(--neutralTertiary); border-width: 0 0 2px 0; border-radius: var(--radius); font-family: var(--font); font-size: 0.9rem; background: var(--white); color: var(--themeDark); box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12); transition: border-color 0.2s, box-shadow 0.2s;}
-    .auth-modal .login-input:hover{background: var(--neutralLighter);}
-    .auth-modal .login-input:focus{outline: none; border-color: var(--green); box-shadow: 0 0 0 1px rgba(15, 141, 58, 0.12);}
+    .auth-modal .login-input{width: 100%; padding: 0.3rem 0.85rem; border-color: var(--neutralTertiary); border-width: 0 0 2px 0; border-radius: var(--radius); font-family: var(--font); font-size: 0.9rem; background: var(--white); color: var(--themeDark); box-shadow: 0 0 0 1px rgba(0, 120, 180, 0.12); transition: border-color 0.2s, box-shadow 0.2s;}
+    .auth-modal .login-input:hover{background: var(--themeLighterAlt); border-color: var(--themeTertiary);}
+    .auth-modal .login-input:focus{outline: none; border-color: var(--themePrimary); box-shadow: 0 0 0 1px rgba(0, 120, 180, 0.12);}
     .auth-modal .login-input::placeholder{color: var(--muted); font-weight: 400;}
     .auth-modal .login-submit-btn{display:block;width:100%;padding:0.7rem;background: var(--themeDark);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all .2s;letter-spacing:0.03em;}
-    .auth-modal .login-submit-btn:hover{background: var(--greenDark);box-shadow:0 4px 12px rgba(16,185,129,0.3);}
+    .auth-modal .login-submit-btn:hover{background: var(--themeDarkAlt);box-shadow:0 4px 12px rgba(0,120,180,0.3);}
     @media(max-width:500px){.auth-modal{max-width:95%;margin:1rem;padding:1.5rem;}}
     </style>`;
   }
@@ -817,10 +817,11 @@ async function mountAppShell(root, { user, bus, store }) {
   function render() {
     root.innerHTML = `
       <div class="app-shell">
-        <header class="app-header" style="display: flex; align-items: center; justify-content: space-between; padding: 0; background: var(--white);">
+        <header class="app-header" style="display: flex; align-items: center; justify-content: space-between; padding: 0; background: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <!-- Logo HUMNT con fondo oscuro -->
-          <div style="display: flex; width: var(--sidebar-width); height: var(--header-height); align-items: center; gap: 0.75rem; flex-shrink: 0; background: var(--themeDark); padding: 0 1.5rem;">
-            <div style="font-weight: 700; color: var(--white); font-size: 1rem; letter-spacing: 0.05em;">HUMNT</div>
+          <div style="display: flex; width: var(--sidebar-width); height: var(--header-height); align-items: center; justify-content: flex-start; gap: 0.75rem; flex-shrink: 0; background: var(--themeDark); padding: 0 1.5rem;">
+            <img src="img/logotipo_blanco.png" alt="Logo HUMNT" style="height: 38px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));" />
+            <div style="font-weight: 700; color: var(--white); font-size: 1.1rem; letter-spacing: 0.05em; display: none;">HUMNT</div>
           </div>
 
           <!-- Contenido del Header -->

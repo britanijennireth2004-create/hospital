@@ -239,7 +239,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
     document.getElementById('hc-modal-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'hc-modal-overlay';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:1100;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:modalSlideIn 0.3s ease;';
+    overlay.className = 'modal-overlay';
     overlay.innerHTML = buildHCModalContent(p);
     document.body.appendChild(overlay);
     bindHCModalEvents(overlay);
@@ -257,11 +257,13 @@ export default function mountClinical(root, { bus, store, user, role }) {
     const age = calcAge(p.birthDate);
     const canAdd = canCreate();
     return `
-      <div class="modal-content" style="max-width:1100px;background:var(--modal-bg);border:none;overflow:hidden;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;max-height:92vh;padding:0;width:100%;">
-        <div class="modal-header" style="background:var(--modal-header);flex-direction:column;align-items:center;padding:1.5rem;position:relative;flex-shrink:0;width:100%;box-sizing:border-box;">
-          <h2 style="margin:0;color:white;letter-spacing:0.08em;font-size:1.4rem;font-weight:700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-          <div style="color:rgba(255,255,255,0.9);font-size:0.85rem;margin-top:0.25rem;font-weight:500;">HISTORIA CLÍNICA — ${p.name.toUpperCase()}</div>
-          <button id="hc-btn-close" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">${ic.close}</button>
+      <div class="modal-content" style="max-width:1100px; height: 92vh;">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h3>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">HISTORIA CLÍNICA — ${p.name.toUpperCase()}</div>
+          </div>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="hc-btn-close">&times;</button>
         </div>
         
         <!-- Info del paciente -->
@@ -284,9 +286,9 @@ export default function mountClinical(root, { bus, store, user, role }) {
         </div>
         
         <!-- Footer con botones de acción -->
-        <div class="modal-footer" style="padding:1.25rem 1.5rem;display:flex;justify-content:flex-end;gap:1.5rem;border-top:1px solid var(--border);background:white;flex-shrink:0;">
-          ${records.length > 0 ? `<button class="btn-circle btn-circle-view" id="hc-btn-pdf" title="Imprimir Historia Médica Completa">${ic.pdf}</button>` : ''}
-          ${canAdd ? `<button class="btn-circle btn-circle-save" id="hc-btn-new" title="Agregar Nuevo Registro">${ic.plus}</button>` : ''}
+        <div class="modal-footer">
+          ${records.length > 0 ? `<button class="btn-circle btn-circle-view" id="hc-btn-pdf" title="Imprimir Historia Médica Completa"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>` : ''}
+          ${canAdd ? `<button class="btn-circle btn-circle-save" id="hc-btn-new" title="Agregar Nuevo Registro"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>` : ''}
         </div>
       </div>`;
   }
@@ -324,8 +326,8 @@ export default function mountClinical(root, { bus, store, user, role }) {
             
             <!-- Signos vitales -->
             ${(vitals.bloodPressure || vitals.heartRate || vitals.temperature || vitals.spo2 || vitals.weight || vitals.height) ? `
-            <div style="background:var(--modal-section-forest-light,#f0fdf4);border-radius:8px;padding:1rem;border:1px solid var(--modal-section-forest,#6ee7b7);">
-              <div style="font-size:0.75rem;font-weight:800;color:var(--modal-section-forest,#059669);margin-bottom:0.75rem;text-transform:uppercase;">SIGNOS VITALES</div>
+            <div style="background:#fff;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;border-left:4px solid #3b82f6;">
+              <div style="font-size:0.75rem;font-weight:800;color:#2563eb;margin-bottom:0.75rem;text-transform:uppercase;">SIGNOS VITALES</div>
               <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
                 ${vitals.bloodPressure ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">PRESIÓN ARTERIAL</div><div style="font-weight:600;font-size:0.9rem;">${vitals.bloodPressure}</div></div>` : ''}
                 ${vitals.heartRate ? `<div><div style="font-size:0.7rem;font-weight:700;color:var(--muted);">F. CARDÍACA</div><div style="font-weight:600;font-size:0.9rem;">${vitals.heartRate} lpm</div></div>` : ''}
@@ -337,32 +339,32 @@ export default function mountClinical(root, { bus, store, user, role }) {
             </div>` : ''}
 
             <!-- Evaluación clínica -->
-            <div style="background:var(--modal-section-gold-light,#fffbeb);border-radius:8px;padding:1rem;border:1px solid var(--modal-section-gold,#fcd34d);">
+            <div style="background:#fff;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;border-left:4px solid #ea580c;">
               <div style="display:grid;grid-template-columns:1fr;gap:1rem;">
                 <div>
-                  <div style="font-size:0.75rem;font-weight:800;color:#b8860b;margin-bottom:0.4rem;text-transform:uppercase;">MOTIVO DE CONSULTA</div>
+                  <div style="font-size:0.75rem;font-weight:800;color:#c2410c;margin-bottom:0.4rem;text-transform:uppercase;">MOTIVO DE CONSULTA</div>
                   <div style="font-size:0.9rem;line-height:1.4;">${r.reason || 'No especificado'}</div>
                 </div>
                 <div>
-                  <div style="font-size:0.75rem;font-weight:800;color:#b8860b;margin-bottom:0.4rem;text-transform:uppercase;">DIAGNÓSTICO PRINCIPAL</div>
+                  <div style="font-size:0.75rem;font-weight:800;color:#c2410c;margin-bottom:0.4rem;text-transform:uppercase;">DIAGNÓSTICO PRINCIPAL</div>
                   <div style="font-size:0.9rem;line-height:1.4;font-weight:600;">${r.diagnosis || 'Pendiente'}</div>
                 </div>
               </div>
             </div>
 
             <!-- Plan y Recetas -->
-            <div style="background:var(--modal-section-olive-light,#f1f8e9);border-radius:8px;padding:1rem;border:1px solid var(--modal-section-olive,#aed581);">
+            <div style="background:#fff;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;border-left:4px solid #16a34a;">
               <div style="display:grid;grid-template-columns:1fr;gap:1.25rem;">
                 <div>
-                  <div style="font-size:0.75rem;font-weight:800;color:var(--modal-section-olive,#558b2f);margin-bottom:0.4rem;text-transform:uppercase;">PLAN DE TRATAMIENTO</div>
+                  <div style="font-size:0.75rem;font-weight:800;color:#15803d;margin-bottom:0.4rem;text-transform:uppercase;">PLAN DE TRATAMIENTO</div>
                   <div style="font-size:0.9rem;line-height:1.4;">${r.treatment || '—'}</div>
                 </div>
                 <div>
-                  <div style="font-size:0.75rem;font-weight:800;color:var(--modal-section-olive,#558b2f);margin-bottom:0.4rem;text-transform:uppercase;">RECETAS MÉDICAS</div>
+                  <div style="font-size:0.75rem;font-weight:800;color:#15803d;margin-bottom:0.4rem;text-transform:uppercase;">RECETAS MÉDICAS</div>
                   <div style="font-size:0.9rem;line-height:1.4;">${presHtml}</div>
                 </div>
                 ${r.followUp || r.notes ? `
-                <div style="border-top:1px dashed var(--border);padding-top:1rem;display:flex;gap:2rem;">
+                <div style="border-top:1px dashed #e2e8f0;padding-top:1rem;display:flex;gap:2rem;">
                   ${r.followUp ? `<div><div style="font-size:0.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;">Próximo Control</div><div style="font-size:0.85rem;font-weight:600;margin-top:0.25rem;">${new Date(r.followUp).toLocaleDateString('es-ES')}</div></div>` : ''}
                   ${r.notes ? `<div><div style="font-size:0.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;">Notas Adicionales</div><div style="font-size:0.85rem;margin-top:0.25rem;">${r.notes}</div></div>` : ''}
                 </div>` : ''}
@@ -381,33 +383,35 @@ export default function mountClinical(root, { bus, store, user, role }) {
     const doctors = store.get('doctors') || [];
     const vitals = r.vitalSigns || {};
     return `
-      <div class="modal-content" style="max-width:950px;background:var(--modal-bg);border:none;overflow:hidden;box-shadow:var(--shadow-lg);">
-        <div class="modal-header" style="background:var(--modal-header);flex-direction:column;align-items:center;padding:1.5rem;position:relative;">
-          <h2 style="margin:0;color:white;letter-spacing:0.08em;font-size:1.4rem;font-weight:700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-          <div style="color:rgba(255,255,255,0.9);font-size:0.85rem;margin-top:0.25rem;font-weight:500;">NUEVO REGISTRO DE ATENCIÓN MÉDICA</div>
-          <button id="btn-close-record-modal" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">${ic.close}</button>
+      <div class="modal-content" style="max-width:950px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h3>
+          <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">NUEVO REGISTRO DE ATENCIÓN MÉDICA</div>
         </div>
-        <div style="background:white;margin:1.5rem;border-radius:8px;padding:2rem;max-height:70vh;overflow-y:auto;">
-          <form id="cl-record-form">
-            <!-- Cabecera general -->
-            <div style="background:#f8fafc;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;margin-bottom:1.5rem;">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--modal-header);margin-bottom:1rem;text-transform:uppercase;">Datos de la Atención</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
-                <div class="form-group">
-                  <label class="form-label" style="font-weight:700;font-size:0.78rem;">PROFESIONAL RESPONSABLE *</label>
-                  <input type="text" class="input" value="${user.name} (${role === 'doctor' ? 'Médico' : role === 'nurse' ? 'Enfermera/o' : 'Administrador'})" readonly style="background:#edf2f7;color:var(--text);font-weight:600;">
+        <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-record-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 2rem; max-height: 70vh; overflow-y: auto;">
+        <form id="cl-record-form">
+          <!-- Cabecera general -->
+          <div style="background:#f8fafc;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;margin-bottom:1.5rem;">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--modal-header);margin-bottom:1rem;text-transform:uppercase;">Datos de la Atención</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label" style="font-weight:700;font-size:0.78rem;">PROFESIONAL RESPONSABLE *</label>
+                <input type="text" class="input" value="${user.name} (${role === 'doctor' ? 'Médico' : role === 'nurse' ? 'Enfermera/o' : 'Administrador'})" readonly style="background:#edf2f7;color:var(--text);font-weight:600;">
                   <input type="hidden" id="rf-doctor" value="${role === 'doctor' ? (user.doctorId || user.id) : user.id}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-weight:700;font-size:0.78rem;">FECHA *</label>
-                  <input type="date" class="input" id="rf-date" required value="${r.date ? new Date(r.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-weight:700;font-size:0.78rem;">TIPO *</label>
-                  <select class="input" id="rf-type" required>
-                    ${Object.entries(ENTRY_TYPES).map(([k, v]) => `<option value="${k}" ${(r.type || 'consultation') === k ? 'selected' : ''}>${v.label}</option>`).join('')}
-                  </select>
-                </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight:700;font-size:0.78rem;">FECHA *</label>
+                    <input type="date" class="input" id="rf-date" required value="${r.date ? new Date(r.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" style="font-weight:700;font-size:0.78rem;">TIPO *</label>
+                    <select class="input" id="rf-type" required>
+                      ${Object.entries(ENTRY_TYPES).map(([k, v]) => `<option value="${k}" ${(r.type || 'consultation') === k ? 'selected' : ''}>${v.label}</option>`).join('')}
+                    </select>
+                  </div>
               </div>
               <div style="margin-top:0.75rem;">
                 <div class="form-group">
@@ -421,8 +425,8 @@ export default function mountClinical(root, { bus, store, user, role }) {
             </div>
 
             <!-- Signos vitales -->
-            <div style="background:var(--modal-section-forest-light,#f0fdf4);border-radius:8px;padding:1.25rem;border:1px solid var(--modal-section-forest,#6ee7b7);margin-bottom:1.5rem;">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--modal-section-forest,#059669);margin-bottom:1rem;text-transform:uppercase;">Signos Vitales y Biometría</div>
+            <div style="background:#fff;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;border-left:4px solid #3b82f6;margin-bottom:1.5rem;">
+              <div style="font-size:0.8rem;font-weight:800;color:#2563eb;margin-bottom:1rem;text-transform:uppercase;">Signos Vitales y Biometría</div>
               <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;">
                 <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">PRESIÓN ARTERIAL</label><input type="text" class="input" id="rf-bp" placeholder="120/80" value="${vitals.bloodPressure || ''}"></div>
                 <div class="form-group"><label class="form-label" style="font-size:0.75rem;font-weight:700;">FREC. CARDÍACA (lpm)</label><input type="number" class="input" id="rf-hr" placeholder="72" value="${vitals.heartRate || ''}"></div>
@@ -436,8 +440,8 @@ export default function mountClinical(root, { bus, store, user, role }) {
             </div>
 
             <!-- Evaluación clínica -->
-            <div style="background:var(--modal-section-gold-light,#fffbeb);border-radius:8px;padding:1.25rem;border:1px solid var(--modal-section-gold,#fcd34d);margin-bottom:1.5rem;">
-              <div style="font-size:0.8rem;font-weight:700;color:#b8860b;margin-bottom:1rem;text-transform:uppercase;">Motivo y Evaluación</div>
+            <div style="background:#fff;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;border-left:4px solid #ea580c;margin-bottom:1.5rem;">
+              <div style="font-size:0.8rem;font-weight:800;color:#c2410c;margin-bottom:1rem;text-transform:uppercase;">Motivo y Evaluación</div>
               <div class="form-group" style="margin-bottom:0.75rem;">
                 <label class="form-label" style="font-size:0.75rem;font-weight:700;">MOTIVO DE CONSULTA</label>
                 <textarea class="input" id="rf-reason" rows="2">${r.reason || ''}</textarea>
@@ -449,8 +453,8 @@ export default function mountClinical(root, { bus, store, user, role }) {
             </div>
 
             <!-- Plan -->
-            <div style="background:var(--modal-section-olive-light,#f1f8e9);border-radius:8px;padding:1.25rem;border:1px solid var(--modal-section-olive,#aed581);">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--modal-section-olive,#558b2f);margin-bottom:1rem;text-transform:uppercase;">Plan y Seguimiento</div>
+            <div style="background:#fff;border-radius:8px;padding:1.25rem;border:1px solid #e2e8f0;border-left:4px solid #16a34a;">
+              <div style="font-size:0.8rem;font-weight:800;color:#15803d;margin-bottom:1rem;text-transform:uppercase;">Plan y Seguimiento</div>
               <div class="form-group" style="margin-bottom:0.75rem;">
                 <label class="form-label" style="font-size:0.75rem;font-weight:700;">PLAN DE TRATAMIENTO</label>
                 <textarea class="input" id="rf-treatment" rows="2">${r.treatment || ''}</textarea>
@@ -472,13 +476,17 @@ export default function mountClinical(root, { bus, store, user, role }) {
                 </div>
               </div>
             </div>
-          </form>
-        </div>
-        <div class="modal-footer" style="padding:1.25rem 1.5rem;display:flex;justify-content:flex-end;gap:1rem;border:none;">
-          <button class="btn-circle btn-circle-cancel" id="btn-cancel-record" title="Cancelar">${ic.close}</button>
-          <button class="btn-circle btn-circle-save" id="btn-save-record" title="Guardar Registro">${ic.check}</button>
-        </div>
-      </div>`;
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-circle" id="btn-cancel-record" title="Cancelar" style="background-color: #64748b; color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        </button>
+        <button class="btn-circle" id="btn-save-record" title="Guardar Registro" style="background-color: var(--themePrimary); color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </button>
+      </div>
+    </div>`;
   }
 
   // ── GUARDAR REGISTRO ──────────────────────────────────────────────────────
@@ -581,9 +589,9 @@ export default function mountClinical(root, { bus, store, user, role }) {
         y += 26;
 
         doc.setFontSize(9); text(100, 100, 100); doc.setFont('helvetica', 'normal');
-        doc.text(`Registro ID: ${record.id?.split('_').pop() || '—'}`, margin, y);
-        doc.text(`Fecha: ${date.toLocaleDateString('es-ES')}`, pW - margin, y, { align: 'right' });
-        doc.text(`Tipo: ${typeLabel(record.type)}`, pW / 2, y, { align: 'center' });
+        doc.text(`Registro ID: ${record.id?.split('_').pop() || '—'} `, margin, y);
+        doc.text(`Fecha: ${date.toLocaleDateString('es-ES')} `, pW - margin, y, { align: 'right' });
+        doc.text(`Tipo: ${typeLabel(record.type)} `, pW / 2, y, { align: 'center' });
         y += 8;
 
         // Paciente y Responsable
@@ -592,17 +600,17 @@ export default function mountClinical(root, { bus, store, user, role }) {
         doc.setFont('helvetica', 'bold'); text(40, 80, 40);
         doc.text('PACIENTE', margin + 3, y + 6);
         doc.setFont('helvetica', 'normal'); text(0, 0, 0);
-        doc.text(`${p.name}`, margin + 3, y + 12);
-        doc.text(`CI: ${p.docType || 'V'}-${p.dni || '—'}`, margin + 3, y + 18);
+        doc.text(`${p.name} `, margin + 3, y + 12);
+        doc.text(`CI: ${p.docType || 'V'} -${p.dni || '—'} `, margin + 3, y + 18);
         doc.text(`Edad: ${calcAge(p.birthDate)} años`, margin + 3, y + 24);
-        doc.text(`Tel: ${p.phone || '—'}`, margin + 3, y + 30);
+        doc.text(`Tel: ${p.phone || '—'} `, margin + 3, y + 30);
         doc.setFont('helvetica', 'bold'); text(40, 40, 80);
         doc.text('PROFESIONAL RESPONSABLE', pW / 2 + 5, y + 6);
         doc.setFont('helvetica', 'normal'); text(0, 0, 0);
         const respName = record.creatorName ? ((record.creatorRole === 'nurse' ? 'Lic. ' : record.creatorRole === 'doctor' ? 'Dr. ' : '') + record.creatorName) : ('Dr. ' + (dr?.name || '—'));
         doc.text(respName, pW / 2 + 5, y + 12);
-        doc.text(`${record.creatorRole === 'nurse' ? 'Área de Enfermería' : dr?.specialty || 'Medicina General'}`, pW / 2 + 5, y + 18);
-        if (dr?.license) doc.text(`Mat: ${dr.license}`, pW / 2 + 5, y + 24);
+        doc.text(`${record.creatorRole === 'nurse' ? 'Área de Enfermería' : dr?.specialty || 'Medicina General'} `, pW / 2 + 5, y + 18);
+        if (dr?.license) doc.text(`Mat: ${dr.license} `, pW / 2 + 5, y + 24);
         y += 40;
 
         // Signos vitales
@@ -611,7 +619,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         doc.text('SIGNOS VITALES', margin + 3, y + 5);
         y += 7;
         const vLabs = ['P. Arterial', 'F. Cardíaca', 'Temp.', 'Sat. O2', 'Peso', 'Talla'];
-        const vVals = [`${vitals.bloodPressure || '-'}`, `${vitals.heartRate || '-'} lpm`, `${vitals.temperature || '-'}°C`, `${vitals.spo2 || '-'}%`, `${vitals.weight || '-'} kg`, `${vitals.height || '-'} cm`];
+        const vVals = [`${vitals.bloodPressure || '-'} `, `${vitals.heartRate || '-'} lpm`, `${vitals.temperature || '-'}°C`, `${vitals.spo2 || '-'}% `, `${vitals.weight || '-'} kg`, `${vitals.height || '-'} cm`];
         doc.setFontSize(8); text(0, 0, 0);
         let xo = margin; const colW = cW / 6;
         vLabs.forEach((l, i) => {
@@ -644,7 +652,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         const pres = record.prescriptions;
         if (pres && pres.length > 0) {
           pres.forEach((px, i) => {
-            doc.text(`${i + 1}. ${px.medication} — ${px.dosage} — ${px.frequency} — ${px.duration}`, margin + 3, y + 5);
+            doc.text(`${i + 1}. ${px.medication} — ${px.dosage} — ${px.frequency} — ${px.duration} `, margin + 3, y + 5);
             y += 6;
           });
         } else {
@@ -658,7 +666,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         y += 15;
         doc.line(pW - margin - 60, y, pW - margin, y);
         doc.text(record.creatorName ? ((record.creatorRole === 'nurse' ? 'Lic. ' : record.creatorRole === 'doctor' ? 'Dr. ' : '') + record.creatorName) : ('Dr. ' + (dr?.name || 'Médico Tratante')), pW - margin - 30, y + 4, { align: 'center' });
-        if (dr?.license) doc.text(`Mat. ${dr.license}`, pW - margin - 30, y + 9, { align: 'center' });
+        if (dr?.license) doc.text(`Mat.${dr.license} `, pW - margin - 30, y + 9, { align: 'center' });
       });
 
       const fname = `HC_${p.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -686,7 +694,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         if (body) body.innerHTML = renderRows();
         if (countEl) countEl.textContent = `Mostrando ${state.paginated.length} de ${state.filtered.length} pacientes`;
         if (pag) pag.classList.toggle('hidden', state.totalPages <= 1);
-        if (pgInfo) pgInfo.textContent = `Página ${state.currentPage} de ${state.totalPages}`;
+        if (pgInfo) pgInfo.textContent = `Página ${state.currentPage} de ${state.totalPages} `;
         if (pgCtrl) pgCtrl.innerHTML = renderPageControls();
         bindRowEvents();
       });
@@ -717,7 +725,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
         const body = root.querySelector('#cl-list-body');
         const pgInfo = root.querySelector('#cl-page-info');
         if (body) body.innerHTML = renderRows();
-        if (pgInfo) pgInfo.textContent = `Página ${state.currentPage} de ${state.totalPages}`;
+        if (pgInfo) pgInfo.textContent = `Página ${state.currentPage} de ${state.totalPages} `;
         pagCtrl.innerHTML = renderPageControls();
         bindRowEvents();
       });
@@ -753,7 +761,7 @@ export default function mountClinical(root, { bus, store, user, role }) {
       // Añadir modal encima del HC modal
       const formOverlay = document.createElement('div');
       formOverlay.id = 'cl-record-modal';
-      formOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1200;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:modalSlideIn 0.3s ease;';
+      formOverlay.className = 'modal-overlay';
       formOverlay.innerHTML = renderRecordForm(state.selectedPatient);
       document.body.appendChild(formOverlay);
 

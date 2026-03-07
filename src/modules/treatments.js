@@ -448,20 +448,22 @@ export default function mountTreatments(root, { bus, store, user, role }) {
 
     <!-- MODAL: NUEVO REGISTRO -->
     <div class="modal-overlay hidden" id="treatment-modal">
-        <div class="modal-content" style="max-width:680px;background:var(--modal-bg);border:none;overflow:hidden;box-shadow:var(--shadow-lg);">
-            <div class="modal-header" style="background:var(--modal-header);padding:1.5rem;position:relative;flex-direction:column;align-items:center;">
-                <h2 style="margin:0;color:white;font-size:1.2rem;font-weight:700;">REGISTRO DE TRATAMIENTO / NOVEDAD</h2>
-                <div style="color:rgba(255,255,255,0.85);font-size:0.8rem;margin-top:0.3rem;" id="modal-patient-name">—</div>
-                <button id="close-treatment-modal" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;">×</button>
+        <div class="modal-content" style="max-width:680px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">REGISTRO DE TRATAMIENTO / NOVEDAD</h3>
+                    <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;" id="modal-patient-name">—</div>
+                </div>
+                <button class="close-modal btn-circle" id="close-treatment-modal" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
             </div>
-            <div class="modal-body" style="overflow-y:auto;max-height:75vh;">
+            <div class="modal-body" style="padding: 2rem;">
                 <!-- Aviso inmutabilidad -->
-                <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:0.75rem 1rem;margin:1.25rem 1.5rem 0;display:flex;gap:0.75rem;align-items:center;">
+                <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:0.75rem 1rem;margin-bottom: 1.5rem;display:flex;gap:0.75rem;align-items:center;">
                     <span style="color:#d97706;flex-shrink:0;">${SVG.lock}</span>
                     <span style="font-size:0.82rem;color:#92400e;line-height:1.5;"><strong>Registro Inmutable.</strong> Una vez guardado, no podrá modificarse. Para corregir un error, use la opción "Enmienda".</span>
                 </div>
 
-                <form id="treatment-form" style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1rem;">
+                <form id="treatment-form" style="display:flex;flex-direction:column;gap:1rem;">
 
                     <!-- Tipo + Turno -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
@@ -838,7 +840,7 @@ export default function mountTreatments(root, { bus, store, user, role }) {
                     </div>
                 </form>
             </div>
-            <div class="modal-footer" style="background:var(--modal-header);padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border:none;">
+            <div class="modal-footer">
                 <button class="btn-circle btn-circle-cancel" id="cancel-treatment-btn" title="Cancelar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -851,13 +853,15 @@ export default function mountTreatments(root, { bus, store, user, role }) {
 
     <!-- MODAL: ENMIENDA -->
     <div class="modal-overlay hidden" id="amend-modal">
-        <div class="modal-content" style="max-width:560px;background:var(--modal-bg);border:none;overflow:hidden;box-shadow:var(--shadow-lg);">
-            <div class="modal-header" style="background:#dc2626;padding:1.5rem;position:relative;flex-direction:column;align-items:center;">
-                <div style="display:flex;align-items:center;gap:0.6rem;">${SVG.pencil}<h2 style="margin:0;color:white;font-size:1.1rem;font-weight:700;">NOTA ACLARATORIA / ENMIENDA</h2></div>
-                <div style="color:rgba(255,255,255,0.85);font-size:0.78rem;margin-top:0.3rem;">El registro original es inmutable y permanece intacto</div>
-                <button id="close-amend-modal" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;">×</button>
+        <div class="modal-content" style="max-width:560px;">
+            <div class="modal-header" style="background:#dc2626;">
+                <div>
+                    <h3 class="modal-title" style="display:flex;align-items:center;gap:0.6rem;">${SVG.pencil} NOTA ACLARATORIA / ENMIENDA</h3>
+                    <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">El registro original es inmutable y permanece intacto</div>
+                </div>
+                <button class="close-modal btn-circle" id="close-amend-modal" style="background: rgba(255,255,255,0.2); border: none; color: white;">&times;</button>
             </div>
-            <div class="modal-body" style="padding:1.5rem;background:white;margin:1.5rem;border-radius:8px;">
+            <div class="modal-body" style="padding: 2rem;">
                 <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:0.85rem 1rem;margin-bottom:1rem;">
                     <div style="font-size:0.72rem;font-weight:800;color:#dc2626;margin-bottom:0.4rem;">REGISTRO ORIGINAL A ENMENDAR</div>
                     <div style="font-size:0.85rem;color:#1e293b;" id="amend-original-text">—</div>
@@ -871,7 +875,7 @@ export default function mountTreatments(root, { bus, store, user, role }) {
                     <strong>Firmado por:</strong> ${user.name} (${roleLabel(role)}) — ${fmt(Date.now())}
                 </div>
             </div>
-            <div class="modal-footer" style="background:#dc2626;padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border:none;">
+            <div class="modal-footer">
                 <button class="btn-circle btn-circle-cancel" id="cancel-amend-btn" title="Cancelar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>

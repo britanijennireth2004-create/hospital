@@ -6,7 +6,7 @@
 export default function mountSecurity(root, { bus, store, user, role }) {
   // Estado local
   const state = {
-    activeTab: 'audit',
+    activeTab: 'charts',
     auditLogs: [],
     loginHistory: [],
     sessions: [],
@@ -37,7 +37,10 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
     loadData();
     render();
-    setupEventListeners();
+    if (!state.listenersInitialized) {
+      setupEventListeners();
+      state.listenersInitialized = true;
+    }
   }
 
   // Cargar datos
@@ -101,23 +104,62 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
   // Obtener badge de módulo
   function getModuleBadge(module) {
-    const svgShield = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
-    const svgUser = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const svgDocMed = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>';
-    const svgCal = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const svgClip = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>';
-    const svgPulse = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-    const svgBldg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/></svg>';
     const modules = {
-      'auth': `${svgShield} Autenticaci\u00f3n`,
-      'patients': `${svgUser} Pacientes`,
-      'doctors': `${svgDocMed} M\u00e9dicos`,
-      'appointments': `${svgCal} Citas`,
-      'clinical': `${svgClip} Historia Cl\u00ednica`,
-      'triaje': `${svgPulse} Triaje`,
-      'areas': `${svgBldg} \u00c1reas`
+      'auth': 'Autenticación',
+      'patients': 'Pacientes',
+      'doctors': 'Médicos',
+      'appointments': 'Citas',
+      'clinical': 'Historia Clínica',
+      'triaje': 'Triaje',
+      'areas': 'Áreas',
+      'security': 'Seguridad',
+      'resources': 'Recursos',
+      'treatments': 'Tratamientos'
     };
     return modules[module] || module;
+  }
+
+  function getModuleLabel(mod) {
+    if (!mod) return 'SISTEMA';
+    const labels = {
+      'auth': 'AUTENTICACIÓN',
+      'patients': 'GESTIÓN DE PACIENTES',
+      'doctors': 'MÉDICOS Y TURNOS',
+      'appointments': 'CITAS MÉDICAS',
+      'clinical': 'HISTORIAS CLÍNICAS',
+      'triaje': 'TRIAJE Y EMERGENCIAS',
+      'areas': 'INFRAESTRUCTURA',
+      'security': 'SEGURIDAD Y PERMISOS',
+      'resources': 'RECURSOS Y EQUIPOS',
+      'treatments': 'TRATAMIENTOS',
+      'landpage': 'PÁGINA PÚBLICA'
+    };
+    return labels[mod] || mod.toUpperCase();
+  }
+
+  function getChartColor(i) {
+    const palette = [
+      'var(--themePrimary)',   // Azul institucional
+      'var(--themeSecondary)', // Azul secundario
+      '#7c3aed',               // Violeta
+      '#0891b2',               // Cian
+      '#059669',               // Esmeralda
+      '#db2777',               // Rosa
+      '#ea580c',               // Naranja
+      '#4f46e5',               // Indigo
+      '#9333ea',               // Púrpura
+      '#16a34a',               // Verde
+      '#2563eb',               // Azul real
+      '#be123c'                // Carmesí
+    ];
+    return palette[i % palette.length];
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   // Filtrar logs de auditoría
@@ -152,67 +194,24 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
     root.innerHTML = `
       <div class="security-module animated-fade-in" style="max-width: 1400px; margin: 0 auto; padding: 1rem;">
-        <!-- Stats Cards -->
-        <div class="stats-auto-grid mb-4" id="stats-container">
-          <div class="stat-info-card">
-            <span class="stat-info-label">Eventos Totales</span>
-            <span class="stat-info-value">${state.auditLogs.length}</span>
-            <span class="stat-info-sub">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21L15 15"/><circle cx="10" cy="10" r="7"/></svg>
-              Logs registrados
-            </span>
-          </div>
-
-          <div class="stat-info-card">
-            <span class="stat-info-label">Sesiones Activas</span>
-            <span class="stat-info-value">${state.sessions.filter(s => s.isActive).length}</span>
-            <span class="stat-info-sub">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              Usuarios en línea
-            </span>
-          </div>
-
-          <div class="stat-info-card">
-            <span class="stat-info-label">Accesos Hoy</span>
-            <span class="stat-info-value">${state.loginHistory.filter(l => {
-      const d = new Date(l.timestamp);
-      return d.toDateString() === new Date().toDateString();
-    }).length}</span>
-            <span class="stat-info-sub">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              Autenticaciones
-            </span>
-          </div>
-
-          <div class="stat-info-card">
-            <span class="stat-info-label">Seguridad</span>
-            <span class="stat-info-value" style="font-size: 1.25rem;">PROTEGIDO</span>
-            <span class="stat-info-sub">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Estado del sistema
-            </span>
-          </div>
-        </div>
-
-        <!-- Tabs Premium -->
         <div style="background: white; padding: 0.5rem; border-radius: 12px 12px 0 0; display: flex; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 0;">
+          <button class="tab-btn ${state.activeTab === 'charts' ? 'active' : ''}" data-tab="charts" 
+            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'charts' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'charts' ? 'var(--themePrimary)' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.8rem; letter-spacing: 0.05em;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+            GRÁFICOS
+          </button>
           <button class="tab-btn ${state.activeTab === 'audit' ? 'active' : ''}" data-tab="audit" 
-            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'audit' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'audit' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-            AUDITORÍA
+            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'audit' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'audit' ? 'var(--themePrimary)' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.8rem; letter-spacing: 0.05em;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            LOGS DE AUDITORÍA
           </button>
           <button class="tab-btn ${state.activeTab === 'sessions' ? 'active' : ''}" data-tab="sessions"
-            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'sessions' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'sessions' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'sessions' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'sessions' ? 'var(--themePrimary)' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.8rem; letter-spacing: 0.05em;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            SESIONES ACTIVAS
-          </button>
-          <button class="tab-btn ${state.activeTab === 'logins' ? 'active' : ''}" data-tab="logins"
-            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'logins' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'logins' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            HISTORIAL DE ACCESO
+            SESIONES
           </button>
           <button class="tab-btn ${state.activeTab === 'policies' ? 'active' : ''}" data-tab="policies"
-            style="padding: 0.75rem 1.5rem; border: none; background: ${state.activeTab === 'policies' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'policies' ? '#3b82f6' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+            style="padding: 0.75rem 1.25rem; border: none; background: ${state.activeTab === 'policies' ? '#f1f5f9' : 'transparent'}; color: ${state.activeTab === 'policies' ? 'var(--themePrimary)' : '#64748b'}; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.8rem; letter-spacing: 0.05em;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             POLÍTICAS
           </button>
@@ -229,12 +228,229 @@ export default function mountSecurity(root, { bus, store, user, role }) {
   // Renderizar contenido de tab
   function renderTabContent(paginatedLogs, totalPages) {
     switch (state.activeTab) {
+      case 'charts': return renderChartsTab();
       case 'audit': return renderAuditTab(paginatedLogs, totalPages);
       case 'sessions': return renderSessionsTab();
-      case 'logins': return renderLoginsTab();
       case 'policies': return renderPoliciesTab();
       default: return '';
     }
+  }
+
+  function renderChartsTab() {
+    const totalLogs = state.auditLogs.length;
+    const activeSessions = state.sessions.filter(s => s.isActive).length;
+    const totalLoginsToday = state.loginHistory.filter(l => {
+      const d = new Date(l.timestamp);
+      return d.toDateString() === new Date().toDateString();
+    }).length;
+
+    // Procesar datos para gráficos
+    const modulesData = {};
+    const actionsData = {};
+    const rolesData = {};
+    const timelineData = {};
+
+    // Pre-llenar los últimos 7 días con 0 para asegurar que el gráfico siempre sea visible
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      timelineData[dateStr] = 0;
+    }
+
+    state.auditLogs.forEach(log => {
+      modulesData[log.module] = (modulesData[log.module] || 0) + 1;
+      actionsData[log.action] = (actionsData[log.action] || 0) + 1;
+      rolesData[log.userRole] = (rolesData[log.userRole] || 0) + 1;
+      const date = new Date(log.timestamp).toISOString().split('T')[0];
+      // Solo sumamos si cae dentro del rango de los últimos 7 días
+      if (timelineData.hasOwnProperty(date)) {
+        timelineData[date]++;
+      }
+    });
+
+    const moduleEntries = Object.entries(modulesData).sort((a, b) => b[1] - a[1]);
+    const actionEntries = Object.entries(actionsData).sort((a, b) => b[1] - a[1]);
+    const roleEntries = Object.entries(rolesData).sort((a, b) => b[1] - a[1]);
+
+    // Preparar Leyenda de Módulos (Top 6 + Otros)
+    const moduleLegend = moduleEntries.slice(0, 6);
+    if (moduleEntries.length > 6) {
+      const othersCount = moduleEntries.slice(6).reduce((acc, curr) => acc + curr[1], 0);
+      moduleLegend.push(['OTROS', othersCount]);
+    }
+
+    // Preparar Leyenda de Roles (Top 6 + Otros)
+    const roleLegend = roleEntries.slice(0, 6);
+    if (roleEntries.length > 6) {
+      const othersCount = roleEntries.slice(6).reduce((acc, curr) => acc + curr[1], 0);
+      roleLegend.push(['OTROS', othersCount]);
+    }
+
+    return `
+      <div class="animated-fade-in">
+        <!-- Bloque de Gráficos de Auditoría -->
+        <div class="grid grid-2" style="gap: 2rem; margin-bottom: 2rem;">
+          <div class="card" style="padding: 2rem; border: 1px solid rgba(226, 232, 240, 0.8);">
+            <h3 style="margin-top: 0; margin-bottom: 2rem; font-size: 1rem; font-weight: 700; color: var(--themeDarker); display: flex; align-items: center; gap: 0.5rem;">
+              <span style="width: 4px; height: 16px; background: var(--themePrimary); border-radius: 4px;"></span>
+              Actividad por Módulo
+            </h3>
+            <div style="display: flex; align-items: center; gap: 2.5rem;">
+              <div style="flex: 1.2; position: relative; max-width: 180px;">
+                <svg viewBox="0 0 100 100" style="width: 100%; transform: rotate(-90deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15)); overflow: visible;">
+                  ${renderPieChart(moduleEntries, totalLogs, 0)}
+                </svg>
+              </div>
+              <div style="flex: 1;">
+                ${moduleLegend.map(([mod, count], i) => `
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+                      <div style="width: 12px; height: 12px; border-radius: 3px; background: ${getChartColor(i)}; flex-shrink: 0;"></div>
+                      <span style="font-size: 0.7rem; font-weight: 700; color: var(--themeDark); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${getModuleBadge(mod)}">${getModuleBadge(mod)}</span>
+                    </div>
+                    <span style="font-size: 0.7rem; color: var(--muted); font-weight: 800; flex-shrink: 0;">${Math.round((count / (totalLogs || 1)) * 100)}%</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 2rem; border: 1px solid rgba(226, 232, 240, 0.8);">
+            <h3 style="margin-top: 0; margin-bottom: 2rem; font-size: 1rem; font-weight: 700; color: var(--themeDarker); display: flex; align-items: center; gap: 0.5rem;">
+              <span style="width: 4px; height: 16px; background: var(--themeSecondary); border-radius: 4px;"></span>
+              Impacto por Roles de Usuario
+            </h3>
+            <div style="display: flex; align-items: center; gap: 2.5rem;">
+               <div style="flex: 1.2; position: relative; max-width: 180px;">
+                <svg viewBox="0 0 100 100" style="width: 100%; transform: rotate(-90deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15)); overflow: visible;">
+                  ${renderPieChart(roleEntries, totalLogs, 2)}
+                </svg>
+              </div>
+              <div style="flex: 1;">
+                ${roleLegend.map(([role, count], i) => `
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+                      <div style="width: 12px; height: 12px; border-radius: 3px; background: ${getChartColor(i + 2)}; flex-shrink: 0;"></div>
+                      <span style="font-size: 0.7rem; font-weight: 700; color: var(--themeDark); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${role || 'SISTEMA'}">${role || 'SISTEMA'}</span>
+                    </div>
+                    <span style="font-size: 0.7rem; color: var(--muted); font-weight: 800; flex-shrink: 0;">${Math.round((count / (totalLogs || 1)) * 100)}%</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 2rem; border: 1px solid rgba(226, 232, 240, 0.8); margin-bottom: 2rem;">
+            <h3 style="margin-top: 0; margin-bottom: 2rem; font-size: 1rem; font-weight: 700; color: var(--themeDarker); display: flex; align-items: center; gap: 0.5rem;">
+              <span style="width: 4px; height: 16px; background: var(--themePrimary); border-radius: 4px;"></span>
+              Tendencia de Seguridad (Actividad Diaria)
+            </h3>
+            <div style="height: 120px;">
+              <svg viewBox="0 0 1000 120" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
+                ${renderAreaChart(timelineData)}
+              </svg>
+            </div>
+          </div>
+      </div>
+    `;
+  }
+
+  function renderDashboardTab() { return ''; }
+
+  function renderPieChart(entries, total, colorOffset = 0) {
+    if (!total || total === 0) return '<circle cx="50" cy="50" r="45" fill="#f1f5f9" />';
+
+    let currentAngle = 0;
+    const paths = entries.map(([_, count], i) => {
+      const percent = count / total;
+      if (percent <= 0) return '';
+
+      // Convertir porcentaje a radianes
+      const angle = percent * 2 * Math.PI;
+
+      // Calcular puntos (r=45 para dejar un pequeño margen)
+      const r = 45;
+      const x1 = 50 + r * Math.cos(currentAngle);
+      const y1 = 50 + r * Math.sin(currentAngle);
+
+      currentAngle += angle;
+
+      const x2 = 50 + r * Math.cos(currentAngle);
+      const y2 = 50 + r * Math.sin(currentAngle);
+
+      // Flag para arcos mayores a 180 grados
+      const largeArcFlag = percent > 0.5 ? 1 : 0;
+
+      const color = getChartColor(i + colorOffset);
+      const label = entries[i][0];
+      const tooltipText = `${getModuleBadge(label)}: ${count} (${Math.round(percent * 100)}%)`;
+
+      // Construir comando de path: M centro L p1 A r r 0 largeArc 1 p2 Z
+      return `
+      <path d="M 50 50 L ${x1} ${y1} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2} ${y2} Z" 
+        fill="${color}" stroke="${color}" stroke-width="0.5" 
+        style="cursor: pointer; transition: opacity 0.2s;" 
+        onmouseover="this.style.opacity='0.8'" 
+        onmouseout="this.style.opacity='1'">
+        <title>${tooltipText}</title>
+      </path>
+    `;
+    }).join('');
+
+    return `<g>${paths}</g><circle cx="50" cy="50" r="2.5" fill="white" />`;
+  }
+
+  function renderAreaChart(data) {
+    const dates = Object.keys(data).sort().slice(-7);
+    if (dates.length < 2) return '<div style="text-align:center; padding: 2rem; color: var(--muted);">Sin actividad suficiente para graficar tendencias</div>';
+
+    const maxVal = Math.max(...Object.values(data)) || 10;
+    const stepX = 1000 / (dates.length - 1);
+    const chartHeight = 100; // Altura interna del gráfico
+    const totalHeight = 130; // Altura total con labels
+
+    const points = dates.map((date, i) => {
+      const x = i * stepX;
+      // Normalizar Y (dejando margen arriba y abajo)
+      const y = chartHeight - (data[date] / maxVal) * (chartHeight * 0.7) - (chartHeight * 0.15);
+      return `${x},${y}`;
+    }).join(' ');
+
+    return `
+      <defs>
+        <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:var(--themePrimary);stop-opacity:0.35" />
+          <stop offset="100%" style="stop-color:var(--themePrimary);stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      
+      <!-- Ejes de referencia (líneas horizontales tenues) -->
+      <line x1="0" y1="${chartHeight * 0.15}" x2="1000" y2="${chartHeight * 0.15}" stroke="#f1f5f9" stroke-width="1" />
+      <line x1="0" y1="${chartHeight * 0.5}" x2="1000" y2="${chartHeight * 0.5}" stroke="#f1f5f9" stroke-width="1" />
+      <line x1="0" y1="${chartHeight * 0.85}" x2="1000" y2="${chartHeight * 0.85}" stroke="#f1f5f9" stroke-width="1" />
+      
+      <!-- Área y Línea -->
+      <path d="M0,${chartHeight} L${points} L1000,${chartHeight} Z" fill="url(#areaGrad)" />
+      <polyline points="${points}" fill="none" stroke="var(--themePrimary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" />
+      
+      <!-- Puntos y Etiquetas -->
+      ${dates.map((date, i) => {
+      const x = i * stepX;
+      const val = data[date];
+      const y = chartHeight - (val / maxVal) * (chartHeight * 0.7) - (chartHeight * 0.15);
+      const dayLabel = date.split('-').slice(1).reverse().join('/'); // DD/MM
+
+      return `
+          <circle cx="${x}" cy="${y}" r="6" fill="white" stroke="var(--themePrimary)" stroke-width="2.5" style="cursor: pointer;">
+            <title>Día: ${dayLabel} - Actividad: ${val} eventos</title>
+          </circle>
+          <text x="${x}" y="${totalHeight - 5}" text-anchor="${i === 0 ? 'start' : (i === dates.length - 1 ? 'end' : 'middle')}" fill="#64748b" style="font-size: 14px; font-weight: 600;">${dayLabel}</text>
+          ${val > 0 ? `<text x="${x}" y="${y - 12}" text-anchor="middle" fill="var(--themePrimary)" style="font-size: 12px; font-weight: 800; pointer-events: none;">${val}</text>` : ''}
+        `;
+    }).join('')}
+    `;
   }
 
   // Tab de Auditoría
@@ -272,7 +488,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         <button class="btn btn-outline" id="btn-clear-filters" style="white-space: nowrap;">Limpiar</button>
       </div>
 
-      <!-- Tabla -->
+      <!--Tabla -->
       <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
@@ -321,7 +537,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         </table>
       </div>
 
-      <!-- Paginación -->
+      <!--Paginación -->
       ${totalPages > 1 ? `
         <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem;">
           <button class="btn btn-outline btn-sm page-btn" data-page="${state.currentPage - 1}" ${state.currentPage === 1 ? 'disabled' : ''}>←</button>
@@ -330,7 +546,8 @@ export default function mountSecurity(root, { bus, store, user, role }) {
           `).join('')}
           <button class="btn btn-outline btn-sm page-btn" data-page="${state.currentPage + 1}" ${state.currentPage === totalPages ? 'disabled' : ''}>→</button>
         </div>
-      ` : ''}
+      ` : ''
+      }
     `;
   }
 
@@ -451,7 +668,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         <!-- Políticas de Contraseña -->
         <div style="background: var(--bg-light); padding: 1.25rem; border-radius: var(--radius);">
           <h4 style="margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Políticas de Contraseña
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg> Políticas de Contraseña
           </h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div>
@@ -474,19 +691,19 @@ export default function mountSecurity(root, { bus, store, user, role }) {
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem;">
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
               <input type="checkbox" name="requireUppercase" ${p.requireUppercase ? 'checked' : ''}>
-              <span>Requiere mayúsculas</span>
+                <span>Requiere mayúsculas</span>
             </label>
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
               <input type="checkbox" name="requireLowercase" ${p.requireLowercase ? 'checked' : ''}>
-              <span>Requiere minúsculas</span>
+                <span>Requiere minúsculas</span>
             </label>
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
               <input type="checkbox" name="requireNumbers" ${p.requireNumbers ? 'checked' : ''}>
-              <span>Requiere números</span>
+                <span>Requiere números</span>
             </label>
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
               <input type="checkbox" name="requireSpecialChars" ${p.requireSpecialChars ? 'checked' : ''}>
-              <span>Requiere caracteres especiales</span>
+                <span>Requiere caracteres especiales</span>
             </label>
           </div>
         </div>
@@ -494,7 +711,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         <!-- Políticas de Sesión -->
         <div style="background: var(--bg-light); padding: 1.25rem; border-radius: var(--radius);">
           <h4 style="margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Políticas de Sesión
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg> Políticas de Sesión
           </h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div>
@@ -506,9 +723,11 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 1rem; align-items: center;">
-          <button type="button" class="btn btn-outline" id="btn-reset-policies">Restaurar valores</button>
+          <button type="button" class="btn-circle btn-circle-cancel" id="btn-reset-policies" title="Restaurar valores">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+          </button>
           <button type="submit" class="btn-circle btn-circle-save" title="Guardar Políticas">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
           </button>
         </div>
       </form>
@@ -541,19 +760,19 @@ export default function mountSecurity(root, { bus, store, user, role }) {
     }
 
     // Limpiar filtros
-    if (e.target.id === 'btn-clear-filters') {
+    if (e.target.closest('#btn-clear-filters')) {
       state.filters = { search: '', action: '', module: '', dateFrom: '', dateTo: '' };
       state.currentPage = 1;
       render();
     }
 
     // Exportar logs
-    if (e.target.id === 'btn-export-logs') {
+    if (e.target.closest('#btn-export-logs')) {
       exportLogs();
     }
 
     // Reset políticas
-    if (e.target.id === 'btn-reset-policies') {
+    if (e.target.closest('#btn-reset-policies')) {
       state.policies = {
         minLength: 8,
         requireUppercase: true,
@@ -565,7 +784,6 @@ export default function mountSecurity(root, { bus, store, user, role }) {
         sessionTimeoutMinutes: 480
       };
       render();
-      setupEventListeners();
       showNotification('Políticas restauradas a valores predeterminados', 'info');
     }
 
@@ -675,7 +893,7 @@ export default function mountSecurity(root, { bus, store, user, role }) {
   // Agregar log de auditoría
   function addAuditLog(action, module, description, details = {}) {
     const log = {
-      id: `audit_${Date.now()}`,
+      id: `audit_${Date.now()} `,
       userId: user.id,
       userName: user.name,
       userRole: user.role,
@@ -691,18 +909,28 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
   // Renderizar detalles de log (JSON)
   function renderLogDetails(details) {
-    if (!details || Object.keys(details).length === 0) {
-      return '<div style="color: #64748b; font-size: 0.875rem; font-style: italic;">Sin detalles adicionales</div>';
+    if (!details) return '<div style="color: #64748b; font-size: 0.875rem; font-style: italic;">Sin detalles adicionales</div>';
+
+    let entries = [];
+    if (typeof details === 'string') {
+      try {
+        const parsed = JSON.parse(details);
+        entries = Object.entries(parsed);
+      } catch (e) {
+        return `<div style="word-break: break-all;">${escapeHtml(details)}</div>`;
+      }
+    } else if (typeof details === 'object') {
+      entries = Object.entries(details);
     }
 
-    let entries = Object.entries(details);
+    if (entries.length === 0) return '<div style="color: #64748b; font-size: 0.875rem; font-style: italic;">Sin detalles adicionales</div>';
 
     return `
-      <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.75rem 1.5rem; align-items: baseline;">
+      <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; align-items: baseline;">
         ${entries.map(([key, value]) => `
-          <div style="font-weight: 700; color: #475569; font-size: 0.75rem; text-transform: uppercase; text-align: right;">${key}:</div>
-          <div style="font-size: 0.85rem; color: #1e293b; font-family: 'JetBrains Mono', monospace; background: #f8fafc; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0; word-break: break-all;">
-            ${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
+          <div style="font-weight: 700; color: #475569; font-size: 0.75rem; text-transform: uppercase; text-align: right;">${escapeHtml(key)}:</div>
+          <div style="font-size: 0.85rem; color: #1e293b; font-family: 'JetBrains Mono', monospace; background: #fff; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0; word-break: break-all;">
+            ${typeof value === 'object' ? JSON.stringify(value, null, 2) : escapeHtml(String(value))}
           </div>
         `).join('')}
       </div>
@@ -712,56 +940,80 @@ export default function mountSecurity(root, { bus, store, user, role }) {
   // Mostrar modal de detalles de log
   function showLogDetailsModal(log) {
     const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
     modal.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(15, 23, 42, 0.75); display: flex; align-items: center;
       justify-content: center; z-index: 5000; backdrop-filter: blur(8px);
-      padding: 1rem; animation: fadeIn 0.2s ease-out;
+      padding: 1rem; animation: fadeIn 0.15s ease-out;
     `;
 
+    const dateStr = new Date(log.timestamp).toLocaleString('es-ES', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+
     modal.innerHTML = `
-      <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-content" style="max-width: 650px;">
         <div class="modal-header">
-          <h3 class="modal-title">Detalles del Evento de Auditoría</h3>
-          <button class="close-modal btn-circle" style="font-size: 2rem; background: rgba(0, 0, 0, 0.2); color: white;" id="close-log-modal">&times;</button>
+          <div>
+            <h3 class="modal-title">Informe Detallado de Auditoría</h3>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">Evento ID: ${log.id}</div>
+          </div>
+          <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="close-log-modal-icon">&times;</button>
         </div>
         
-        <div class="modal-body" style="padding: 1.5rem;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="modal-body" style="padding: 2rem; max-height: 75vh; overflow-y: auto;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
             <div>
-              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Fecha y Hora</div>
-              <div style="font-weight: 500;">${formatDateTime(log.timestamp)}</div>
+              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Fecha y Hora</div>
+              <div style="font-weight: 600; color: var(--neutralDark);">${dateStr}</div>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Módulo</div>
+              <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Módulo Operativo</div>
               <div>${getModuleBadge(log.module)}</div>
             </div>
-            <div>
-              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Usuario</div>
-              <div style="font-weight: 500;">${log.userName} (${log.userRole})</div>
-            </div>
-            <div>
-              <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Acción</div>
-              <div>${getActionBadge(log.action)}</div>
+          </div>
+
+          <div style="background: #f8fafc; border-radius: 8px; padding: 1.25rem; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+            <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 0.75rem;">Responsable de la Acción</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <div style="font-size: 0.8rem; color: var(--muted);">Usuario</div>
+                <div style="font-weight: 700;">${escapeHtml(log.userName)}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.8rem; color: var(--muted);">Rol</div>
+                <div style="font-weight: 700; text-transform: uppercase;">${escapeHtml(log.userRole)}</div>
+              </div>
             </div>
           </div>
 
           <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem;">Descripción</div>
-            <div style="padding: 1rem; background: var(--bg-light); border-radius: 4px; border-left: 4px solid var(--accent);">${log.description}</div>
+            <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem;">Descripción del Evento</div>
+            <div style="padding: 1.25rem; background: #fffbe6; border-left: 4px solid var(--themeTertiary); color: #856404; font-weight: 600; line-height: 1.5; border-radius: 0 4px 4px 0;">
+              ${escapeHtml(log.description)}
+            </div>
           </div>
 
-          <div>
-            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem;">Detalles Técnicos</div>
-            <div style="background: #f1f5f9; padding: 1rem; border-radius: 4px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
+          <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 0.75rem;">Trazabilidad Técnica (Detalles JSON)</div>
+            <div style="background: #f1f5f9; border-radius: 8px; padding: 1.25rem; border: 1px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
               ${renderLogDetails(log.details)}
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: #eff6fc; border: 1px solid var(--themeLight); border-radius: 8px;">
+            <div style="font-size: 1.5rem;">🛡️</div>
+            <div style="font-size: 0.85rem; color: var(--themeDark); line-height: 1.4;">
+              <strong>Registro de Auditoría Verificado:</strong> Esta entrada ha sido generada automáticamente por el motor de seguridad y es inmutable para fines legales y de cumplimiento técnico.
             </div>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button class="btn-circle btn-circle-cancel" id="close-log-btn" title="Cerrar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button class="btn-circle btn-circle-cancel close-modal" id="close-log-btn" title="Cerrar Informe">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
@@ -771,10 +1023,10 @@ export default function mountSecurity(root, { bus, store, user, role }) {
 
     const closeModal = () => {
       modal.style.opacity = '0';
-      setTimeout(() => modal.remove(), 200);
+      setTimeout(() => modal.remove(), 150);
     };
 
-    modal.querySelector('#close-log-modal').addEventListener('click', closeModal);
+    modal.querySelector('#close-log-modal-icon').addEventListener('click', closeModal);
     modal.querySelector('#close-log-btn').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   }

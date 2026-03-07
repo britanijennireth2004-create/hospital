@@ -426,18 +426,18 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
       <!-- Modal para nuevo/editar médico -->
       <div class="modal-overlay ${state.showModal ? '' : 'hidden'}" id="doctor-modal">
-        <div class="modal-content" style="max-width: 800px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              ${state.editingId ? 'EDICIÓN DE PERFIL PROFESIONAL' : 'REGISTRO DE PERSONAL MÉDICO'}
+        <div class="modal-content" style="max-width: 800px;">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NÚÑEZ TOVAR</h3>
+              <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">
+                ${state.editingId ? 'EDICIÓN DE PERFIL PROFESIONAL' : 'REGISTRO DE PERSONAL MÉDICO'}
+              </div>
             </div>
-            <button class="btn-close-modal" id="btn-close-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              ${icons.close}
-            </button>
+            <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-modal">&times;</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 65vh; overflow-y: auto;">
+          <div class="modal-body" style="padding: 1.5rem; max-height: 65vh; overflow-y: auto;">
             <form id="doctor-form">
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 20px;">
                 <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: var(--neutralPrimary); display: flex; align-items: center; gap: 8px;">
@@ -459,10 +459,7 @@ export default function mountDoctors(root, { bus, store, user, role }) {
                         <option value="J">J</option>
                         <option value="P">P</option>
                       </select>
-                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0; height: 38px;">
-                      <button type="button" id="btn-search-registry" title="Buscar en registro nacional" style="border: 1px solid var(--neutralTertiary); border-left: none; border-radius: 0 4px 4px 0; background: #f8fafc; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent);">
-                        ${icons.search}
-                      </button>
+                      <input type="text" class="input" id="form-dni" required placeholder="Número de cédula" style="flex: 1; border-radius: 0 4px 4px 0; height: 38px;">
                     </div>
                   </div>
                 </div>
@@ -619,31 +616,29 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
+          <div class="modal-footer">
             <button class="btn-circle btn-circle-cancel" id="btn-cancel" title="Cancelar">
-              ${icons.close || ICONS.close}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <button class="btn-circle btn-circle-save" id="btn-save" title="${state.editingId ? 'Actualizar Perfil' : 'Registrar Médico'}" ${state.isLoading ? 'disabled' : ''}>
-              ${state.isLoading ? '<span class="loading-spinner"></span>' : ICONS.check}
+              ${state.isLoading ? '<span class="loading-spinner"></span>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'}
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Modal para cambiar estado (Admin/Receptionist) -->
+      <!-- Modal para cambiar estado -->
       <div class="modal-overlay ${state.showStatusModal ? '' : 'hidden'}" id="status-modal">
-        <div class="modal-content" style="max-width: 500px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--warning); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">CAMBIAR ESTADO</h2>
-            <div id="status-modal-name" style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              Médico
+        <div class="modal-content" style="max-width: 500px;">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">CAMBIAR ESTADO</h3>
+              <div id="status-modal-name" style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">Médico</div>
             </div>
-            <button class="btn-close-modal" id="btn-close-status-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              ${ICONS.close}
-            </button>
+            <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-status-modal">&times;</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+          <div class="modal-body" style="padding: 1.5rem;">
             <form id="status-form">
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESTADO ACTUAL</label>
@@ -677,31 +672,31 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn-circle btn-circle-cancel" id="btn-cancel-status" title="Cancelar">
-              ${ICONS.close}
+          <div class="modal-footer">
+            <button class="btn-circle" id="btn-cancel-status" title="Cancelar" style="background-color: #64748b; color: white;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <button class="btn-circle btn-circle-status" id="btn-save-status" title="Actualizar Estado">
-              ${ICONS.check}
+            <button class="btn-circle" id="btn-save-status" title="Actualizar Estado" style="background-color: var(--success); color: white;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Modal para ajustar capacidad (Admin/Receptionist) -->
+      <!-- Modal para ajustar capacidad -->
       <div class="modal-overlay ${state.showCapacityModal ? '' : 'hidden'}" id="capacity-modal">
-        <div class="modal-content" style="max-width: 500px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-          <div class="modal-header" style="background: var(--modal-text); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-            <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">AJUSTAR CAPACIDAD</h2>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">
-              ${state.currentDoctor ? state.currentDoctor.name : 'Médico'}
+        <div class="modal-content" style="max-width: 500px;">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">AJUSTAR CAPACIDAD</h3>
+              <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">
+                ${state.currentDoctor ? state.currentDoctor.name : 'Médico'}
+              </div>
             </div>
-            <button class="btn-close-modal" id="btn-close-capacity-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              ${icons.close}
-            </button>
+            <button class="close-modal btn-circle" style="background: rgba(255,255,255,0.2); border: none; color: white;" id="btn-close-capacity-modal">&times;</button>
           </div>
           
-          <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+          <div class="modal-body" style="padding: 1.5rem;">
             <form id="capacity-form">
               <div class="form-group">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CAPACIDAD ACTUAL</label>
@@ -758,12 +753,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
             </form>
           </div>
           
-          <div class="modal-footer" style="background: var(--modal-header); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; border: none;">
-            <button class="btn-circle btn-circle-cancel" id="btn-cancel-capacity" title="Cancelar">
-              ${ICONS.close}
+          <div class="modal-footer">
+            <button class="btn-circle" id="btn-cancel-capacity" title="Cancelar" style="background-color: #64748b; color: white;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <button class="btn-circle btn-circle-save" id="btn-save-capacity" title="Actualizar Capacidad">
-              ${ICONS.check}
+            <button class="btn-circle" id="btn-save-capacity" title="Actualizar Capacidad" style="background-color: var(--themePrimary); color: white;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
           </div>
         </div>
@@ -816,7 +811,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       btnSave: root.querySelector('#btn-save'),
       btnNewDoctor: root.querySelector('#btn-new-doctor'),
       btnCreateFirst: root.querySelector('#btn-create-first'),
-      btnSearchRegistry: root.querySelector('#btn-search-registry'),
 
       // Modal de estado
       statusModal: root.querySelector('#status-modal'),
@@ -939,11 +933,6 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               </div>
               <div class="text-sm">
                 ${stats.todayAppointments}/${dailyCapacity} pacientes
-                ${canManageAll ? `
-                  <button class="btn-circle btn-circle-status" style="width: 24px; height: 24px; margin-left: 0.5rem;" data-action="capacity" data-id="${doctor.id}" title="Ajustar capacidad">
-                    ${icons.capacity || ICONS.chart}
-                  </button>
-                ` : ''}
               </div>
             ` : `
               <div style="font-size: 0.8rem; color: var(--muted); text-align: center;">Sin actividad hoy</div>
@@ -963,6 +952,9 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               ${canChangeStatus ? `
                 <button class="btn-circle btn-circle-cancel" data-action="status" data-id="${doctor.id}" title="Cambiar Estado">
                   ${ICONS.sync}
+                </button>
+                <button class="btn-circle btn-circle-view" data-action="capacity" data-id="${doctor.id}" title="Ajustar Capacidad">
+                  ${icons.capacity || ICONS.chart}
                 </button>
               ` : ''}
               ${canEdit ? `
@@ -1197,8 +1189,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
       });
     }
 
-    if (elements.btnSearchRegistry) {
-      elements.btnSearchRegistry.addEventListener('click', handleRegistryLookup);
+    if (elements.formDni) {
+      elements.formDni.addEventListener('input', debounce(handleRegistryLookup, 500));
+    }
+
+    if (elements.formDocType) {
+      elements.formDocType.addEventListener('change', handleRegistryLookup);
     }
   }
 
@@ -1211,13 +1207,12 @@ export default function mountDoctors(root, { bus, store, user, role }) {
     const dni = elements.formDni.value.trim();
 
     if (dni && dni.length >= 6) {
-      // Mostrar estado de carga visual en el botón
-      const originalIcon = elements.btnSearchRegistry.innerHTML;
-      elements.btnSearchRegistry.innerHTML = '<div style="width:16px; height:16px; border:2px solid #ccc; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+      // Mostrar estado de carga visual sutil
+      if (elements.formDni) elements.formDni.style.opacity = '0.7';
 
       setTimeout(() => {
         const found = store.fetchFromRegistry(docType, dni);
-        elements.btnSearchRegistry.innerHTML = originalIcon;
+        if (elements.formDni) elements.formDni.style.opacity = '1';
 
         if (found) {
           showNotification(`Datos encontrados para C.I. ${docType}-${dni}. Precargando...`, 'info');
@@ -1241,12 +1236,8 @@ export default function mountDoctors(root, { bus, store, user, role }) {
               }, 2000);
             }
           });
-        } else {
-          showNotification(`No se encontraron datos para la cédula ${docType}-${dni}.`, 'warning');
         }
       }, 700);
-    } else {
-      showNotification('Ingrese una cédula válida (mínimo 6 dígitos)', 'warning');
     }
   }
 
@@ -1975,31 +1966,21 @@ export default function mountDoctors(root, { bus, store, user, role }) {
 
     const modalContainer = document.createElement('div');
     modalContainer.id = 'view-doctor-modal';
-    modalContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    `;
+    modalContainer.className = 'modal-overlay';
 
     modalContainer.innerHTML = `
-      <div class="modal-content" style="max-width: 850px; background: var(--modal-bg); border: none; overflow: hidden; box-shadow: var(--shadow-lg);">
-        <div class="modal-header" style="background: var(--modal-header); flex-direction: column; align-items: center; padding: 1.5rem; position: relative;">
-          <h2 style="margin: 0; color: white; letter-spacing: 0.1em; font-size: 1.5rem; font-weight: 700;">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h2>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-top: 0.25rem; letter-spacing: 0.05em; font-weight: 500;">PERFIL DEL PROFESIONAL MÉDICO</div>
-          <button class="btn-close-modal" id="close-view-doctor-modal" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-            ${icons.close}
+      <div class="modal-content" style="max-width: 850px;">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">HOSPITAL UNIVERSITARIO MANUEL NUÑEZ TOVAR</h3>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; font-weight: 500;">PERFIL DEL PROFESIONAL MÉDICO</div>
+          </div>
+          <button class="close-modal btn-circle" id="close-view-doctor-modal" style="background: rgba(255,255,255,0.2); border: none; color: white;">
+            &times;
           </button>
         </div>
         
-        <div class="modal-body" style="background: white; margin: 1.5rem; border-radius: 8px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-height: 70vh; overflow-y: auto;">
+        <div class="modal-body" style="padding: 2rem; max-height: 70vh; overflow-y: auto;">
           <!-- Encabezado de Perfil -->
           <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2.5rem; border-bottom: 1px solid #eee; padding-bottom: 2rem;">
             <div style="width: 100px; height: 100px; background: var(--card-doctor); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; color: var(--modal-header);">
@@ -2138,25 +2119,25 @@ export default function mountDoctors(root, { bus, store, user, role }) {
           </div>
         </div>
         
-        <div class="modal-footer" style="background: var(--modal-header); padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border: none;">
+        <div class="modal-footer">
           ${(role === 'admin' || role === 'receptionist' || (role === 'doctor' && user?.doctorId === doctor.id)) ? `
             <button class="btn-circle btn-circle-edit" id="edit-doctor-btn" data-id="${doctor.id}" title="Editar Perfil">
-              ${icons.edit}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button class="btn-circle btn-circle-status" id="view-schedule-btn" data-id="${doctor.id}" title="Ver Agenda">
-              ${icons.schedule}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </button>
           ` : ''}
           ${canEditStatus ? `
             <button class="btn-circle btn-circle-cancel" id="change-status-btn" data-id="${doctor.id}" title="Cambiar Estado">
-              ${icons.status}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </button>
             <button class="btn-circle btn-circle-save" id="adjust-capacity-btn" data-id="${doctor.id}" title="Ajustar Capacidad">
-              ${icons.capacity}
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
             </button>
           ` : ''}
-          <button class="btn-circle btn-circle-cancel" id="close-modal-btn" title="Cerrar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button class="btn-circle" id="close-modal-btn" title="Cerrar" style="background-color: #64748b;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
