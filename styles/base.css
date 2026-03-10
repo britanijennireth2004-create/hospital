@@ -13,7 +13,7 @@ body {
 }
 
 body {
-  background: var(--bg);
+  background: var(--themeLighter);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -97,7 +97,7 @@ p {
 .btn-outline {
   background: transparent;
   border: 1px solid var(--border);
-  color: var(--text);
+  color: var(--themePrimary);
 }
 
 .btn-outline:hover {
@@ -219,7 +219,7 @@ p {
   display: block;
   margin-bottom: 0.25rem;
   font-weight: 500;
-  color: var(--text);
+  color: var(--themeSecondary);
 }
 
 .input,
@@ -280,12 +280,12 @@ textarea.error {
 }
 
 .table th {
-  background: var(--bg-light);
+  background: var(--themeLighterAlt);
   padding: 0.75rem;
   text-align: left;
   font-weight: 600;
   border-bottom: 2px solid var(--border);
-  color: var(--text);
+  color: var(--themeTertiary);
 }
 
 .table td {
@@ -294,7 +294,7 @@ textarea.error {
 }
 
 .table tr:hover {
-  background: var(--bg-light);
+  background: var(--neutralLighter);
 }
 
 .table-sm th,
@@ -319,7 +319,7 @@ textarea.error {
 }
 
 .stat-info-card:hover {
-  border-color: var(--accent);
+  border-color: var(--themeTertiary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transform: translateY(-2px);
 }
@@ -336,7 +336,7 @@ textarea.error {
 .stat-info-value {
   font-size: 1.75rem;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--themeTertiary);
   line-height: 1;
 }
 
@@ -352,7 +352,7 @@ textarea.error {
 }
 
 .card {
-  background: var(--card);
+  background: var(--themeLighterAlt);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 1.5rem;

@@ -738,7 +738,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
-  background: var(--bg-light);
+  background: var(--themeLighterAlt);
   border-bottom: 1px solid var(--border);
 }
 
@@ -750,7 +750,7 @@
 }
 
 .calendar-day-head {
-  background: var(--bg-light);
+  background: var(--themeLighterAlt);
   padding: 0.75rem;
   text-align: center;
   font-weight: 600;
@@ -834,7 +834,7 @@
 
 .view-toggle {
   display: flex;
-  background: var(--bg-light);
+  background: rgba(0, 0, 0, 0.05);
   padding: 0.25rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -853,8 +853,8 @@
 }
 
 .view-toggle-btn.active {
-  background: white;
-  color: var(--accent);
+  background: var(--themeLighterAlt);
+  color: var(--themeTertiary);
   box-shadow: var(--shadow-sm);
 }
 
@@ -864,7 +864,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: var(--bg);
+  background: var(--themeLighter);
   padding: 1.5rem;
 }
 

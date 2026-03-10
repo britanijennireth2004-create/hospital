@@ -276,33 +276,33 @@ export default function mountAreas(root, { bus, store, user, role }) {
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOMBRE DEL ÁREA *</label>
                   <input type="text" class="input" id="form-name" 
-                         required placeholder="Ej: Pediatría, Urgencias, Laboratorio..." style="border-color: var(--modal-border); background: var(--modal-bg);">
+                         required placeholder="Ej: Pediatría, Urgencias, Laboratorio...">
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CÓDIGO INTERNO *</label>
                   <input type="text" class="input" id="form-code" 
-                         required placeholder="Ej: PED, URG, LAB" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                         required placeholder="Ej: PED, URG, LAB">
                 </div>
               </div>
               
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">DESCRIPCIÓN DEL SERVICIO</label>
                 <textarea class="input" id="form-description" rows="2"
-                          placeholder="Breve descripción..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
+                          placeholder="Breve descripción..."></textarea>
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">UBICACIÓN FÍSICA</label>
                   <input type="text" class="input" id="form-location" 
-                         placeholder="Ej: Piso 3, Ala Norte..." style="border-color: var(--modal-border); background: var(--modal-bg);">
+                         placeholder="Ej: Piso 3, Ala Norte...">
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TELÉFONO DE CONTACTO</label>
                   <input type="tel" class="input" id="form-phone" 
-                         placeholder="Ej: 600123456" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                         placeholder="Ej: 600123456">
                 </div>
               </div>
               
@@ -314,7 +314,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">TIPO DE ÁREA</label>
-                  <select class="input" id="form-type" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <select class="input" id="form-type">
                     <option value="clinical">Clínica</option>
                     <option value="diagnostic">Diagnóstico</option>
                     <option value="surgical">Quirúrgica</option>
@@ -328,9 +328,9 @@ export default function mountAreas(root, { bus, store, user, role }) {
                   <div class="flex items-center gap-2">
                     <input type="color" class="input" id="form-color" 
                            value="#2196F3" 
-                           style="width: 50px; height: 38px; padding: 2px; border-color: var(--modal-border);">
+                           style="width: 50px; height: 38px; padding: 2px;">
                     <input type="text" class="input" id="form-color-text" 
-                           placeholder="#2196F3" style="flex: 1; border-color: var(--modal-border); background: var(--modal-bg);">
+                           placeholder="#2196F3">
                   </div>
                 </div>
               </div>
@@ -338,14 +338,14 @@ export default function mountAreas(root, { bus, store, user, role }) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ÁREA PADRE (SI APLICA)</label>
-                  <select class="input" id="form-parent" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <select class="input" id="form-parent">
                     <option value="">Área principal (sin padre)</option>
                   </select>
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">MÉDICO RESPONSABLE</label>
-                  <select class="input" id="form-head-doctor" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                  <select class="input" id="form-head-doctor">
                     <option value="">Sin asignar</option>
                   </select>
                 </div>
@@ -353,15 +353,15 @@ export default function mountAreas(root, { bus, store, user, role }) {
               
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">CAPACIDAD (CONSULTORIOS)</label>
-                <input type="number" class="input" id="form-capacity" min="1" max="50" value="1" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                <input type="number" class="input" id="form-capacity" min="1" max="50" value="1">
               </div>
               
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ESPECIALIDADES</label>
                 <div class="flex gap-2">
                   <input type="text" class="input" id="form-add-specialty" 
-                         placeholder="Ej: Cardiología, Neurología..." style="flex: 1; border-color: var(--modal-border); background: var(--modal-bg);">
-                  <button type="button" class="btn btn-outline" id="btn-add-specialty" style="white-space: nowrap;">Agregar</button>
+                         placeholder="Ej: Cardiología, Neurología..." style="flex: 1;">
+                  <button type="button" class="btn btn-outline" id="btn-add-specialty" style="white-space: nowrap; background: var(--themeLighter); border-color: var(--themeLight);">Agregar</button>
                 </div>
                 <div id="specialties-container" class="flex flex-wrap gap-1 mt-2">
                   <!-- Se llenará dinámicamente -->
@@ -371,7 +371,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">EMAIL DE CONTACTO</label>
                 <input type="email" class="input" id="form-email" 
-                       placeholder="Ej: area@hospital.com" style="border-color: var(--modal-border); background: var(--modal-bg);">
+                       placeholder="Ej: area@hospital.com">
               </div>
               
               ${state.editingId ? `
@@ -388,7 +388,7 @@ export default function mountAreas(root, { bus, store, user, role }) {
               <div class="form-group" style="margin-top: 1.5rem;">
                 <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">NOTAS ADICIONALES</label>
                 <textarea class="input" id="form-notes" rows="2"
-                          placeholder="Observaciones importantes..." style="border-color: var(--modal-border); background: var(--modal-bg);"></textarea>
+                          placeholder="Observaciones importantes..."></textarea>
               </div>
             </form>
           </div>

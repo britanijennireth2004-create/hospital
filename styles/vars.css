@@ -16,15 +16,15 @@
   --green: #107c10;
   /* Colores principales */
   /* Primary */
-  --themeDarker: #004578;
-  --themeDark: #005a9e;
-  --themeDarkAlt: #106ebe;
-  --themePrimary: #0078b4;
-  --themeSecondary: #2b88d8;
-  --themeTertiary: #71afe5;
-  --themeLight: #c7e0f4;
-  --themeLighter: #deecf9;
-  --themeLighterAlt: #eff6fc;
+  --themeDarker: #00213b;
+  --themeDark: #002d4f;
+  --themeDarkAlt: #00355e;
+  --themePrimary: #003b69;
+  --themeSecondary: #0f4c7b;
+  --themeTertiary: #427aa5;
+  --themeLight: #93b7d2;
+  --themeLighter: #c2d7e7;
+  --themeLighterAlt: #eff5f9;
   /* Foreground */
   --black: #000000;
   --neutralDark: #201f1e;
@@ -62,10 +62,10 @@
   --accent-light: rgba(15, 141, 58, 0.1);
 
   /* Sistema de colores */
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --info: #3b82f6;
+  --success: var(--tealLight);
+  --warning: var(--yellow);
+  --danger: var(--red);
+  --info: var(--blue);
 
   /* Bordes */
   --border: #e8f3ea;
@@ -111,11 +111,11 @@
 
   /* variables para niveles de triaje */
   --triaje-gray: #cdd8cd;
-  --triaje-red: #ea4632;
-  --triaje-orange: #ea7d32;
-  --triaje-yellow: #eace32;
-  --triaje-green: #33ac2a;
-  --triaje-blue: #226dc8;
+  --triaje-red: var(--red);
+  --triaje-orange: var(--orange);
+  --triaje-yellow: var(--yellow);
+  --triaje-green: var(--green);
+  --triaje-blue: var(--blue);
   --triaje-red-light: #fed7d7;
   --triaje-orange-light: #feebc8;
   --triaje-yellow-light: #fefcbf;

@@ -4,15 +4,15 @@
 
 // SVG ICONS DEFINITIONS (puedes usar una función helper para obtenerlos)
 const icons = {
-  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="#467c2a" stroke-width="1.5"/><path stroke="#467c2a" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/><path stroke="#467c2a" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/></svg>`,
+  calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="2.25" y="3.75" width="15.5" height="14" rx="2.25" stroke="var(--muted)" stroke-width="1.5"/><path stroke="var(--muted)" stroke-width="1.5" d="M6 1.75v3.5M14 1.75v3.5"/><path stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" d="M2 7.5h16"/></svg>`,
   clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><rect x="4.25" y="3.75" width="11.5" height="14" rx="2.25" stroke="#ea4632" stroke-width="1.5"/><rect x="6.75" y="2" width="6.5" height="3.5" rx="1.25" stroke="#ea4632" stroke-width="1.5"/></svg>`,
-  user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#10b981" stroke-width="1.5"/><path stroke="#10b981" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
+  user: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="var(--muted)" stroke-width="1.5"/><path stroke="var(--muted)" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
   settings: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="3.5" stroke="#888" stroke-width="1.5"/><path stroke="#888" stroke-width="1.5" d="M10 1.75v2.5M10 15.75v2.5M3.64 3.64l1.77 1.77M14.59 14.59l1.77 1.77M1.75 10h2.5M15.75 10h2.5M3.64 16.36l1.77-1.77M14.59 5.41l1.77-1.77"/></svg>`,
-  doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="6" r="4" stroke="#249" stroke-width="1.5"/><path stroke="#249" stroke-width="1.5" d="M3.5 18c0-3.037 2.486-5.5 6.5-5.5s6.5 2.463 6.5 5.5"/></svg>`,
+  doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="6" r="4" stroke="var(--muted)" stroke-width="1.5"/><path stroke="var(--muted)" stroke-width="1.5" d="M3.5 18c0-3.037 2.486-5.5 6.5-5.5s6.5 2.463 6.5 5.5"/></svg>`,
   patient: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#38a169" stroke-width="1.5"/><path stroke="#38a169" stroke-width="1.5" d="M3.75 17A6.25 6.25 0 0116.25 17"/></svg>`,
   area: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" fill="none" viewBox="0 0 20 20"><rect x="2.25" y="4.25" width="15.5" height="10.5" rx="1.75" stroke="#d69e2e" stroke-width="1.5"/><path stroke="#d69e2e" stroke-width="1.5" d="M6.5 15.75V17a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5v-1.25"/></svg>`,
   successCheck: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="20" height="20" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="#38a169" stroke-width="2"/><path stroke="#38a169" stroke-width="2" d="M6 10.5l2.5 2 5-5"/></svg>`,
-  warning: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><path stroke="#d69e2e" stroke-width="1.5" d="M10 3v8"/><circle cx="10" cy="15" r="1" fill="#d69e2e"/><circle cx="10" cy="10" r="9" stroke="#d69e2e" stroke-width="1.5"/></svg>`,
+  warning: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><path stroke="var(--muted)" stroke-width="1.5" d="M10 3v8"/><circle cx="10" cy="15" r="1" fill="var(--muted)"/><circle cx="10" cy="10" r="9" stroke="var(--muted)" stroke-width="1.5"/></svg>`,
   info: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="#249" stroke-width="2"/><path stroke="#249" stroke-width="2" d="M10 7v5"/><circle cx="10" cy="14" r="1" fill="#249"/></svg>`,
   // Iconos adicionales
   plus: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
@@ -207,7 +207,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         <polyline
           points="${points}"
           fill="none"
-          stroke="var(--accent)"
+          stroke="var(--themeTertiary)"
           stroke-width="3"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -215,7 +215,7 @@ export default function mountDashboard(root, { bus, store, user, role }) {
         
         <!-- Puntos del gráfico -->
         ${data.map((d, i) => `
-          <circle cx="${getX(i)}" cy="${getY(d.count)}" r="4" fill="white" stroke="var(--accent)" stroke-width="2">
+          <circle cx="${getX(i)}" cy="${getY(d.count)}" r="4" fill="white" stroke="var(--themeTertiary)" stroke-width="2">
             <title>${d.date.toLocaleDateString()}: ${d.count} citas</title>
           </circle>
         `).join('')}

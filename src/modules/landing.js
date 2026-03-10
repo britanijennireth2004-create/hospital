@@ -538,7 +538,7 @@ export default function mountLanding(container, { onGetStarted, store }) {
         }
 
         .landing-btn-primary {
-          background: linear-gradient(135deg, var(--themeDarker), var(--themeDark));
+          background: linear-gradient(135deg, var(--themeDarker), var(--themePrimary));
           color: white;
         }
 

@@ -1180,7 +1180,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       case 'cancelled': icon = icons.cancel; break;
     }
 
-    return `<span class="badge ${statusColor[status] || ''}">${icon} ${statusText[status] || status}</span>`;
+    return `<span class="badge ${statusColor[status] || ''}">${statusText[status] || status}</span>`;
   }
 
   // === LÓGICA DEL CALENDARIO ===

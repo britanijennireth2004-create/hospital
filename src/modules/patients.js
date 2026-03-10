@@ -430,17 +430,17 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Nombre</label>
-                          <input type="text" class="input" id="form-emergency-name" style="border-color: var(--modal-border);">
+                          <input type="text" class="input" id="form-emergency-name" style="border-color: var(--muted);">
                         </div>
                         
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Teléfono</label>
-                          <input type="tel" class="input" id="form-emergency-phone" style="border-color: var(--modal-border);">
+                          <input type="tel" class="input" id="form-emergency-phone" style="border-color: var(--muted);">
                         </div>
                         
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Parentesco</label>
-                          <input type="text" class="input" id="form-emergency-relation" placeholder="Ej: Esposa, Hijo..." style="border-color: var(--modal-border);">
+                          <input type="text" class="input" id="form-emergency-relation" placeholder="Ej: Esposa, Hijo..." style="border-color: var(--muted);">
                         </div>
                       </div>
                     </div>
@@ -450,12 +450,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Compañía</label>
-                          <input type="text" class="input" id="form-insurance-company" placeholder="Ej: Sanitas, Adeslas..." style="border-color: var(--modal-border);">
+                          <input type="text" class="input" id="form-insurance-company" placeholder="Ej: Sanitas, Adeslas..." style="border-color: var(--muted);">
                         </div>
                         
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Número de póliza</label>
-                          <input type="text" class="input" id="form-insurance-number" style="border-color: var(--modal-border);">
+                          <input type="text" class="input" id="form-insurance-number" style="border-color: var(--muted);">
                         </div>
                       </div>
                     </div>
@@ -466,12 +466,12 @@ export default function mountPatients(root, { bus, store, user, role }) {
                       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Usuario (Email por defecto)</label>
-                          <input type="text" class="input" id="form-username" placeholder="Nombre de usuario" style="border-color: var(--modal-border);">
+                          <input type="text" class="input" id="form-username" placeholder="Nombre de usuario" style="border-color: var(--muted);">
                         </div>
                         
                         <div class="form-group">
                           <label class="form-label" style="font-weight: 600; color: #4a5568; font-size: 0.8rem;">Contraseña *</label>
-                          <input type="password" class="input" id="form-password" placeholder="Mínimo 6 caracteres" style="border-color: var(--modal-border);">
+                          <input type="password" class="input" id="form-password" placeholder="Mínimo 6 caracteres" style="border-color: var(--muted);">
                         </div>
                       </div>
                     </div>
@@ -673,7 +673,7 @@ export default function mountPatients(root, { bus, store, user, role }) {
         </td>
         <td data-label="Estado">
           <span class="badge ${patient.isActive ? 'badge-success' : 'badge-danger'}">
-            ${patient.isActive ? icons.successCheck : icons.cancel} ${patient.isActive ? 'Activo' : 'Inactivo'}
+            ${patient.isActive ? 'Activo' : 'Inactivo'}
           </span>
         </td>
         <td data-label="Acciones">
