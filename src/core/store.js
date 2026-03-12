@@ -5,7 +5,7 @@ export async function createStore(bus) {
 
   // Datos de ejemplo más completos
   const defaultData = {
-    version: '3.3',
+    version: '3.4',
     users: [
       {
         id: 'admin_1',
@@ -237,6 +237,50 @@ export async function createStore(bus) {
     ],
 
     appointments: [
+      {
+        id: 'apt_today_1',
+        patientId: 'p_1',
+        doctorId: 'd_1',
+        areaId: 'area_1',
+        dateTime: new Date().setHours(10, 30, 0, 0),
+        duration: 30,
+        status: 'scheduled',
+        priority: 'rutina',
+        type: 'control',
+        reason: 'Fiebre persistente',
+        notes: '',
+        modality: 'presencial',
+        virtualLink: '',
+        consultorioId: 'con_1',
+        equipmentIds: [],
+        arrivalDateTime: null,
+        startDateTime: null,
+        endDateTime: null,
+        createdAt: Date.now(),
+        createdBy: 'admin_1'
+      },
+      {
+        id: 'apt_today_2',
+        patientId: 'p_2',
+        doctorId: 'd_1',
+        areaId: 'area_1',
+        dateTime: new Date().setHours(8, 0, 0, 0),
+        duration: 30,
+        status: 'completed',
+        priority: 'rutina',
+        type: 'control',
+        reason: 'Revisión mensual',
+        notes: '',
+        modality: 'presencial',
+        virtualLink: '',
+        consultorioId: 'con_1',
+        equipmentIds: [],
+        arrivalDateTime: null,
+        startDateTime: null,
+        endDateTime: null,
+        createdAt: Date.now(),
+        createdBy: 'admin_1'
+      },
       {
         id: 'apt_1',
         patientId: 'p_1',

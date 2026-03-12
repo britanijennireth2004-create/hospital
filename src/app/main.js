@@ -303,13 +303,18 @@ function showLoading(show) {
     loadingEl.id = 'loading';
     loadingEl.className = 'loading-overlay';
     loadingEl.innerHTML = `
-      <div class="loading-spinner"></div>
-      <p>Cargando aplicación...</p>
+      <div class="splash-logo-container">
+        <div class="splash-spinner"></div>
+        <div class="splash-spinner-inner"></div>
+        <div class="splash-initials">HUMNT</div>
+      </div>
+      <p>Cargando Sistema Médico...</p>
     `;
     document.body.appendChild(loadingEl);
   }
   loadingEl.style.display = show ? 'flex' : 'none';
 }
+
 
 function showError(message) {
   const appElement = document.getElementById('app');
@@ -1181,6 +1186,10 @@ async function initApp() {
     const savedUser = localStorage.getItem('hospital_user');
     const hasSeenLanding = localStorage.getItem('hospital_landing_seen');
 
+    // Forzar que el cargando dure al menos 3 segundos para mostrar el nuevo diseño
+    const minLoadingTime = 3000;
+    const startTime = Date.now();
+
     if (savedUser) {
       const user = JSON.parse(savedUser);
       APP_STATE.user = user;
@@ -1192,6 +1201,14 @@ async function initApp() {
       await mountLoginScreen();
     }
 
+    // Calcular cuánto tiempo falta para cumplir los 3 segundos
+    const elapsedTime = Date.now() - startTime;
+    const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+
+    if (remainingTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+    }
+
   } catch (error) {
     console.error('Error al inicializar:', error);
     showError(`Error técnico: ${error.message}`);
@@ -1199,6 +1216,7 @@ async function initApp() {
     showLoading(false);
   }
 }
+
 
 async function mountLandingScreen() {
   const appElement = document.getElementById('app');

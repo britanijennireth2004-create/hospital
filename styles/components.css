@@ -1332,3 +1332,83 @@ textarea.error-field {
 .treatment-entry.is-amendment:hover {
   background: #fef2f2;
 }
+
+/* ===== LOADING SCREEN (Mobile version design) ===== */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #002d4f 0%, #005bb7 100%);
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.8s ease-out;
+}
+
+.splash-logo-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.splash-initials {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.2rem;
+  z-index: 10;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.splash-spinner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #ffffff;
+  border-radius: 50%;
+  animation: splashSpin 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.splash-spinner-inner {
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 2px solid #93b7d2;
+  border-radius: 50%;
+  animation: splashSpinReverse 1.5s linear infinite;
+}
+
+@keyframes splashSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes splashSpinReverse {
+  0% {
+    transform: rotate(360deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+#loading p {
+  margin-top: 30px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+}
