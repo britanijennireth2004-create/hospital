@@ -13,7 +13,19 @@ export default function mountLandingManager(root, { store, user, role }) {
   let elements = {};
 
   function init() {
-    state.config = store.get('landingConfig');
+    const config = store.get('landingConfig');
+    // Asegurar que sea un objeto y no un array vacío (comportamiento por defecto del store.get)
+    state.config = (config && !Array.isArray(config)) ? config : null;
+    
+    if (!state.config) {
+      console.warn('Landing config not found in store, using defaults');
+      state.config = {
+        hero: { title: '', subtitle: '', description: '', backgroundImage: '' },
+        contact: { email: '', phone: '', address: '' },
+        social: { instagram: '', telegram: '', whatsapp: '', facebook: '' }
+      };
+    }
+    
     render();
     setupEventListeners();
   }
@@ -269,9 +281,11 @@ export default function mountLandingManager(root, { store, user, role }) {
 
     if (elements.btnReset) {
       elements.btnReset.addEventListener('click', () => {
-        state.config = store.get('landingConfig');
+        const config = store.get('landingConfig');
+        state.config = (config && !Array.isArray(config)) ? config : null;
         state.tempBackgroundImage = null;
         render();
+        setupEventListeners();
         window.hospitalAlert('Cambios descartados. Configuración recargada.', 'info');
       });
     }
@@ -279,7 +293,9 @@ export default function mountLandingManager(root, { store, user, role }) {
     if (elements.btnResetImg) {
       elements.btnResetImg.addEventListener('click', () => {
         state.tempBackgroundImage = 'img/hospital.jpg';
-        elements.previewBox.style.backgroundImage = `url('img/hospital.jpg')`;
+        if (elements.previewBox) {
+          elements.previewBox.style.backgroundImage = `url('img/hospital.jpg')`;
+        }
         window.hospitalAlert('Imagen restaurada. Debe guardar para aplicar.', 'info');
       });
     }
@@ -310,12 +326,18 @@ export default function mountLandingManager(root, { store, user, role }) {
   }
 
   async function saveConfig() {
+    // Validaciones básicas
+    if (!elements.heroTitle || !elements.contactEmail) {
+      window.hospitalAlert('Error: No se pudieron capturar los campos del formulario', 'error');
+      return;
+    }
+
     const newConfig = {
       hero: {
-        title: elements.heroTitle.value,
-        subtitle: elements.heroSubtitle.value,
-        description: elements.heroDescription.value,
-        backgroundImage: state.tempBackgroundImage || state.config.hero.backgroundImage
+        title: elements.heroTitle.value.trim(),
+        subtitle: elements.heroSubtitle.value.trim(),
+        description: elements.heroDescription.value.trim(),
+        backgroundImage: state.tempBackgroundImage || (state.config.hero ? state.config.hero.backgroundImage : '')
       },
       stats: [
         { label: 'Pacientes registrados', value: 'auto' },
@@ -324,24 +346,29 @@ export default function mountLandingManager(root, { store, user, role }) {
         { label: 'Áreas activas', value: 'auto' }
       ],
       contact: {
-        email: elements.contactEmail.value,
-        phone: elements.contactPhone.value,
-        address: elements.contactAddress.value
+        email: elements.contactEmail.value.trim(),
+        phone: elements.contactPhone.value.trim(),
+        address: elements.contactAddress.value.trim()
       },
       social: {
-        instagram: elements.socialInstagram.value,
-        telegram: elements.socialTelegram.value,
-        facebook: state.config.social.facebook, // Mantener para no perder datos si no hay input
-        whatsapp: elements.socialWhatsapp.value
+        instagram: elements.socialInstagram.value.trim(),
+        telegram: elements.socialTelegram.value.trim(),
+        facebook: (state.config.social && state.config.social.facebook) ? state.config.social.facebook : '',
+        whatsapp: elements.socialWhatsapp.value.trim()
       }
     };
 
     try {
+      // Usar exportData/importData es seguro para claves de nivel superior
       const data = store.exportData();
       data.landingConfig = newConfig;
       store.importData(data);
 
-      window.hospitalAlert('¡Portal actualizado correctamente!', 'success');
+      // Actualizar estado local
+      state.config = newConfig;
+      state.tempBackgroundImage = null;
+
+      await window.hospitalAlert('¡Portal actualizado correctamente!', 'success');
 
       Logger.log(store, user, {
         action: Logger.Actions.UPDATE,
@@ -350,12 +377,12 @@ export default function mountLandingManager(root, { store, user, role }) {
         details: { hasNewImage: !!state.tempBackgroundImage }
       });
 
-      // Actualizar estado local
-      state.config = newConfig;
-      state.tempBackgroundImage = null;
+      // Re-renderizar para limpiar estados temporales y reflejar cambios
+      render();
+      setupEventListeners();
     } catch (error) {
-      console.error(error);
-      window.hospitalAlert('Error al guardar la configuración', 'error');
+      console.error('Error al guardar config landing:', error);
+      window.hospitalAlert('Error al guardar la configuración: ' + error.message, 'error');
     }
   }
 

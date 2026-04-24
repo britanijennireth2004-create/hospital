@@ -710,14 +710,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
                 </div>
               </div>
               
-              <div style="margin-bottom: 2rem;">
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 700; color: var(--modal-text); font-size: 0.85rem;">ÁREA *</label>
-                  <select class="input" id="form-area" required style="border-color: var(--neutralTertiary); background: var(--white);">
-                    <option value="">Seleccionar área</option>
-                  </select>
-                </div>
-              </div>
 
               <!-- Modalidad de atención -->
               <div style="margin-bottom: 2rem;" id="modality-section">
@@ -886,7 +878,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       patientHelperText: root.querySelector('#patient-helper-text'),
       btnClearPatient: root.querySelector('#btn-clear-patient'),
       formDoctor: root.querySelector('#form-doctor'),
-      formArea: root.querySelector('#form-area'),
       formDate: root.querySelector('#form-date'),
       formTime: root.querySelector('#form-time'),
       formDuration: root.querySelector('#form-duration'),
@@ -968,11 +959,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       elements.formDoctor.innerHTML = `<option value="">Seleccionar médico</option>${options}`;
     }
 
-    if (elements.formArea) {
-      const areas = store.get('areas');
-      const options = areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-      elements.formArea.innerHTML = `<option value="">Seleccionar área</option>${options}`;
-    }
 
     // Cargar consultorios disponibles
     if (elements.formConsultorio) {
@@ -1665,12 +1651,8 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       });
     }
 
-    if (elements.formArea) {
-      elements.formArea.addEventListener('change', updateDoctorsByAreaAndDate);
-    }
     if (elements.formDate) {
       elements.formDate.addEventListener('change', () => {
-        updateAvailableAreas();
         updateDoctorsByAreaAndDate();
         updateAvailableResources();
 
@@ -1739,7 +1721,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.formTime) {
       elements.formTime.addEventListener('change', () => {
         validateDoctorSchedule();
-        updateAvailableAreas();
         updateDoctorsByAreaAndDate();
         updateAvailableResources();
       });
@@ -2078,9 +2059,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         if (doctor) {
           // Seleccionar médico y área
           elements.formDoctor.value = doctor.id;
-          if (elements.formArea && doctor.areaId) {
-            elements.formArea.value = doctor.areaId;
-          }
+          elements.formDoctor.value = doctor.id;
 
           if (role === 'doctor') {
             elements.formDoctor.disabled = true;
@@ -2102,7 +2081,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
         const doctor = store.find('doctors', doctorId);
         if (doctor) {
           elements.formDoctor.value = doctor.id;
-          if (elements.formArea && doctor.areaId) elements.formArea.value = doctor.areaId;
           if (role === 'doctor') elements.formDoctor.disabled = true;
         }
       }
@@ -2186,7 +2164,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
       }
     }
     if (elements.formDoctor) elements.formDoctor.value = appointment.doctorId;
-    if (elements.formArea) elements.formArea.value = appointment.areaId;
     if (elements.formDate) elements.formDate.value = dateStr;
     if (elements.formTime) elements.formTime.value = timeStr;
     if (elements.formDuration) elements.formDuration.value = appointment.duration;
@@ -2288,108 +2265,26 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     if (elements.equipmentInfo) elements.equipmentInfo.textContent = 'Ctrl+clic para seleccionar múltiples equipos';
   }
 
-  function updateAvailableAreas() {
-    if (!elements.formArea) return;
-
-    const date = elements.formDate?.value;
-    const time = elements.formTime?.value;
-    const duration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
-
-    const allAreas = store.get('areas');
-
-    // Si no hay fecha y hora activas, cargar todas las áreas como de costumbre
-    if (!date || !time) {
-      const options = allAreas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-      elements.formArea.innerHTML = `<option value="">Seleccionar área</option>${options}`;
-      return;
-    }
-
-    // Encontrar médicos disponibles para ese slot específico
-    const availableDoctors = getAvailableDoctorsForDate(date, null, state.editingId, time, duration);
-    const availableAreaIds = new Set();
-
-    availableDoctors.forEach(d => {
-      availableAreaIds.add(d.areaId);
-      if (d.otherAreas && Array.isArray(d.otherAreas)) {
-        d.otherAreas.forEach(aid => availableAreaIds.add(aid));
-      }
-    });
-
-    const currentArea = elements.formArea.value;
-
-    // Solo mostrar áreas con médicos disponibles
-    const filteredAreas = allAreas.filter(a => availableAreaIds.has(a.id));
-
-    elements.formArea.innerHTML = '<option value="">Seleccionar área (disponibles)</option>' +
-      filteredAreas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-
-    // Intentar mantener el área seleccionada si sigue disponible
-    if (availableAreaIds.has(currentArea)) {
-      elements.formArea.value = currentArea;
-    }
-  }
-
   function updateDoctorsByAreaAndDate() {
-    if (!elements.formDoctor || !elements.formArea) return;
-
-    const areaId = elements.formArea.value;
-    const selectedDate = elements.formDate ? elements.formDate.value : null;
+    if (!elements.formDoctor) return;
     const selectedTime = elements.formTime ? elements.formTime.value : null;
     const selectedDuration = elements.formDuration ? parseInt(elements.formDuration.value) : 30;
 
     if (!selectedDate) {
       const doctors = store.get('doctors');
-      let filteredDoctors = doctors;
-      if (areaId) filteredDoctors = doctors.filter(d => d.areaId === areaId || (d.otherAreas && d.otherAreas.includes(areaId)));
-      const options = filteredDoctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
+      const options = doctors.map(d => `<option value="${d.id}">${d.name} - ${d.specialty}</option>`).join('');
       elements.formDoctor.innerHTML = `<option value="">Seleccionar médico</option>${options}`;
       hideNoDoctorsMessage();
       return;
     }
 
-    const availableDoctors = getAvailableDoctorsForDate(selectedDate, areaId, state.editingId, selectedTime, selectedDuration);
+    const availableDoctors = getAvailableDoctorsForDate(selectedDate, null, state.editingId, selectedTime, selectedDuration);
 
     if (availableDoctors.length === 0) {
       elements.formDoctor.innerHTML = `<option value="">Sin médicos disponibles hoy</option>`;
 
       // Si hay área seleccionada pero no hay médicos, sugerir cambio de fecha
-      if (areaId) {
-        showNoDoctorsMessage();
-        if (elements.noDoctorsMessage) {
-          const area = store.find('areas', areaId);
-          elements.noDoctorsMessage.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 0.85rem;">
-              <div style="background: #fff; border-radius: 50%; padding: 0.5rem; display: flex;">${icons.warning}</div>
-              <div style="flex:1;">
-                <strong>No hay médicos de ${area?.name || 'esta área'} disponibles para hoy.</strong>
-                <div style="font-size: 0.85rem; margin-top: 0.25rem;">
-                  Todos los especialistas están fuera de turno o tienen cupo lleno.
-                </div>
-              </div>
-              <button type="button" id="btn-suggest-next-day" class="btn btn-sm" style="background:#856404; color:white; border:none; padding: 5px 10px; border-radius:4px; font-size:0.75rem;">
-                Buscar próximo día
-              </button>
-            </div>
-          `;
-
-          const btnSuggest = elements.noDoctorsMessage.querySelector('#btn-suggest-next-day');
-          if (btnSuggest) {
-            btnSuggest.onclick = () => {
-              const nextDate = findNextAvailableDateForArea(areaId, selectedDate);
-              if (nextDate) {
-                elements.formDate.value = nextDate;
-                updateAvailableAreas();
-                updateDoctorsByAreaAndDate();
-                showNotification(`Se cambió al ${nextDate} donde hay médicos disponibles`, 'success');
-              } else {
-                showNotification('No se encontró disponibilidad próxima en esta área', 'warning');
-              }
-            };
-          }
-        }
-      } else {
         hideNoDoctorsMessage();
-      }
     } else {
       const options = availableDoctors.map(d => {
         const remaining = getDoctorRemainingAvailability(d.id, selectedDate, state.editingId);
@@ -2553,7 +2448,6 @@ export default function mountAppointments(root, { bus, store, user, role }) {
 
     const requiredFields = [
       { field: elements.formDoctor, label: 'Debe seleccionar médico' },
-      { field: elements.formArea, label: 'Debe seleccionar área' },
       { field: elements.formDate, label: 'Fecha requerida' },
       { field: elements.formTime, label: 'Hora requerida' },
       { field: elements.formDuration, label: 'Duración requerida' }
@@ -2621,7 +2515,7 @@ export default function mountAppointments(root, { bus, store, user, role }) {
     return {
       patientId: elements.formPatient.value,
       doctorId: elements.formDoctor.value,
-      areaId: elements.formArea.value,
+      areaId: store.find('doctors', elements.formDoctor.value)?.areaId || '',
       dateTime: date.getTime(),
       duration: parseInt(elements.formDuration.value),
       reason: elements.formReason.value || '',

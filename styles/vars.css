@@ -77,7 +77,7 @@
   --shadow-lg: 0 12px 40px rgba(15, 59, 47, 0.12);
 
   /* Bordes redondeados */
-  --radius: 0;
+  --radius: 4px;
   --radius-sm: 6px;
   --radius-lg: 16px;
 

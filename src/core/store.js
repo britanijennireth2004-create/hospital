@@ -172,31 +172,29 @@ export async function createStore(bus) {
     areas: [
       {
         id: 'area_1',
-        name: 'Medicina General',
-        description: 'Atención médica general y consultas',
-        color: '#0f8d3a',
-        isActive: true
+        name: 'Hospitalización Norte',
+        location: { edificio: 'A', piso: '1', ala: 'Este' },
+        specialty: 'Medicina General',
+        type: 'clinical',
+        rooms: [
+          { id: 'h1', name: '101', type: 'Individual', totalBeds: 1, availableBeds: 1, status: 'disponible' },
+          { id: 'h2', name: '102', type: 'Individual', totalBeds: 1, availableBeds: 0, status: 'ocupada' }
+        ],
+        isActive: true,
+        color: '#107c10'
       },
       {
         id: 'area_2',
-        name: 'Pediatría',
-        description: 'Especialidad en atención infantil',
-        color: '#3b82f6',
-        isActive: true
-      },
-      {
-        id: 'area_3',
-        name: 'Cardiología',
-        description: 'Especialidad en enfermedades del corazón',
-        color: '#ef4444',
-        isActive: true
-      },
-      {
-        id: 'area_4',
-        name: 'Traumatología',
-        description: 'Especialidad en lesiones óseas y musculares',
-        color: '#f59e0b',
-        isActive: true
+        name: 'Unidad de Cuidados Intensivos',
+        location: { edificio: 'B', piso: '1', ala: 'Norte' },
+        specialty: 'UCI',
+        type: 'clinical',
+        rooms: [
+          { id: 'h3', name: 'UCI-01', type: 'UCI', totalBeds: 1, availableBeds: 1, status: 'disponible' },
+          { id: 'h4', name: 'UCI-02', type: 'UCI', totalBeds: 1, availableBeds: 1, status: 'disponible' }
+        ],
+        isActive: true,
+        color: '#d13438'
       }
     ],
 
